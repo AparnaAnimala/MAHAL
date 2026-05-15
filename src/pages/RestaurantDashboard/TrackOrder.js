@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 // import "../css/trackOrder.css";
 
-const API = "http://localhost:5000/api/v1/orders";
+const API = "http://192.168.2.9:5000/api/v1/orders";
 
 const steps = [
   { label: "Order Placed", icon: "fa-receipt" },

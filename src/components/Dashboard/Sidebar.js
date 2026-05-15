@@ -7,13 +7,13 @@ import "../../pages/css/status.css";
 import introJs from "intro.js";
 import { toolsTourSteps } from "../../tours/toolsTour";
 import { tourLock } from "../../utils/tourLock";
-
+import { useTranslation } from "react-i18next";
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [startToolsTour, setStartToolsTour] = useState(
     localStorage.getItem("startToolsTour")
   );
-  const API = "http://192.168.2.21:5000/api/v1";
+  const API = "http://192.168.2.9:5000/api/v1";
 
   const [issueCount, setIssueCount] = useState(0);
   const [orderCount, setOrderCount] = useState(0);
@@ -26,6 +26,7 @@ const Sidebar = () => {
     if (s === "OUT FOR DELIVERY") return "OUT_FOR_DELIVERY";
     return s.replace(/\s+/g, "_");
   };
+  const { t } = useTranslation();
 
 
 
@@ -153,7 +154,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-products" className={isActive ? "active" : ""}>
               <i className="fas fa-box"></i>
-              {!collapsed && <span>My Products</span>}
+              {!collapsed && <span>{t("my_products")}</span>}
             </li>
           )}
         </NavLink>
@@ -162,7 +163,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-add-product" className={isActive ? "active" : ""}>
               <i className="fas fa-plus-circle"></i>
-              {!collapsed && <span>Add New Product</span>}
+              {!collapsed && <span>{t("add_product")}</span>}
             </li>
           )}
         </NavLink>
@@ -171,7 +172,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-offers" className={isActive ? "active" : ""}>
               <i className="fas fa-gift"></i>
-              {!collapsed && <span>Offers</span>}
+              {!collapsed && <span>{t("offers")}</span>}
             </li>
           )}
         </NavLink>
@@ -181,14 +182,14 @@ const Sidebar = () => {
               <div className="icon_with_badge">
                 <i className="fas fa-shopping-cart"></i>
 
-                {orderCount > 0 && (
+                {/* {orderCount > 0 && (
                   <span className="sidebar_badge">
                     {orderCount > 9 ? "9+" : orderCount}
                   </span>
-                )}
+                )} */}
               </div>
 
-              {!collapsed && <span>Orders</span>}
+              {!collapsed && <span>{t("orders")}</span>}
             </li>
           )}
         </NavLink>
@@ -197,7 +198,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-credit" className={isActive ? "active" : ""}>
               <i className="fas fa-wallet"></i>
-              {!collapsed && <span>Credit Wallet</span>}
+              {!collapsed && <span>{t("credit_wallet")}</span>}
             </li>
           )}
         </NavLink>
@@ -210,7 +211,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-invoice" className={isActive ? "active" : ""}>
               <i className="fas fa-file-invoice"></i>
-              {!collapsed && <span>Invoice Form</span>}
+              {!collapsed && <span>{t("invoice")}</span>}
             </li>
           )}
         </NavLink>
@@ -219,7 +220,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-receipt" className={isActive ? "active" : ""}>
               <i className="fas fa-receipt"></i>
-              {!collapsed && <span>Receipt Manager</span>}
+              {!collapsed && <span>{t("receipts")}</span>}
             </li>
           )}
         </NavLink>
@@ -231,7 +232,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-reports" className={isActive ? "active" : ""}>
               <i className="fa fa-chart-line"></i>
-              {!collapsed && <span>Reports</span>}
+              {!collapsed && <span>{t("reports")}</span>}
             </li>
           )}
         </NavLink>
@@ -249,7 +250,7 @@ const Sidebar = () => {
                 )}
               </div>
 
-              {!collapsed && <span>Order Issues</span>}
+              {!collapsed && <span>{t("issues")}</span>}
             </li>
           )}
         </NavLink>
@@ -257,7 +258,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-delivery" className={isActive ? "active" : ""}>
               <i className="fas fa-truck"></i>
-              {!collapsed && <span>Delivery Boys</span>}
+              {!collapsed && <span>{t("delivery")}</span>}
             </li>
           )}
         </NavLink>
@@ -266,7 +267,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-promotionreview" className={isActive ? "active" : ""}>
               <i className="fas fa-bullhorn"></i>
-              {!collapsed && <span>Promotion Review</span>}
+              {!collapsed && <span>{t("promotion_review")}</span>}
             </li>
           )}
         </NavLink>
@@ -275,16 +276,16 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-paidpromotion" className={isActive ? "active" : ""}>
               <i className="fas fa-bullhorn"></i>
-              {!collapsed && <span>Paid Promotion</span>}
+              {!collapsed && <span>{t("paid_promotion")}</span>}
             </li>
           )}
         </NavLink>
 
         <NavLink to="/dashboard/support" className="menu_link">
           {({ isActive }) => (
-            <li className={isActive ? "active" : ""}>
+            <li id="tour-support" className={isActive ? "active" : ""}>
               <i className="fas fa-headset"></i>
-              {!collapsed && <span>Support</span>}
+              {!collapsed && <span>{t("support")}</span>}
             </li>
           )}
         </NavLink>
@@ -293,7 +294,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-docs" className={isActive ? "active" : ""}>
               <i className="fas fa-book"></i>
-              {!collapsed && <span>Documentation</span>}
+              {!collapsed && <span>{t("documentation")}</span>}
             </li>
           )}
         </NavLink>
@@ -302,7 +303,7 @@ const Sidebar = () => {
           {({ isActive }) => (
             <li id="tour-help" className={isActive ? "active" : ""}>
               <i className="fas fa-question-circle"></i>
-              {!collapsed && <span>Help</span>}
+              {!collapsed && <span>{t("help")}</span>}
             </li>
           )}
         </NavLink>

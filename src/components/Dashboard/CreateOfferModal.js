@@ -135,12 +135,12 @@
 
 //   /* ================= FETCH DROPDOWNS ================= */
 //   useEffect(() => {
-//     fetch("http://127.0.0.1:5000/api/products/categories")
+//     fetch("http://192.168.2.9:5000/api/products/categories")
 //       .then((r) => r.json())
 //       .then(setCategories);
 
 //     fetch(
-//       `http://127.0.0.1:5000/api/products?supplier_id=${supplierId}`
+//       `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
 //     )
 //       .then((r) => r.json())
 //       .then(setProducts);
@@ -154,7 +154,7 @@
 //     }
 
 //     try {
-//       await fetch("http://127.0.0.1:5000/api/offers", {
+//       await fetch("http://192.168.2.9:5000/api/offers", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify({
@@ -314,10 +314,11 @@
 
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
+import { useTranslation } from "react-i18next";
 
 const CreateOfferModal = ({ onClose, onSaved, offer }) => {
   const isEdit = Boolean(offer);
-
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState("category");
   const supplierId = localStorage.getItem("linked_id");
 
@@ -395,11 +396,11 @@ useEffect(() => {
   useEffect(() => {
     if (!supplierId) return;
 
-    fetch(`http://127.0.0.1:5000/api/categories?supplier_id=${supplierId}`)
+    fetch(`http://192.168.2.9:5000/api/categories?supplier_id=${supplierId}`)
       .then(r => r.json())
       .then(setCategories);
 
-    fetch(`http://127.0.0.1:5000/api/products?supplier_id=${supplierId}`)
+    fetch(`http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`)
       .then(r => r.json())
       .then(setProducts);
 
@@ -417,7 +418,10 @@ useEffect(() => {
         ...prev,
         selectedProducts: [{
           value: p.product_id,
-          label: p.product_name_english,
+          label:
+          i18n.language === "ar"
+            ? p.product_name_arabic || p.product_name_english
+            : p.product_name_english,
         }],
         product_id: [p.product_id],
       }));
@@ -433,17 +437,20 @@ useEffect(() => {
 
     return {
       value: p.product_id,
-      label: p.product_name_english,
+      label:
+    i18n.language === "ar"
+      ? p.product_name_arabic || p.product_name_english
+      : p.product_name_english,
       qty: p.stock_qty,
       status,
-      image: `http://127.0.0.1:5000${p.image_url}`,
+      image: `http://192.168.2.9:5000${p.image_url}`,
     };
   });
 
   /* ================= SAVE ================= */
   const saveOffer = async () => {
     if (!form.start_date || !form.end_date) {
-      alert("Missing date range");
+      alert(t("missing_date_range"));
       return;
     }
 
@@ -488,8 +495,8 @@ useEffect(() => {
     };
     try {
       const url = isEdit
-        ? `http://127.0.0.1:5000/api/offers/${offer.offer_id}`
-        : `http://127.0.0.1:5000/api/offers`;
+        ? `http://192.168.2.9:5000/api/offers/${offer.offer_id}`
+        : `http://192.168.2.9:5000/api/offers`;
 
       const method = isEdit ? "PUT" : "POST";
 
@@ -528,16 +535,16 @@ useEffect(() => {
 
       {/* HEADER + TABS (fixed top area) */}
       <div className="modal_header">
-        <h3>{isEdit ? "Update Offer" : "Create Offer"}</h3>
+        <h3>{isEdit ? t("update_offer") : t("create_offer")}</h3>
         <button className="close_btn" onClick={onClose}>×</button>
       </div>
 
       <div className="offer_tabs pill_tabs">
         <button className={activeTab === "category" ? "active" : ""} onClick={() => setActiveTab("category")}>
-          Category Offer
+          {t("category_offer")}
         </button>
         <button className={activeTab === "product" ? "active" : ""} onClick={() => setActiveTab("product")}>
-          Product Offer
+          {t("product_offer")}
         </button>
       </div>
 
@@ -549,32 +556,36 @@ useEffect(() => {
           {activeTab === "category" && (
             <>
               <div className="form_group">
-                <label>Category</label>
+                <label>{t("category")}</label>
                 <select
                   onChange={async (e) => {
                     const category_id = e.target.value;
                     setForm({ ...form, category_id, sub_category_id: "" });
 
                     const res = await fetch(
-                      `http://127.0.0.1:5000/api/subcategories?supplier_id=${supplierId}&category_id=${category_id}`
+                      `http://192.168.2.9:5000/api/subcategories?supplier_id=${supplierId}&category_id=${category_id}`
                     );
                     setSubCategories(await res.json());
                   }}
                 >
-                  <option value="">Select Category</option>
+                  <option value="">{t("select_category")}</option>
                   {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>{i18n.language === "ar"
+                    ? c.name_arabic || c.name
+                    : c.name}</option>
                   ))}
                 </select>
               </div>
 
               {subCategories.length > 0 && (
                 <div className="form_group">
-                  <label>Sub Category</label>
+                  <label>{t("sub_category")}</label>
                   <select onChange={(e)=>setForm({ ...form, sub_category_id: e.target.value })}>
                     <option value="">Select Sub Category</option>
                     {subCategories.map(sc => (
-                      <option key={sc.id} value={sc.id}>{sc.name}</option>
+                      <option key={sc.id} value={sc.id}>{i18n.language === "ar"
+                      ? sc.name_arabic || sc.name
+                      : sc.name}</option>
                     ))}
                   </select>
                 </div>
@@ -585,7 +596,7 @@ useEffect(() => {
           {/* PRODUCT MODE */}
           {activeTab === "product" && (
             <div className="form_group">
-              <label>Select Products</label>
+              <label>{t("select_products")}</label>
               <Select
                 isMulti
                 options={productOptions}
@@ -604,7 +615,7 @@ useEffect(() => {
                   className="selected_expand_toggle"
                   onClick={() => setForm({ ...form, expandedProducts: !form.expandedProducts })}
                 >
-                  {form.selectedProducts.length} products selected {form.expandedProducts ? "▲" : "▼"}
+                  {form.selectedProducts.length} {t("products_selected")}{form.expandedProducts ? "▲" : "▼"}
                 </div>
               )}
 
@@ -637,20 +648,20 @@ useEffect(() => {
           )}
             {/* DISCOUNT TYPE */}
             <div className="form_group">
-              <label>Discount Type</label>
+              <label>{t("discount_type")}</label>
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value)}
               >
-                <option>Percentage</option>
-                <option>Flat</option>
-                <option>BOGO</option>
+                <option>{t("percentage")}</option>
+                <option>{t("flat")}</option>
+                <option>{t("bogo")}</option>
               </select>
             </div>
 
             {discountType === "Percentage" && (
               <div className="form_group">
-                <label>Discount (%)</label>
+                <label>{t("discount_percentage")}</label>
                 <input
                   type="number"
                   value={form.discount_percentage}
@@ -663,7 +674,7 @@ useEffect(() => {
 
             {discountType === "Flat" && (
               <div className="form_group">
-                <label>Flat Amount (₹)</label>
+                <label>{t("flat_amount")} (QAR )</label>
                 <input
                   type="number"
                   value={form.flat_amount}
@@ -677,7 +688,7 @@ useEffect(() => {
             {discountType === "BOGO" && (
               <div className="two_col">
                 <div className="form_group">
-                  <label>Buy Qty</label>
+                  <label>{t("buy_qty")}</label>
                   <input
                     type="number"
                     value={form.bogo_buy}
@@ -687,7 +698,7 @@ useEffect(() => {
                   />
                 </div>
                 <div className="form_group">
-                  <label>Get Qty</label>
+                  <label>{t("get_qty")}</label>
                   <input
                     type="number"
                     value={form.bogo_get}
@@ -709,12 +720,12 @@ useEffect(() => {
                   setForm({ ...form, free_delivery: e.target.checked })
                 }
               />
-              <label htmlFor="free_delivery">Enable Free Delivery</label>
+              <label htmlFor="free_delivery">{t("free_delivery")}</label>
             </div>
 
             {form.free_delivery && (
               <div className="form_group">
-                <label>Min Order for Free Delivery (₹)</label>
+                <label>Min Order for Free Delivery (QAR )</label>
                 <input
                   type="number"
                   value={form.min_order_for_free_delivery}
@@ -731,7 +742,7 @@ useEffect(() => {
             {/* DATE */}
             <div className="two_col">
               <div className="form_group">
-                <label>Start Date</label>
+                <label>{t("start_date")}</label>
                 <input
                   type="date"
                   value={form.start_date}
@@ -741,7 +752,7 @@ useEffect(() => {
                 />
               </div>
               <div className="form_group">
-                <label>End Date</label>
+                <label>{t("end_date")}</label>
                 <input
                   type="date"
                   value={form.end_date}
@@ -755,7 +766,7 @@ useEffect(() => {
             {/* TIME */}
             <div className="two_col">
               <div className="form_group">
-                <label>Start Time</label>
+                <label>{t("start_time")}</label>
                 <input
                   type="time"
                   value={form.start_time}
@@ -765,7 +776,7 @@ useEffect(() => {
                 />
               </div>
               <div className="form_group">
-                <label>End Time</label>
+                <label>{t("end_time")}</label>
                 <input
                   type="time"
                   value={form.end_time}
@@ -777,7 +788,7 @@ useEffect(() => {
             </div>
 
             <div className="form_group">
-              <label>Offer Title</label>
+              <label>{t("offer_title")}</label>
               <input
                 value={form.title}
                 onChange={(e) =>
@@ -787,7 +798,7 @@ useEffect(() => {
             </div>
 
             <div className="form_group">
-              <label>Description</label>
+              <label>{t("description")}</label>
               <textarea
                 rows="2"
                 value={form.description}
@@ -800,7 +811,7 @@ useEffect(() => {
 
           <div className="checkbox_row modern_check">
             <input type="checkbox" id="featured" onChange={(e)=>setForm({ ...form, featured: e.target.checked })}/>
-            <label htmlFor="featured">Set as Featured Offer</label>
+            <label htmlFor="featured">{t("set_featured")}</label>
           </div>
            {isEdit && (
               <div className="checkbox_row modern_check">
@@ -811,13 +822,13 @@ useEffect(() => {
                   onChange={(e) => setIsInactive(e.target.checked)}
                 />
                 <label htmlFor="inactive_offer">
-                  Deactivate this offer
+                  {t("deactivate_offer")}
                 </label>
               </div>
             )}
        
         <button className="btn_save glow full" onClick={saveOffer}>
-            {isEdit ? "Update Offer" : "Save Offer"}
+            {isEdit ? t("update_offer") : t("save_offer")}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api/v1/delivery-boys";
+const API = "http://192.168.2.9:5000/api/v1/delivery-boys";
 
 export default function DeliveryBoys() {
   const [boys, setBoys] = useState([]);
@@ -10,14 +11,11 @@ export default function DeliveryBoys() {
   const [vehicleType, setVehicleType] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
 
-  // ✅ Selected Delivery Boy for Update/Delete
   const [selectedBoy, setSelectedBoy] = useState("");
 
   const token = localStorage.getItem("token");
+  const { t } = useTranslation();
 
-  // =====================================
-  // ✅ Fetch Delivery Boys List
-  // =====================================
   const fetchBoys = async () => {
     try {
       const res = await fetch(API, {
@@ -35,19 +33,15 @@ export default function DeliveryBoys() {
     fetchBoys();
   }, []);
 
-  // =====================================
-  // ✅ Add OR Update Delivery Boy
-  // =====================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name || !mobile) {
-      alert("⚠️ Name and Mobile are required");
+      alert(t("delivery_required"));
       return;
     }
 
     try {
-      // ✅ If selectedBoy exists → Update
       const url = selectedBoy ? `${API}/${selectedBoy}` : API;
       const method = selectedBoy ? "PUT" : "POST";
 
@@ -68,17 +62,16 @@ export default function DeliveryBoys() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed");
+        alert(data.error || t("failed"));
         return;
       }
 
       alert(
         selectedBoy
-          ? "✅ Delivery Boy Updated Successfully"
-          : "✅ Delivery Boy Saved Successfully"
+          ? t("delivery_updated")
+          : t("delivery_saved")
       );
 
-      // ✅ Reset Form After Submit/Update
       setName("");
       setMobile("");
       setVehicleType("");
@@ -88,18 +81,14 @@ export default function DeliveryBoys() {
       fetchBoys();
     } catch (err) {
       console.error(err);
-      alert("❌ Server Error");
+      alert(t("server_error"));
     }
   };
 
-  // =====================================
-  // ✅ Delete Delivery Boy
-  // =====================================
   const handleDelete = async () => {
     if (!selectedBoy) return;
 
-    if (!window.confirm("Are you sure you want to delete this delivery boy?"))
-      return;
+    if (!window.confirm(t("delete_confirm"))) return;
 
     try {
       await fetch(`${API}/${selectedBoy}`, {
@@ -109,9 +98,8 @@ export default function DeliveryBoys() {
         },
       });
 
-      alert("❌ Delivery Boy Deleted Successfully");
+      alert(t("delivery_deleted"));
 
-      // Reset Fields
       setSelectedBoy("");
       setName("");
       setMobile("");
@@ -121,49 +109,48 @@ export default function DeliveryBoys() {
       fetchBoys();
     } catch (err) {
       console.error(err);
-      alert("❌ Server Error");
+      alert(t("server_error"));
     }
   };
 
   return (
     <div className="dashboard_page add_product_page">
-      {/* ✅ HEADER */}
+
       <div className="page_header glass">
         <div>
-          <h2>🚚 Delivery Boys Management</h2>
-          <p className="sub_text">Manage delivery staff information</p>
+          <h2>🚚 {t("delivery_management")}</h2>
+          <p className="sub_text">{t("delivery_subtitle")}</p>
         </div>
       </div>
 
-      {/* ✅ FORM SECTION */}
       <div className="section_card soft">
-        <h4>Add / Update Delivery Boy</h4>
+        <h4>{t("add_update_delivery")}</h4>
 
         <form onSubmit={handleSubmit}>
-          {/* INPUTS */}
+
           <div className="form_grid three">
             <div className="form_group">
-              <label>Driver Name</label>
+              <label>{t("driver_name")}</label>
               <input
-                placeholder="Enter Driver Name"
+                placeholder={t("enter_driver_name")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
 
             <div className="form_group">
-              <label>Mobile Number</label>
+              <label>{t("mobile_number")}</label>
               <input
-                placeholder="Enter Mobile Number"
+                placeholder={t("enter_mobile")}
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
               />
             </div>
 
             <div className="form_group">
-              <label>Vehicle Type</label>
+              <label>{t("vehicle_type")}</label>
               <input
-                placeholder="Bike / Van"
+                placeholder={t("vehicle_type_placeholder")}
                 value={vehicleType}
                 onChange={(e) => setVehicleType(e.target.value)}
               />
@@ -172,45 +159,36 @@ export default function DeliveryBoys() {
 
           <div className="form_grid three">
             <div className="form_group">
-              <label>Vehicle Number</label>
+              <label>{t("vehicle_number")}</label>
               <input
-                placeholder="Enter Vehicle Number"
+                placeholder={t("enter_vehicle_number")}
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
               />
             </div>
           </div>
 
-
-
-          {/* ✅ ACTION BUTTONS */}
           <div className="form_footer">
-            {/* Submit / Update Button */}
             <button type="submit" className="btn_save glow">
-              {selectedBoy ? "Update Delivery Boy" : "Submit Delivery Boy"}
+              {selectedBoy ? t("update_delivery") : t("submit_delivery")}
             </button>
 
-            {/* Delete Button Only If Selected */}
             {selectedBoy && (
               <button
                 type="button"
                 className="btn_cancel"
                 onClick={handleDelete}
               >
-                Delete Delivery Boy
+                {t("delete_delivery")}
               </button>
             )}
           </div>
 
-                    {/* ✅ DROPDOWN BELOW INPUTS */}
           <div className="form_group">
-            <label>Select Saved Delivery Boy</label>
+            <label>{t("select_delivery")}</label>
 
             <select
-              style={{
-    width: "fit-content",
-    minWidth: "250px",
-  }}
+              style={{ width: "fit-content", minWidth: "250px" }}
               value={selectedBoy}
               onChange={(e) => {
                 const boyId = e.target.value;
@@ -221,13 +199,11 @@ export default function DeliveryBoys() {
                 );
 
                 if (boy) {
-                  // Auto Fill Old Data
                   setName(boy.name);
                   setMobile(boy.mobile);
                   setVehicleType(boy.vehicle_type);
                   setVehicleNumber(boy.vehicle_number);
                 } else {
-                  // Reset if none selected
                   setName("");
                   setMobile("");
                   setVehicleType("");
@@ -235,7 +211,9 @@ export default function DeliveryBoys() {
                 }
               }}
             >
-              <option value="">-- Select Delivery Boy --</option>
+              <option value="">
+                {t("select_delivery_placeholder")}
+              </option>
 
               {boys.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -244,6 +222,7 @@ export default function DeliveryBoys() {
               ))}
             </select>
           </div>
+
         </form>
       </div>
     </div>

@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "jspdf-autotable";
-
+import { useTranslation } from "react-i18next";
 const ITEMS_PER_PAGE = 5;
+
 
 const InvoiceReport = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t, i18n } = useTranslation();
 
   const [invoiceFilter, setInvoiceFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -17,7 +19,7 @@ const InvoiceReport = () => {
   /* ================= FETCH ================= */
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:5000/api/reports/invoices", {
+      .get("http://192.168.2.9:5000/api/reports/invoices", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setData(res.data || []))
@@ -64,12 +66,13 @@ const InvoiceReport = () => {
   /* ================= DOWNLOAD ================= */
   const download = async (type) => {
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/reports/invoices/${type}`,
+      `http://192.168.2.9:5000/api/reports/invoices/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           invoice: invoiceFilter,
           status: statusFilter,
+          lang: i18n.language,   // 🔥 ADD THIS LINE
         },
         responseType: "blob",
       }
@@ -82,25 +85,57 @@ const InvoiceReport = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+  
+const isArabic = i18n.language?.startsWith("ar");
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB"
+  ).format(new Date(date));
+};
+
+const formatId = (id) => {
+  if (!isArabic) return id;
+  const prefix = id.replace(/[0-9]/g, "");
+  const numbers = id.replace(/\D/g, "");
+  return prefix + formatNumber(numbers);
+};
+
+  const statusMap = {
+    GENERATED: isArabic ? "تم الإنشاء" : "Generated",
+    CANCELLED: isArabic ? "ملغي" : "Cancelled",
+  };
+
+const paymentMap = {
+  PAID: isArabic ? "مدفوع" : "Paid",
+  UNPAID: isArabic ? "غير مدفوع" : "Unpaid",
+  PARTIAL: isArabic ? "مدفوع جزئياً" : "Partial",
+};
 
   /* ================= UI ================= */
   return (
     <div className="report_page">
       <div className="page_header glass">
-        <h2>Invoice Report</h2>
+        <h2>{t("invoice_report")}</h2>
 
         <div className="header_actions">
           <button
             className="btn dark bulk_btn"
             onClick={() => download("excel")}
           >
-            ⬇ Excel
+            ⬇ {t("download_excel")}
           </button>
           <button
             className="btn dark pdf_btn"
             onClick={() => download("pdf")}
           >
-            ⬇ PDF
+            ⬇ {t("download_pdf")}
           </button>
         </div>
       </div>
@@ -113,11 +148,11 @@ const InvoiceReport = () => {
             setCurrentPage(1);
           }}
         >
-          <option value="ALL">All Status</option>
+          <option value="ALL">{t("all_status")}</option>
           {[...new Set(data.map((d) => d.invoice_status))].map(
             (s) => (
               <option key={s} value={s}>
-                {s}
+                {statusMap[s] || s}
               </option>
             )
           )}
@@ -128,50 +163,56 @@ const InvoiceReport = () => {
         <table className="mini_table">
           <thead>
             <tr>
-              <th>Invoice ID</th>
-              <th>Invoice No</th>
-              <th>Order</th>
-              <th>Date</th>
-              <th>Restaurant</th>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Discount</th>
-              <th>Item Total</th>
-              <th>Subtotal</th>
-              <th>Tax</th>
-              <th>Grand Total</th>
-              <th>Status</th>
-              <th>Payment</th>
+              <th>{t("invoice_id")}</th>
+              <th>{t("invoice_no")}</th>
+              <th>{t("order")}</th>
+              <th>{t("date")}</th>
+              <th>{t("restaurant")}</th>
+              <th>{t("product")}</th>
+              <th>{t("qty")}</th>
+              <th>{t("price")}</th>
+              <th>{t("discount")}</th>
+              <th>{t("item_total")}</th>
+              <th>{t("subtotal")}</th>
+              <th>{t("tax")}</th>
+              <th>{t("grand_total")}</th>
+              <th>{t("status")}</th>
+              <th>{t("payment")}</th>
             </tr>
           </thead>
 
           <tbody>
             {paginatedData.map((r) => (
               <tr key={r.invoice_id}>
-                <td>{r.invoice_id}</td>
-                <td>{r.invoice_number}</td>
-                <td>{r.order_id}</td>
+                <td>{formatId(r.invoice_id)}</td>
+                <td>{formatId(r.invoice_number)}</td>
+                <td>{formatId(r.order_id)}</td>
+                <td>{formatDate(r.invoice_date)}</td>
                 <td>
-                  {new Date(r.invoice_date).toLocaleDateString()}
+                  {i18n.language === "ar"
+                    ? r.restaurant_name_arabic
+                    : r.restaurant_name_english}
                 </td>
-                <td>{r.restaurant_name_english}</td>
-                <td>{r.product_name_english}</td>
-                <td>{r.quantity}</td>
-                <td>{r.price_per_unit}</td>
-                <td>{r.discount}</td>
-                <td>{r.item_total}</td>
-                <td>{r.subtotal_amount}</td>
-                <td>{r.tax_amount}</td>
-                <td>{r.grand_total}</td>
+                <td>
+                  {i18n.language === "ar"
+                    ? r.product_name_arabic
+                    : r.product_name_english}
+                </td>
+                <td>{formatNumber(r.quantity)}</td>
+                <td>{formatNumber(r.price_per_unit)}</td>
+                <td>{formatNumber(r.discount)}</td>
+                <td>{formatNumber(r.item_total)}</td>
+                <td>{formatNumber(r.subtotal_amount)}</td>
+                <td>{formatNumber(r.tax_amount)}</td>
+                <td>{formatNumber(r.grand_total)}</td>
                 <td>
                   <span className="status ok">
-                    {r.invoice_status}
+                    {statusMap[r.invoice_status] || r.invoice_status}
                   </span>
                 </td>
                 <td>
                   <span className="status danger">
-                    {r.payment_status}
+                    {paymentMap[r.payment_status] || r.payment_status}
                   </span>
                 </td>
               </tr>
@@ -187,11 +228,11 @@ const InvoiceReport = () => {
                 setCurrentPage((p) => Math.max(p - 1, 1))
               }
             >
-              Prev
+              {t("prev")}
             </button>
 
             <span>
-              Page {currentPage} of {totalPages}
+              {t("page")} {formatNumber(currentPage)} {t("of")} {formatNumber(totalPages)}
             </span>
 
             <button
@@ -202,7 +243,7 @@ const InvoiceReport = () => {
                 )
               }
             >
-              Next
+              {t("next")}
             </button>
           </div>
         )}

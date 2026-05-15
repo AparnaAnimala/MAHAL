@@ -58,7 +58,7 @@ const CustomersPage = () => {
         </div>
 
         <div className="stat-card">
-          <h3>₹ 1,25,000</h3>
+          <h3>QAR  1,25,000</h3>
           <p>Total Revenue</p>
         </div>
 
@@ -112,7 +112,7 @@ const CustomersPage = () => {
 
             <div>{c.orders}</div>
 
-            <div>₹ {c.spent}</div>
+            <div>QAR  {c.spent}</div>
 
             <div>
               <span className={`status ${c.status}`}>
@@ -165,7 +165,7 @@ const CustomersPage = () => {
 
         <div>
           <span>Total Spent</span>
-          <b>₹ {viewCustomer.spent}</b>
+          <b>QAR  {viewCustomer.spent}</b>
         </div>
 
       </div>

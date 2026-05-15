@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "../css/RecipeMaster.css";
+import { useTranslation } from "react-i18next";
 
 export default function RecipeMaster() {
   const [menuItems, setMenuItems] = useState([]);
   const [units, setUnits] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState("");
   const restaurantId = localStorage.getItem("linked_id"); // or restaurant_id
+  const { t, i18n } = useTranslation();
 
   // 👉 Start with 10 empty rows
   const [ingredientRows, setIngredientRows] = useState(
@@ -19,7 +21,7 @@ export default function RecipeMaster() {
   if (!restaurantId) return;
 
   fetch(
-    `http://127.0.0.1:5000/api/recipes/menu-items?restaurant_id=${restaurantId}`
+    `http://192.168.2.9:5000/api/recipes/menu-items?restaurant_id=${restaurantId}`
   )
     .then(res => res.json())
     .then(data => setMenuItems(Array.isArray(data) ? data : []))
@@ -30,11 +32,11 @@ export default function RecipeMaster() {
   // FETCH UNITS FROM GENERAL_MASTER
   // ===============================
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/recipes/units")
+    fetch(`http://192.168.2.9:5000/api/recipes/units?lang=${i18n.language}`)
       .then(res => res.json())
       .then(data => setUnits(Array.isArray(data) ? data : []))
       .catch(() => setUnits([]));
-  }, []);
+  }, [i18n.language]);
 
   // ===============================
   // UPDATE ROW
@@ -80,16 +82,16 @@ export default function RecipeMaster() {
     );
 
     if (!selectedMenu) {
-      alert("Please select a Menu Item!");
+      alert(t("pleaseSelectMenuItem"));
       return;
     }
 
     if (filteredRows.length === 0) {
-      alert("Please enter at least one ingredient.");
+      alert(t("pleaseEnterIngredient"));
       return;
     }
 
-    fetch("http://127.0.0.1:5000/api/recipes/save", {
+    fetch("http://192.168.2.9:5000/api/recipes/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -111,19 +113,19 @@ export default function RecipeMaster() {
   );
 
  return (
-  <div className="dashboard_page">
+  <div className="dashboard_page" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
 
     {/* HEADER */}
     <div className="page_header">
       <div>
-        <h2 className="mb-0">Add Recipe</h2>
+        <h2 className="mb-0">{t("addRecipe")}</h2>
       </div>
     </div>
 
     {/* ===== MENU ITEM ===== */}
     <div className="section_card soft mt-3">
       <label className="form-label fw-semibold">
-        Menu Item <span className="text-danger">*</span>
+        {t("menuItem")} <span className="text-danger">*</span>
       </label>
 
       <div className="d-flex gap-4 align-items-center">
@@ -133,7 +135,7 @@ export default function RecipeMaster() {
           value={selectedMenu}
           onChange={(e) => setSelectedMenu(e.target.value)}
         >
-          <option value="">Select menu item...</option>
+          <option value="">{t("selectMenuItem")}</option>
 
           {menuItems.map((item) => (
             <option key={item.id} value={item.id}>
@@ -160,10 +162,10 @@ export default function RecipeMaster() {
       <table className="table recipe_table">
         <thead>
           <tr>
-            <th>Ingredient</th>
-            <th>Quantity</th>
-            <th>Unit</th>
-            <th style={{ width: "140px" }}>Action</th>
+            <th>{t("ingredient")}</th>
+            <th>{t("quantity")}</th>
+            <th>{t("unit")}</th>
+            <th style={{ width: "140px" }}>{t("action")}</th>
           </tr>
         </thead>
 
@@ -175,7 +177,7 @@ export default function RecipeMaster() {
               <td>
                 <input
                   className="form-control"
-                  placeholder="e.g. Onion"
+                  placeholder={t("egOnion")}
                   value={row.name}
                   onChange={(e) =>
                     updateRow(i, "name", e.target.value)
@@ -188,7 +190,7 @@ export default function RecipeMaster() {
                 <input
                   type="number"
                   className="form-control"
-                  placeholder="quantity"
+                 placeholder={t("quantity")}
                   value={row.quantity}
                   onChange={(e) =>
                     updateRow(i, "quantity", e.target.value)
@@ -205,7 +207,7 @@ export default function RecipeMaster() {
                     updateRow(i, "unit", e.target.value)
                   }
                 >
-                  <option value="">Select unit</option>
+                  <option value="">{t("selectUnit")}</option>
 
                   {units.map((u, idx) => (
                     <option key={idx} value={u.value}>
@@ -245,7 +247,7 @@ export default function RecipeMaster() {
       {/* ===== SAVE BUTTON ===== */}
       <div className="mt-3 text-center m-auto">
         <button className="btn btn-outline-orange" onClick={saveRecipe}>
-          Save Recipe
+          {t("saveRecipe")}
         </button>
       </div>
     </div>

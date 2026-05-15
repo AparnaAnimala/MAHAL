@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../pages/css/SupplierPromotions.css";
-
-const API = "http://127.0.0.1:5000/api/v1";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/v1";
 
 const toBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -29,6 +29,7 @@ const SupplierPromotionRequest = () => {
   const [categories, setCategories] = useState([]);
   const [categoryProducts, setCategoryProducts] = useState([]);
   const [selectAllInCategory, setSelectAllInCategory] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const [form, setForm] = useState({
     title: "",
@@ -189,7 +190,7 @@ const SupplierPromotionRequest = () => {
   };
 
   const resetForm = () => {
-    if (!window.confirm("Clear this form?")) return;
+    if (!window.confirm(t("clear_form"))) return;
 
     setSelectedProductTabProducts([]);
     setSelectedCategoryTabProducts([]);
@@ -229,17 +230,17 @@ const SupplierPromotionRequest = () => {
     );
 
     if (finalSelectedProducts.length === 0) {
-      alert("Select at least one product");
+      alert(t("select_product_error"));
       return;
     }
 
     if (!form.offer_type) {
-      alert("Select offer type");
+      alert(t("select_offer_error"));
       return;
     }
 
     if (!form.offer_value) {
-      alert("Enter offer value");
+      alert(t("enter_value_error"));
       return;
     }
 
@@ -265,8 +266,23 @@ const SupplierPromotionRequest = () => {
       payload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    alert("Promotion Request Sent to Admin");
+    alert(t("promotion_success"));
     resetForm();
+  };
+  const isArabic = i18n.language?.startsWith("ar");
+
+  /* helper for cities */
+  const getCityName = (city) => {
+    if (!isArabic) return city;
+
+    const map = {
+      Doha: "الدوحة",
+      Qatar: "قطر",
+      Bangalore: "بنغالور",
+      India: "الهند",
+    };
+
+    return map[city] || city;
   };
 
   return (
@@ -274,7 +290,7 @@ const SupplierPromotionRequest = () => {
       <div className="promotion_card">
 
         <h2 className="promotion_heading">
-          Request Paid Promotion
+          {t("request_promotion")}
         </h2>
 
         <div className="tab_row">
@@ -282,24 +298,24 @@ const SupplierPromotionRequest = () => {
             className={activeTab === "PRODUCT" ? "tab active" : "tab"}
             onClick={() => setActiveTab("PRODUCT")}
           >
-            Products
+            {t("products")}
           </button>
 
           <button
             className={activeTab === "CATEGORY" ? "tab active" : "tab"}
             onClick={() => setActiveTab("CATEGORY")}
           >
-            Categories
+            {t("categories")}
           </button>
         </div>
 
         {activeTab === "PRODUCT" && (
           <>
             <div className="form_group">
-              <label>Search Product</label>
+              <label>{t("search_product")}</label>
               <input
                 type="text"
-                placeholder="Search product..."
+                placeholder={t("search_product_placeholder")}
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
               />
@@ -318,7 +334,10 @@ const SupplierPromotionRequest = () => {
                     className={`result_item ${isSelected ? "selected" : ""}`}
                     onClick={() => toggleProductTabProduct(p)}
                   >
-                    {p.product_name_english}
+                    { i18n.language === "ar"
+                      ? p.product_name_arabic || p.product_name_english
+                      : p.product_name_english
+                    }
                   </div>
                 );
               })}
@@ -329,10 +348,10 @@ const SupplierPromotionRequest = () => {
         {activeTab === "CATEGORY" && (
           <>
             <div className="form_group">
-              <label>Search Category</label>
+              <label>{t("search_category")}</label>
               <input
                 type="text"
-                placeholder="Search category..."
+                placeholder={t("search_category_placeholder")}
                 value={categorySearchKeyword}
                 onChange={(e) => fetchCategorySearch(e.target.value)}
               />
@@ -369,7 +388,7 @@ const SupplierPromotionRequest = () => {
                       checked={selectAllInCategory}
                       onChange={(e) => setSelectAllInCategory(e.target.checked)}
                     />
-                    Select All
+                    {t("select_all")}
                   </label>
 
                   <button
@@ -377,7 +396,7 @@ const SupplierPromotionRequest = () => {
                     className="remove_category_btn"
                     onClick={removeCategoryProducts}
                   >
-                    Remove All
+                    {t("remove_all")}
                   </button>
 
                 </div>
@@ -398,7 +417,10 @@ const SupplierPromotionRequest = () => {
                         onClick={() => toggleCategoryTabProduct(p)}
 
                       >
-                        {p.product_name_english}
+                        { i18n.language === "ar"
+                          ? p.product_name_arabic || p.product_name_english
+                          : p.product_name_english
+                        }
                       </div>
                     );
                   })}
@@ -495,7 +517,7 @@ const SupplierPromotionRequest = () => {
           selectedCategoryTabProducts.length > 0) && (
 
           <div className="selected_section">
-            <h4>Selected Products</h4>
+            <h4>{t("selected_products")}</h4>
 
             <div className="selected_list">
 
@@ -510,7 +532,10 @@ const SupplierPromotionRequest = () => {
 
                   return (
                     <div key={p.product_id} className="selected_chip">
-                      {p.product_name_english} (ID: {p.product_id})
+                      { i18n.language === "ar"
+                      ? p.product_name_arabic || p.product_name_english
+                      : p.product_name_english
+                    } (ID: {p.product_id})
 
                       <span
                         onClick={() => {
@@ -537,7 +562,7 @@ const SupplierPromotionRequest = () => {
 
         {/* TITLE */}
         <div className="form_group">
-          <label>Title</label>
+          <label>{t("title")}</label>
           <input
             type="text"
             value={form.title}
@@ -549,7 +574,7 @@ const SupplierPromotionRequest = () => {
 
         {/* HEADLINE */}
         <div className="form_group">
-          <label>Headline</label>
+          <label>{t("headline")}</label>
           <input
             type="text"
             value={form.headline}
@@ -561,7 +586,7 @@ const SupplierPromotionRequest = () => {
 
         {/* DESCRIPTION */}
         <div className="form_group">
-          <label>Description</label>
+          <label>{t("description")}</label>
           <textarea
             value={form.description}
             onChange={(e) =>
@@ -572,22 +597,26 @@ const SupplierPromotionRequest = () => {
 
         {/* OFFER TYPE */}
         <div className="form_group">
-          <label>Offer Type</label>
+          <label>{t("offer_type")}</label>
           <select
             value={form.offer_type}
             onChange={(e) =>
               setForm({ ...form, offer_type: e.target.value })
             }
           >
-            <option value="">Select Offer Type</option>
-            <option value="PERCENTAGE">Percentage (%)</option>
-            <option value="FLAT">Flat Amount</option>
+            <option value="">{t("select_offer_type")}</option>
+            <option value="PERCENTAGE">
+              {t("percentage")}
+            </option>
+            <option value="FLAT">
+              {t("flat_amount")}
+            </option>
           </select>
         </div>
 
         {/* OFFER VALUE */}
         <div className="form_group">
-          <label>Offer Value</label>
+          <label>{t("offer_value")}</label>
           <input
             type="number"
             value={form.offer_value}
@@ -599,7 +628,7 @@ const SupplierPromotionRequest = () => {
 
         {/* BID */}
         <div className="form_group">
-          <label>Bid Amount</label>
+          <label>{t("bid_amount")}</label>
           <input
             type="number"
             value={form.bid_amount}
@@ -611,55 +640,85 @@ const SupplierPromotionRequest = () => {
 
         {/* BANNER */}
         <div className="form_group">
-          <label>Banner Image (Optional)</label>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={async (e) => {
-              if (!e.target.files[0]) return;
-              const base64 = await toBase64(e.target.files[0]);
-              setForm({ ...form, banner: base64 });
+          <label>{t("banner_image")}</label>
+
+          <div className="file-upload-box">
+            <label className="file-btn">
+              <i className="fas fa-upload"></i>
+              {t("choose_file")}
+
+              <input
+                type="file"
+                hidden
+                onChange={async (e) => {
+                  if (!e.target.files[0]) return;
+
+                  const file = e.target.files[0];
+                  const base64 = await toBase64(file);
+
+                  setForm({ ...form, banner: base64 });
+                }}
+              />
+            </label>
+
+            <span className="file-text">
+              {form.banner
+                ? "✔ " + t("file_selected")
+                : t("no_file_selected")}
+            </span>
+          </div>
+        </div>
+
+        {form.banner && (
+          <img
+            src={form.banner}
+            alt="preview"
+            style={{
+              marginTop: 10,
+              width: 120,
+              borderRadius: 8,
+              border: "1px solid #ddd"
             }}
           />
-        </div>
+        )}
 
         {/* CITY SECTION */}
         <div className="location_section">
           <div className="location_header">
-            <h4>Select Cities</h4>
+            <h4>{t("select_cities")}</h4>
           </div>
 
           <div className="city_grid">
-            {cities.map((city, index) => (
-              <div
-                key={index}
-                className={`city_chip ${
-                  form.cities.includes(city) ? "selected" : ""
-                }`}
-                onClick={() => {
-                  if (form.cities.includes(city)) {
-                    setForm({
-                      ...form,
-                      cities: form.cities.filter((c) => c !== city),
-                    });
-                  } else {
-                    setForm({
-                      ...form,
-                      cities: [...form.cities, city],
-                    });
-                  }
-                }}
-              >
-                {city}
-              </div>
-            ))}
-          </div>
+              {cities.map((city, index) => (
+                <div
+                  key={index}
+                  className={`city_chip ${
+                    form.cities.includes(city) ? "selected" : ""
+                  }`}
+                  onClick={() => {
+                    if (form.cities.includes(city)) {
+                      setForm({
+                        ...form,
+                        cities: form.cities.filter((c) => c !== city),
+                      });
+                    } else {
+                      setForm({
+                        ...form,
+                        cities: [...form.cities, city],
+                      });
+                    }
+                  }}
+                >
+                  {getCityName(city)}
+                </div>
+              ))}
+            </div>
         </div>
 
         {/* DATES */}
         <div className="date_row">
           <div>
-            <label>Start Date</label>
+            <label>{t("start_date")}</label>
             <input
               type="date"
               value={form.start_date}
@@ -670,7 +729,7 @@ const SupplierPromotionRequest = () => {
           </div>
 
           <div>
-            <label>End Date</label>
+            <label>{t("end_date")}</label>
             <input
               type="date"
               value={form.end_date}
@@ -684,11 +743,11 @@ const SupplierPromotionRequest = () => {
         {/* ACTION BUTTONS */}
         <div className="action_row">
           <button className="cancel_btn" onClick={resetForm}>
-            Cancel
+            {t("cancel")}
           </button>
 
           <button className="submit_btn" onClick={submit}>
-            Submit Request
+           {t("submit_request")}
           </button>
         </div>
 

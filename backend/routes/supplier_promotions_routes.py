@@ -187,7 +187,8 @@ def get_supplier_requests():
         cur.execute("""
             SELECT
                 pr.*,
-                pm.product_name_english
+                pm.product_name_english,
+                pm.product_name_arabic
             FROM promotion_requests pr
             LEFT JOIN product_management pm
                 ON pr.product_id = pm.product_id
@@ -214,11 +215,23 @@ def get_supplier_requests():
 def get_supplier_products():
 
     supplier_id = request.supplier["supplier_id"]
+    lang = request.args.get("lang", "en") 
+    
+     # ✅ ADD THIS BLOCK (IMPORTANT)
+        
+
+    for p in products:
+            if lang == "ar" and p.get("product_name_arabic"):
+                p["name"] = p["product_name_arabic"]
+            else:
+                p["name"] = p["product_name_english"]
+
+            # ✅ ALSO SEND BOTH (important)
+            p["name_arabic"] = p.get("product_name_arabic")  # ✅ ADD THIS
 
     conn = cur = None
 
     try:
-
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
@@ -226,6 +239,7 @@ def get_supplier_products():
             SELECT
                 product_id,
                 product_name_english,
+                product_name_arabic,
                 price_per_unit,
                 stock_availability
             FROM product_management
@@ -236,10 +250,11 @@ def get_supplier_products():
 
         products = cur.fetchall()
 
+       
+
         return jsonify(products)
 
     finally:
-
         if cur: cur.close()
         if conn: conn.close()
 
@@ -273,9 +288,11 @@ def get_supplier_categories():
 
         categories = cur.fetchall()
 
+        
+
         return jsonify(categories)
 
     finally:
 
         if cur: cur.close()
-        if conn: conn.close()
+        if conn: conn.close()         

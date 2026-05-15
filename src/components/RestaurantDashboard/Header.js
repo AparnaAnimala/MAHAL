@@ -34,14 +34,14 @@
 //   const token = localStorage.getItem("token");
 //   if (!token) return;
 
-//   fetch("http://127.0.0.1:5000/api/notifications/count", {
+//   fetch("http://192.168.2.9:5000/api/notifications/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
 //     .then(d => setNotificationCount(d.count || 0))
 //     .catch(() => setNotificationCount(0));
 
-//   fetch("http://127.0.0.1:5000/api/cart/count", {
+//   fetch("http://192.168.2.9:5000/api/cart/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
@@ -49,7 +49,7 @@
 //     .catch(() => setCartCount(0));
 
 //   /* WISHLIST COUNT */
-//   fetch("http://127.0.0.1:5000/api/wishlist/count", {
+//   fetch("http://192.168.2.9:5000/api/wishlist/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
@@ -62,7 +62,7 @@
 //   useEffect(() => {
 //     const token = localStorage.getItem("token");
 
-//     fetch("http://127.0.0.1:5000/api/gridlist", {
+//     fetch("http://192.168.2.9:5000/api/gridlist", {
 //       headers: { Authorization: `Bearer ${token}` },
 //     })
 //       .then(res => res.json())
@@ -72,12 +72,12 @@
 
 //   /* RECENT + TRENDING */
 //   useEffect(() => {
-//     fetch("http://127.0.0.1:5000/api/search/recent")
+//     fetch("http://192.168.2.9:5000/api/search/recent")
 //       .then(res => res.json())
 //       .then(setRecentSearches)
 //       .catch(() => {});
 
-//     fetch("http://127.0.0.1:5000/api/search/trending")
+//     fetch("http://192.168.2.9:5000/api/search/trending")
 //       .then(res => res.json())
 //       .then(setTrendingSearches)
 //       .catch(() => {});
@@ -120,7 +120,7 @@
 // useEffect(() => {
 //   const loadCount = () => {
 //     fetch(
-//       "http://127.0.0.1:5000/api/v1/orders/restaurant/notifications/count",
+//       "http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/count",
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -349,7 +349,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { resolveIdentity } from "../../utils/identity";
+import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
 import "../../pages/css/halfscreen.css";
+import { useTranslation } from "react-i18next";
 
 const Header = ({ onProfileClick }) => {
   const navigate = useNavigate();
@@ -375,6 +377,7 @@ const Header = ({ onProfileClick }) => {
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [credit, setCredit] = useState(null);
+   const { t, i18n } = useTranslation();
 
   // ✅ LOCATION STATE
   const [location, setLocation] = useState(null);
@@ -392,7 +395,7 @@ const Header = ({ onProfileClick }) => {
         setLocation({ latitude, longitude });
 
         // 🔥 send to backend
-        fetch("http://127.0.0.1:5000/api/location/save", {
+        fetch("http://192.168.2.9:5000/api/location/save", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -415,7 +418,7 @@ const Header = ({ onProfileClick }) => {
   const loadNotificationCount = () => {
     const token = localStorage.getItem("token");
 
-    fetch("http://127.0.0.1:5000/api/v1/orders/restaurant/notifications/count", {
+    fetch("http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -426,7 +429,7 @@ const Header = ({ onProfileClick }) => {
   const loadCredit = () => {
     const token = localStorage.getItem("token");
 
-    fetch("http://127.0.0.1:5000/api/restaurant/credit-info", {
+    fetch("http://192.168.2.9:5000/api/restaurant/credit-info", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -454,21 +457,21 @@ const Header = ({ onProfileClick }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    fetch("http://127.0.0.1:5000/api/notifications/count", {
+    fetch("http://192.168.2.9:5000/api/notifications/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(d => setNotificationCount(d.count || 0))
       .catch(() => setNotificationCount(0));
 
-    fetch("http://127.0.0.1:5000/api/cart/count", {
+    fetch("http://192.168.2.9:5000/api/cart/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(d => setCartCount(d.count || 0))
       .catch(() => setCartCount(0));
 
-    fetch("http://127.0.0.1:5000/api/wishlist/count", {
+    fetch("http://192.168.2.9:5000/api/wishlist/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -479,7 +482,7 @@ const Header = ({ onProfileClick }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://127.0.0.1:5000/api/gridlist", {
+    fetch("http://192.168.2.9:5000/api/gridlist", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -488,12 +491,12 @@ const Header = ({ onProfileClick }) => {
   }, []);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/search/recent")
+    fetch("http://192.168.2.9:5000/api/search/recent")
       .then(res => res.json())
       .then(setRecentSearches)
       .catch(() => {});
 
-    fetch("http://127.0.0.1:5000/api/search/trending")
+    fetch("http://192.168.2.9:5000/api/search/trending")
       .then(res => res.json())
       .then(setTrendingSearches)
       .catch(() => {});
@@ -530,17 +533,38 @@ const Header = ({ onProfileClick }) => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleSearch = text => {
-    const q = (text || query).trim();
-    if (!q) return;
+const handleSearch = () => {
+  const text = query.toLowerCase().trim();
+  if (!text) return;
 
-    setShowSuggestions(false);
-    setShowOverlay(false);
+  // 🔹 1. Check dashboard routes (orders, invoices, etc.)
+  const routeMatch = dashboardSearchMap.find((item) =>
+    item.keywords.some((k) => text.includes(k.toLowerCase()))
+  );
 
-    navigate(
-      `/restaurantdashboard/CategorieList?search=${encodeURIComponent(q)}&category=${searchCategory}`
-    );
-  };
+  if (routeMatch) {
+    navigate(routeMatch.route);
+    setQuery("");
+    return;
+  }
+
+  // 🔹 2. Check product list
+  const productMatch = allProducts.find((p) =>
+    (p.name || p.product_name_english || "")
+      .toLowerCase()
+      .includes(text)
+  );
+
+  if (productMatch) {
+    // 👉 change route based on your app
+    navigate(`/product/${productMatch.id}`);
+    setQuery("");
+    return;
+  }
+
+  // 🔹 3. fallback → go to search page
+  navigate(`/search?q=${encodeURIComponent(text)}`);
+};
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -559,7 +583,7 @@ const Header = ({ onProfileClick }) => {
 
           <div className="header_left">
             <h4 className="welcome_text">
-              Welcome, <span>{username}!</span>
+              {t("welcome")}, <span>{username}!</span>
             </h4>
 
             {credit && (
@@ -567,137 +591,51 @@ const Header = ({ onProfileClick }) => {
                 <i className="fas fa-wallet"></i>
 
                 <div className="credit_text">
-                  <span className="credit_label">Credit</span>
-                  <b>QAR {Number(credit.credit_available || 0).toFixed(2)}</b>
+                  <span className="credit_label">{t("credit")}</span>
+                  <b>QAR  {Number(credit.credit_available || 0).toFixed(2)}</b>
                 </div>
               </div>
             )}
 
-            <div className="search_wrapper" ref={searchRef}>
-              <select
-                className="search_bar"
-                style={{ maxWidth: "120px" }}
-                value={searchCategory}
-                onChange={(e) => setSearchCategory(e.target.value)}
-              >
-                <option value="All">All</option>
-                <option value="Vegetables">Vegetables</option>
-                <option value="Fruits">Fruits</option>
-                <option value="Groceries">Groceries</option>
-              </select>
-
-              <input
-                className="search_bar"
-                placeholder="Search for ingredients or products..."
-                value={query}
-                onFocus={() => {
-                  setShowOverlay(true);
-                  setShowSuggestions(true);
-                }}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown")
-                    setActiveIndex(i =>
-                      Math.min(i + 1, suggestions.length - 1)
-                    );
-
-                  if (e.key === "ArrowUp")
-                    setActiveIndex(i => Math.max(i - 1, 0));
-
-                  if (e.key === "Enter") {
-                    if (activeIndex >= 0)
-                      handleSearch(
-                        suggestions[activeIndex].product_name_english
-                      );
-                    else handleSearch();
-                  }
-                }}
-              />
-
-              <button className="search_btn" onClick={handleSearch}>
-                <i className="fas fa-search"></i>
-              </button>
-
-              {showOverlay && (
-             <div className="search_dropdown">
-
-                {/* SHOW RECENT + TRENDING WHEN QUERY EMPTY */}
-{query === "" && (
-  <>
-    {recentSearches.length > 0 &&
-      recentSearches.map((r, i) => (
-        <div
-          key={`recent-${i}`}
-          className="search_item"
-          onClick={() => handleSearch(r.search_text)}
-        >
-          🕒 {r.search_text}
-        </div>
-      ))}
-
-    {trendingSearches.length > 0 &&
-      trendingSearches.map((t, i) => (
-        <div
-          key={`trending-${i}`}
-          className="search_item"
-          onClick={() => handleSearch(t.search_text)}
-        >
-          🔥 {t.search_text}
-        </div>
-      ))}
-  </>
-)}
-
-{/* SHOW SUGGESTIONS WHEN TYPING */}
-{query !== "" &&
-  suggestions.map((p, i) => (
-    <div
-      key={p.product_id || p.id}
-      className={`search_item ${i === activeIndex ? "active" : ""}`}
-      onClick={() =>
-        handleSearch(p.name || p.product_name_english)
-      }
-    >
-      {p.name || p.product_name_english}
-    </div>
-  ))}
-
-
-                  {query === "" &&
-                    trendingSearches.map((t, i) => (
-                      <div
-                        key={i}
-                        className="search_item"
-                        onClick={() => handleSearch(t.search_text)}
-                      >
-                        🔥 {t.search_text}
-                      </div>
-                    ))}
-
-                  {suggestions.map((p, i) => (
-                  <div
-                    key={p.product_id || p.id}
-                    className={`search_item ${i === activeIndex ? "active" : ""}`}
-                    onClick={() =>
-                      handleSearch(p.name || p.product_name_english)
-                    }
-                  >
-                    {p.name || p.product_name_english}
-                  </div>
-                ))}
-
-                </div>
-              )}
-            </div>
+            <div className="search_wrapper">
+            <input
+              className="search_bar"
+              placeholder={t("search_placeholder")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <button className="search_btn" onClick={handleSearch}>
+              <i className="fas fa-search"></i>
+            </button>
           </div>
+          </div>
+
+          <div>
+          <select
+            className="lang_dropdown"
+            value={i18n.language}
+            onChange={(e) => {
+              const lang = e.target.value;
+              i18n.changeLanguage(lang);
+              document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+              localStorage.setItem("i18nextLng", lang);
+            }}
+          >
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+          </select>
+            </div>
+          
 
           <div className="header_right">
             {/* <Link to="/restaurantdashboard/CategorieList" className="icon_box Icon_Btn">
               <i className="fas fa-shop"></i> Shop Now
             </Link> */}
+            
 
             <Link to="/restaurantOffers" className="icon_box Icon_Btn">
-              <i className="fas fa-shop"></i> Shop Now
+              <i className="fas fa-shop"></i> {t("shop_now")}
             </Link>
 
             <Link to="/restaurantdashboard/notifications" className="icon_box">
@@ -707,9 +645,13 @@ const Header = ({ onProfileClick }) => {
               )}
             </Link>
 
-            <div className="icon_box logout_icon" onClick={onProfileClick}>
+            {/* <div className="icon_box logout_icon" onClick={onProfileClick}>
               <i className="fas fa-user-circle"></i>
-            </div>
+            </div> */}
+
+            <Link to={`/profile/${localStorage.getItem("role")}/${localStorage.getItem("linked_id")}`} className="icon_box">
+              <i className="fas fa-user"></i>    
+            </Link>
 
               <Link to="/wishlist" className="icon_box">
               <i className="far fa-heart"></i>

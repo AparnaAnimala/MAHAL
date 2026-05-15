@@ -122,8 +122,8 @@
 //             <h4>{d.title}</h4>
 
 //             <div className="mm-price">
-//               <span className="old">₹{d.oldPrice}</span>
-//               <span className="new">₹{d.price}</span>
+//               <span className="old">QAR {d.oldPrice}</span>
+//               <span className="new">QAR {d.price}</span>
 //             </div>
 
 //             {!cart[d.id] ? (
@@ -165,7 +165,7 @@
 //   const fetchDeals = async () => {
 //     try {
 //       const res = await axios.get(
-//         "http://127.0.0.1:5000/api/deals-of-the-day"
+//         "http://192.168.2.9:5000/api/deals-of-the-day"
 //       );
 
 //       let apiData = [];
@@ -187,7 +187,7 @@
 //         img:
 //           d.img1 ||
 //           (d.product_id
-//             ? `http://127.0.0.1:5000/api/image/${d.product_id}/0`
+//             ? `http://192.168.2.9:5000/api/image/${d.product_id}/0`
 //             : "/fallback.png"),
 
 //         oldPrice: d.old_price || 0,
@@ -289,8 +289,8 @@
 
 //             {/* 🔥 PRICE */}
 //             <div className="mm-price">
-//               <span className="old">₹{d.oldPrice}</span>
-//               <span className="new">₹{d.price}</span>
+//               <span className="old">QAR {d.oldPrice}</span>
+//               <span className="new">QAR {d.price}</span>
 //             </div>
 
 //             {/* 🔥 CART */}
@@ -325,7 +325,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "http://192.168.2.9:5000/api";
 
 const MahalDealsOfDay = () => {
   const [deals, setDeals] = useState([]);
@@ -338,7 +338,7 @@ const MahalDealsOfDay = () => {
   const fetchDeals = async () => {
     try {
       const res = await axios.get(
-        "http://127.0.0.1:5000/api/deals-of-the-day"
+        "http://192.168.2.9:5000/api/deals-of-the-day"
       );
 
       let apiData = [];
@@ -358,7 +358,7 @@ const MahalDealsOfDay = () => {
         img:
           d.img1 ||
           (d.product_id
-            ? `http://127.0.0.1:5000/api/image/${d.product_id}/0`
+            ? `http://192.168.2.9:5000/api/image/${d.product_id}/0`
             : "/fallback.png"),
         oldPrice: d.old_price || 0,
         price: d.price || d.price_per_unit || 0,
@@ -497,8 +497,8 @@ const MahalDealsOfDay = () => {
 
             {/* PRICE */}
             <div className="mm-price">
-              <span className="old">₹{d.oldPrice}</span>
-              <span className="new">₹{d.price}</span>
+              <span className="old">QAR {d.oldPrice}</span>
+              <span className="new">QAR {d.price}</span>
             </div>
 
             {/* CART */}

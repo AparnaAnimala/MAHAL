@@ -2,7 +2,7 @@
 // import { useNavigate } from "react-router-dom";
 // import "../css/OrdersDashboard.css";
 
-// const API = "http://127.0.0.1:5000/api/v1/restaurant/invoices";
+// const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
 
 // export default function InvoiceForm({ invoiceId, orderId,onBack }) {
 //   const navigate = useNavigate();
@@ -126,7 +126,7 @@
 //                   <td>{i.invoice_number}</td>
 //                   <td>{i.order_id}</td>
 //                   <td>{new Date(i.invoice_date).toLocaleDateString()}</td>
-//                   <td>QAR {i.grand_total}</td>
+//                   <td>QAR  {i.grand_total}</td>
 //                   <td>
 //                     <span className={`status ${i.invoice_status}`}>
 //                       {i.invoice_status}
@@ -210,22 +210,22 @@
 //                 {/* ✅ ADDED – FULL AMOUNT BREAKUP */}
 //                 <div className="info-row">
 //                   <span>Subtotal</span>
-//                   <span>QAR {selected.header.subtotal_amount}</span>
+//                   <span>QAR  {selected.header.subtotal_amount}</span>
 //                 </div>
 
 //                 <div className="info-row">
 //                   <span>Discount</span>
-//                   <span>QAR {selected.header.discount_amount}</span>
+//                   <span>QAR  {selected.header.discount_amount}</span>
 //                 </div>
 
 //                 <div className="info-row">
 //                   <span>Tax</span>
-//                   <span>QAR {selected.header.tax_amount}</span>
+//                   <span>QAR  {selected.header.tax_amount}</span>
 //                 </div>
 
 //                 <div className="info-row">
 //                   <span><b>Grand Total</b></span>
-//                   <span><b>QAR {selected.header.grand_total}</b></span>
+//                   <span><b>QAR  {selected.header.grand_total}</b></span>
 //                 </div>
 
 //                 <div className="info-row">
@@ -313,8 +313,9 @@
 import React, { useEffect, useState } from "react";
 // import "../css/OrdersDashboard.css";
 import RestaurantInvoiceDetailsModal from "./RestaurantInvoiceDetails";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api/v1/restaurant/invoices";
+const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
 
 export default function InvoiceForm({ invoiceId, orderId, onBack }) {
   const token = localStorage.getItem("token");
@@ -322,6 +323,21 @@ export default function InvoiceForm({ invoiceId, orderId, onBack }) {
   const [invoices, setInvoices] = useState([]);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
+  const { t, i18n } = useTranslation();
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const toArabicDigits = (value) => {
+    if (i18n.language !== "ar") return value;
+
+    return String(value)
+      .replace(/ORD/gi, "طلب")
+      .replace(/INV/gi, "فاتورة")
+      .replace(/STATUS_/gi, "")
+      .replace(/GENERATED/gi, "تم الإنشاء")
+      .replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+  };
 
   /* ================= LOAD LIST ================= */
   useEffect(() => {
@@ -366,41 +382,103 @@ export default function InvoiceForm({ invoiceId, orderId, onBack }) {
   };
 
   /* ================= FILTER ================= */
-  const filteredInvoices = invoices.filter((i) =>
-    String(i.invoice_number || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filteredInvoices = invoices.filter((i) => {
+
+    // 🔍 SEARCH
+    const matchesSearch =
+      !search ||
+      String(i.invoice_number).toLowerCase().includes(search.toLowerCase()) ||
+      String(i.order_id).toLowerCase().includes(search.toLowerCase());
+
+    // 📊 STATUS
+    const matchesStatus =
+      statusFilter === "ALL" ||
+      String(i.invoice_status || "").toUpperCase() === statusFilter;
+
+    // 📅 DATE
+    const invDate = i.invoice_date
+      ? new Date(i.invoice_date)
+      : null;
+
+    const matchesFrom =
+      !fromDate || (invDate && invDate >= new Date(fromDate));
+
+    const matchesTo =
+      !toDate || (invDate && invDate <= new Date(toDate));
+
+    return matchesSearch && matchesStatus && matchesFrom && matchesTo;
+  });
 
   return (
     <div className="orders_page">
-      <h3 className="page_title">Invoice History</h3>
+      <h3 className="page_title">{t("ResinvoiceHistory")}</h3>
 
-      {/* <button className="btn_add_item_v2" onClick={onBack}>
-        ← Back
-      </button> */}
 
-      {/* SEARCH */}
-      <div className="filter-box">
-        <input
-          placeholder="Search Invoice Number..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="search-input"
-        />
-      </div>
 
-      {/* TABLE */}
       <div className="table_wrapper">
+
+        <div className="filters_bar">
+
+          {/* 🔍 SEARCH */}
+          <input
+            placeholder={t("RessearchInvoice")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="filter_input"
+          />
+
+          {/* 📊 STATUS */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="filter_input"
+          >
+            <option value="ALL">{t("resall_status")}</option>
+            <option value="GENERATED">GENERATED</option>
+            <option value="PAID">PAID</option>
+            <option value="UNPAID">UNPAID</option>
+          </select>
+
+          {/* 📅 FROM DATE */}
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="filter_input"
+          />
+
+          {/* 📅 TO DATE */}
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="filter_input"
+          />
+
+          {/* RESET */}
+          <button
+            className="reset_btn"
+            onClick={() => {
+              setSearch("");
+              setStatusFilter("ALL");
+              setFromDate("");
+              setToDate("");
+            }}
+          >
+            {t("reset")}
+          </button>
+
+        </div>
         <table className="orders_table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Invoice</th>
-              <th>Order</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Status</th>
+              <th>{t("Resinvoice")}</th>
+              <th>{t("Resorder")}</th>
+              <th>{t("Resdate")}</th>
+              <th>{t("Restotal")}</th>
+              <th>{t("Resstatus")}</th>
+              <th>{t("Resaction")}</th>
               <th />
             </tr>
           </thead>
@@ -409,33 +487,44 @@ export default function InvoiceForm({ invoiceId, orderId, onBack }) {
             {filteredInvoices.length === 0 && (
               <tr>
                 <td colSpan="7" style={{ textAlign: "center", padding: 20 }}>
-                  No invoices found
+                  {t("ResnoInvoices")}
                 </td>
               </tr>
             )}
 
             {filteredInvoices.map((inv, idx) => (
               <tr key={inv.invoice_id}>
-                <td>{idx + 1}</td>
-                <td>{inv.invoice_number}</td>
-                <td>{inv.order_id}</td>
+                <td>{toArabicDigits(idx + 1)}</td>
+                <td>{toArabicDigits(inv.invoice_number)}</td>
+                <td>{toArabicDigits(inv.order_id)}</td>
+
                 <td>
                   {inv.invoice_date
-                    ? new Date(inv.invoice_date).toLocaleDateString()
+                    ? new Date(inv.invoice_date).toLocaleDateString(
+                        i18n.language === "ar" ? "ar-QA" : "en-US"
+                      )
                     : "-"}
                 </td>
-                <td>QAR {inv.grand_total}</td>
+
+                <td>
+                  {t("resqar")}{" "}
+                  {toArabicDigits(Number(inv.grand_total).toFixed(2))}
+                </td>
+
                 <td>
                   <span className={`status ${inv.invoice_status}`}>
-                    {inv.invoice_status}
+                    {i18n.language === "ar"
+                      ? toArabicDigits(inv.invoice_status)
+                      : inv.invoice_status}
                   </span>
                 </td>
+
                 <td>
                   <button
                     className="view_btn"
                     onClick={() => loadInvoice(inv.invoice_id)}
                   >
-                    View
+                    {t("Resview")}
                   </button>
                 </td>
               </tr>
@@ -444,7 +533,6 @@ export default function InvoiceForm({ invoiceId, orderId, onBack }) {
         </table>
       </div>
 
-      {/* MODAL */}
       {selected && (
         <RestaurantInvoiceDetailsModal
           invoice={selected}
@@ -454,4 +542,3 @@ export default function InvoiceForm({ invoiceId, orderId, onBack }) {
     </div>
   );
 }
-

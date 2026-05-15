@@ -1,0 +1,20 @@
+export default{
+promotion_products: "منتجات العرض",
+priority_level: "مستوى الأولوية",
+off: "خصم",
+loading: "جاري التحميل...",
+promotion_accept_success: "تم قبول العرض",
+promotion_reject_success: "تم رفض العرض",
+promotion_review: "مراجعة العروض",
+no_promotions: "لا توجد عروض",
+id: "المعرف",
+title: "العنوان",
+offer: "العرض",
+action: "الإجراء",
+off: "خصم",
+
+status_invited: "تمت الدعوة",
+status_accepted: "مقبول",
+status_rejected: "مرفوض",
+status_pending: "قيد الانتظار",
+}

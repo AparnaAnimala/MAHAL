@@ -11,7 +11,25 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.platypus import Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+# ✅ YOUR ARABIC SETUP
+import arabic_reshaper
+from bidi.algorithm import get_display
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(BASE_DIR, "..", "fonts", "NotoSansArabic-Regular.ttf")
+
+pdfmetrics.registerFont(TTFont('Arabic', font_path))
+
+def fix_ar(text):
+    if not text:
+        return ""
+    reshaped = arabic_reshaper.reshape(str(text))
+    return get_display(reshaped)
 
 # =====================================================
 # CONFIG
@@ -46,6 +64,7 @@ def build_inventory_report_query(supplier_id, args):
         SELECT
             product_id,
             product_name_english,
+            product_name_arabic,
             stock_availability,
             minimum_order_quantity,
             price_per_unit,
@@ -164,9 +183,17 @@ RIGHT_MARGIN = 40
 # =====================================================
 @reports_bp.route("/inventory/pdf", methods=["GET"])
 def inventory_report_pdf():
+
+    def ar_para(text):
+        return Paragraph(fix_ar(str(text or "-")), arabic_style)
+
     supplier_id, err = get_supplier_from_token()
     if err:
         return jsonify({"error": err[0]}), err[1]
+
+    # ✅ LANGUAGE
+    lang = request.args.get("lang", "en")
+    is_arabic = lang.startswith("ar")
 
     query, params = build_inventory_report_query(supplier_id, request.args)
 
@@ -179,6 +206,7 @@ def inventory_report_pdf():
 
     if not rows:
         return jsonify({"error": "No data for selected filters"}), 404
+
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -190,38 +218,87 @@ def inventory_report_pdf():
         bottomMargin=20
     )
 
+    styles = getSampleStyleSheet()
     elements = []
 
-    styles = getSampleStyleSheet()
-    small = styles["Normal"]
-    small.fontSize = 8
-    small.leading = 9
-    small.wordWrap = "CJK" 
-    # -------- TITLE --------
-    elements.append(Paragraph("<b>Inventory Report</b>", styles["Title"]))
+    # ✅ Arabic style
+    arabic_style = ParagraphStyle(
+        name="ArabicNormal",
+        parent=styles["Normal"],
+        fontName="Arabic",
+        alignment=2,
+        wordWrap="CJK"
+    )
+
+    # ================= TITLE =================
+    title = "تقرير المخزون" if is_arabic else "Inventory Report"
+    title = fix_ar(title) if is_arabic else title
+
+    title_style = ParagraphStyle(
+        name="ArabicTitle",
+        parent=styles["Title"],
+        fontName="Arabic",
+        alignment=2
+    ) if is_arabic else styles["Title"]
+
+    elements.append(Paragraph(f"<b>{title}</b>", title_style))
     elements.append(Spacer(1, 16))
 
-    # -------- TABLE DATA --------
-    table_data = [[
-        "Product",
-        "Stock",
-        "Min Qty",
-        "Price",
-        "Stock Status",
-        "Expiry Status",
-        "Updated"
-    ]]
+    # ================= HEADERS =================
+    if is_arabic:
+        headers = [
+            ar_para("المنتج"),
+            ar_para("المخزون"),
+            ar_para("الحد الأدنى"),
+            ar_para("السعر"),
+            ar_para("حالة المخزون"),
+            ar_para("حالة الصلاحية"),
+            ar_para("آخر تحديث"),
+        ]
+    else:
+        headers = [
+            "Product", "Stock", "Min Qty", "Price",
+            "Stock Status", "Expiry Status", "Updated"
+        ]
 
+    table_data = [headers]
+
+    # ✅ STATUS MAP (Arabic)
+    stock_map = {
+        "IN_STOCK": "متوفر",
+        "LOW_STOCK": "مخزون منخفض",
+        "OUT_OF_STOCK": "غير متوفر"
+    }
+
+    expiry_map = {
+        "VALID": "صالح",
+        "EXPIRING_SOON": "ينتهي قريباً",
+        "EXPIRED": "منتهي",
+        "NO_EXPIRY": "بدون تاريخ انتهاء"
+    }
+
+    # ================= DATA =================
     for r in rows:
         table_data.append([
-            r["product_name_english"],
+            ar_para(r["product_name_arabic"]) if is_arabic
+            else r["product_name_english"],
+
             r["stock_availability"],
             r["minimum_order_quantity"],
             r["price_per_unit"],
-            r["stock_status"],
-            r["expiry_status"],
+
+            ar_para(stock_map.get(r["stock_status"], r["stock_status"])) if is_arabic
+            else r["stock_status"],
+
+            ar_para(expiry_map.get(r["expiry_status"], r["expiry_status"])) if is_arabic
+            else r["expiry_status"],
+
             r["updated_at"].strftime("%Y-%m-%d") if r["updated_at"] else "-"
         ])
+
+    # ✅ RTL FIX
+    if is_arabic:
+        table_data = [row[::-1] for row in table_data]
 
     table = Table(
         table_data,
@@ -231,13 +308,12 @@ def inventory_report_pdf():
     table.setStyle(TableStyle([
         ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTNAME", (0,1), (-1,-1), "Helvetica"),
+
+        ("FONTNAME", (0,0), (-1,-1), "Arabic" if is_arabic else "Helvetica"),
         ("FONTSIZE", (0,0), (-1,-1), 9),
-        ("ALIGN", (1,1), (-1,-1), "CENTER"),
+
+        ("ALIGN", (0,0), (-1,-1), "RIGHT" if is_arabic else "CENTER"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-        ("TOPPADDING", (0,0), (-1,-1), 6),
     ]))
 
     elements.append(table)
@@ -255,32 +331,35 @@ def inventory_report_pdf():
 def build_product_report_query(supplier_id, args):
     query = """
         SELECT
-            product_id,
-            supplier_id,
-            company_name_english,
-            branch_name_english,
-            store_name_english,
-            product_name_english,
-            product_name_arabic,
-            unit_of_measure,
-            currency,
-            price_per_unit,
-            minimum_order_quantity,
-            stock_availability,
-            product_status,
-            flag,
-            category_id,
-            sub_category_id,
-            description,
-            expiry_date,
-            shelf_life,
-            expiry_time,
-            low_stock_alert_sent,
-            out_of_stock_alert_sent,
-            created_at,
-            updated_at
-        FROM product_management
-        WHERE supplier_id = %s
+            pm.product_id,
+            pm.supplier_id,
+            sr.company_name_english,
+            sr.company_name_arabic,
+            pm.branch_name_english,
+            pm.store_name_english,
+            pm.product_name_english,
+            pm.product_name_arabic,
+            pm.unit_of_measure,
+            pm.currency,
+            pm.price_per_unit,
+            pm.minimum_order_quantity,
+            pm.stock_availability,
+            pm.product_status,
+            pm.flag,
+            pm.category_id,
+            pm.sub_category_id,
+            pm.description,
+            pm.expiry_date,
+            pm.shelf_life,
+            pm.expiry_time,
+            pm.low_stock_alert_sent,
+            pm.out_of_stock_alert_sent,
+            pm.created_at,
+            pm.updated_at
+        FROM product_management pm
+        JOIN supplier_registration sr 
+        ON pm.supplier_id = sr.supplier_id
+        WHERE pm.supplier_id = %s
     """
     params = [supplier_id]
 
@@ -381,12 +460,15 @@ def product_report_excel():
 
 
 
-
 @reports_bp.route("/products/pdf", methods=["GET"])
 def product_report_pdf():
     supplier_id, err = get_supplier_from_token()
     if err:
         return jsonify({"error": err[0]}), err[1]
+
+    # ✅ LANGUAGE
+    lang = request.args.get("lang", "en")
+    is_arabic = lang.startswith("ar")
 
     query, params = build_product_report_query(supplier_id, request.args)
 
@@ -412,51 +494,87 @@ def product_report_pdf():
     )
 
     elements = []
-    
     styles = getSampleStyleSheet()
-    small = styles["Normal"]
-    small.fontSize = 8
-    small.leading = 9
-    small.wordWrap = "CJK" 
-    elements.append(Paragraph("<b>Product Report</b>", styles["Title"]))
+
+    # ✅ TITLE STYLE FIX (IMPORTANT 🔥)
+    arabic_title_style = ParagraphStyle(
+        name="ArabicTitle",
+        parent=styles["Title"],
+        fontName="Arabic",
+        alignment=2  # RIGHT ALIGN
+    )
+
+    title = "تقرير المنتجات" if is_arabic else "Product Report"
+    title = fix_ar(title) if is_arabic else title
+
+    elements.append(
+        Paragraph(
+            f"<b>{title}</b>",
+            arabic_title_style if is_arabic else styles["Title"]
+        )
+    )
     elements.append(Spacer(1, 16))
 
-    table_data = [[
-        "Product",
-        "Price",
-        "UOM",
-        "Stock",
-        "Status",
-        "Active",
-        "Created"
-    ]]
+    # ✅ HEADERS
+    if is_arabic:
+        headers = [
+            fix_ar("المنتج"),
+            fix_ar("السعر"),
+            fix_ar("الوحدة"),
+            fix_ar("المخزون"),
+            fix_ar("الحالة"),
+            fix_ar("نشط"),
+            fix_ar("تاريخ الإنشاء"),
+        ]
+    else:
+        headers = ["Product", "Price", "UOM", "Stock", "Status", "Active", "Created"]
 
+    table_data = [headers]
+
+    # ✅ STATUS TRANSLATION
+    status_map = {
+        "Pending Approval": "قيد الموافقة",
+        "Approved": "تمت الموافقة"
+    }
+
+    # ✅ DATA
     for r in rows:
+        status = r["product_status"] or "-"
+
+        if is_arabic:
+            status = fix_ar(status_map.get(status, status))
+
         table_data.append([
-            r["product_name_english"] or "-",
+            fix_ar(r["product_name_arabic"]) if is_arabic else r["product_name_english"],
             r["price_per_unit"] or "-",
             r["unit_of_measure"] or "-",
             r["stock_availability"] or 0,
-            r["product_status"] or "-",
-            "Yes" if r["flag"] == "A" else "No",
+            status,
+            fix_ar("نعم") if (is_arabic and r["flag"] == "A") else ("Yes" if r["flag"] == "A" else "No"),
             r["created_at"].strftime("%Y-%m-%d") if r["created_at"] else "-"
         ])
+
+    # ✅ RTL FIX
+    if is_arabic:
+        table_data = [row[::-1] for row in table_data]
 
     table = Table(
         table_data,
         repeatRows=1,
-        colWidths=[130, 55, 45, 45, 85, 45, 55]
+        colWidths = [150, 70, 60, 60, 100, 60, 80] if not is_arabic else [100, 80, 70, 70, 110, 50, 70]
     )
 
+    # ✅ TABLE STYLE
     table.setStyle(TableStyle([
         ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE", (0,0), (-1,-1), 9),
-        ("ALIGN", (1,1), (-1,-1), "CENTER"),
+        ("FONTNAME", (0,0), (-1,-1), "Arabic" if is_arabic else "Helvetica"),
+        ("FONTSIZE", (0,0), (-1,-1), 8),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT" if is_arabic else "CENTER"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING", (0,0), (-1,-1), 6),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+       
     ]))
 
     elements.append(table)
@@ -471,8 +589,6 @@ def product_report_pdf():
         mimetype="application/pdf"
     )
 
-
-
 def build_order_report_query(supplier_id, args):
     query = """
         SELECT
@@ -485,12 +601,15 @@ def build_order_report_query(supplier_id, args):
 
     oi.product_id,                       -- ✅ ADD THIS LINE
     oi.product_name_english,
+    pm.product_name_arabic,
     oi.quantity,
     oi.price_per_unit,
     oi.discount,
     oi.total_amount AS item_total
 FROM order_header oh
 JOIN order_items oi ON oi.order_id = oh.order_id
+JOIN product_management pm   -- 🔥 IMPORTANT JOIN
+    ON pm.product_id = oi.product_id
 WHERE oh.supplier_id = %s
 
     """
@@ -544,9 +663,17 @@ def order_report():
 
 @reports_bp.route("/orders/pdf", methods=["GET"])
 def order_report_pdf():
+
+    def ar_para(text):
+        return Paragraph(fix_ar(str(text or "-")), arabic_style)
+
     supplier_id, err = get_supplier_from_token()
     if err:
         return jsonify({"error": err[0]}), err[1]
+
+    # ✅ LANGUAGE
+    lang = request.args.get("lang", "en")
+    is_arabic = lang.startswith("ar")
 
     query, params = build_order_report_query(supplier_id, request.args)
 
@@ -559,9 +686,6 @@ def order_report_pdf():
 
     if not rows:
         return jsonify({"error": "No order data for selected filters"}), 404
-
-    # ⬇️ keep your existing PDF generation code
-
 
     buffer = BytesIO()
 
@@ -577,66 +701,87 @@ def order_report_pdf():
     styles = getSampleStyleSheet()
     elements = []
 
-    # ================= HEADING =================
-    title = Paragraph(
-        "<b>Order Report</b>",
-        styles["Title"]
+    # ✅ Arabic style
+    arabic_style = ParagraphStyle(
+        name="ArabicNormal",
+        parent=styles["Normal"],
+        fontName="Arabic",
+        alignment=2,
+        wordWrap="CJK"
     )
-    elements.append(title)
+
+    # ================= TITLE =================
+    title = "تقرير الطلبات" if is_arabic else "Order Report"
+    title = fix_ar(title) if is_arabic else title
+
+    title_style = ParagraphStyle(
+        name="ArabicTitle",
+        parent=styles["Title"],
+        fontName="Arabic",
+        alignment=2
+    ) if is_arabic else styles["Title"]
+
+    elements.append(Paragraph(f"<b>{title}</b>", title_style))
     elements.append(Spacer(1, 14))
 
-    subtitle = Paragraph(
-        "Supplier Order Summary",
-        styles["Normal"]
-    )
-    elements.append(subtitle)
-    elements.append(Spacer(1, 20))
+    # ================= HEADERS =================
+    if is_arabic:
+        headers = [
+            ar_para("رقم الطلب"),
+            ar_para("التاريخ"),
+            ar_para("الحالة"),
+            ar_para("الدفع"),
+            ar_para("المنتج"),
+            ar_para("الكمية"),
+            ar_para("السعر"),
+            ar_para("الإجمالي"),
+        ]
+    else:
+        headers = [
+            "Order ID", "Order Date", "Status", "Payment",
+            "Product", "Qty", "Price", "Line Total"
+        ]
 
-    # ================= TABLE =================
-    table_data = [[
-        "Order ID",
-        "Order Date",
-        "Status",
-        "Payment",
-        "Product",
-        "Qty",
-        "Price",
-        "Line Total"
-    ]]
+    table_data = [headers]
 
+    # ================= DATA =================
     for r in rows:
         table_data.append([
             r["order_id"],
             r["order_date"].strftime("%Y-%m-%d"),
-            r["order_status"],
-            r["payment_status"],
-            r["product_name_english"],
+
+            ar_para(r["order_status"]) if is_arabic else r["order_status"],
+            ar_para(r["payment_status"]) if is_arabic else r["payment_status"],
+
+            ar_para(r["product_name_arabic"]) if is_arabic
+            else Paragraph(r["product_name_english"] or "-", styles["Normal"]),
+
             r["quantity"],
             f"{r['price_per_unit']:.2f}",
             f"{r['item_total']:.2f}",
         ])
 
+    # ✅ RTL
+    if is_arabic:
+        table_data = [row[::-1] for row in table_data]
+
     table = Table(
         table_data,
-        colWidths=[110, 90, 80, 80, 120, 50, 70, 80]
+        colWidths=[110, 90, 80, 80, 120, 50, 70, 110]
     )
 
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+
+        ("FONTNAME", (0, 0), (-1, -1), "Arabic" if is_arabic else "Helvetica"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("ALIGN", (5, 1), (-1, -1), "RIGHT"),
+
+        ("ALIGN", (0, 0), (-1, -1), "RIGHT" if is_arabic else "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
 
     elements.append(table)
-
     doc.build(elements)
     buffer.seek(0)
 
@@ -646,7 +791,6 @@ def order_report_pdf():
         download_name="order_report.pdf",
         mimetype="application/pdf"
     )
-
 
 @reports_bp.route("/orders/excel", methods=["GET"])
 def order_report_excel():
@@ -698,8 +842,10 @@ def build_invoice_report_query(supplier_id, args):
             ih.grand_total,
 
             rr.restaurant_name_english,
+            rr.restaurant_name_arabic,
 
             ii.product_name_english,
+            pm.product_name_arabic,
             ii.quantity,
             ii.price_per_unit,
             ii.discount,
@@ -707,6 +853,8 @@ def build_invoice_report_query(supplier_id, args):
         FROM invoice_header ih
         JOIN invoice_items ii
             ON ii.invoice_id = ih.invoice_id
+        LEFT JOIN product_management pm   -- ✅ IMPORTANT (LEFT JOIN safer)
+            ON pm.product_id = ii.product_id
         JOIN restaurant_registration rr
             ON rr.restaurant_id = ih.restaurant_id
         WHERE ih.supplier_id = %s
@@ -812,24 +960,24 @@ def invoice_report_excel():
         download_name="invoice_report.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
 @reports_bp.route("/invoices/pdf", methods=["GET"])
 def invoice_report_pdf():
+
+    # ================= HELPERS =================
     def wrap(text, style):
         return Paragraph(str(text or "-"), style)
-    
-    styles = getSampleStyleSheet()
-    small = styles["Normal"]
-    small.fontSize = 8
-    small.leading = 9
-    small.wordWrap = "CJK"   # 🔥 IMPORTANT
 
+    def ar_para(text):
+        return Paragraph(fix_ar(str(text or "-")), arabic_style)
 
     supplier_id, err = get_supplier_from_token()
     if err:
         return jsonify({"error": err[0]}), err[1]
 
-    # ✅ Filter-aware query
+    # ================= LANGUAGE =================
+    lang = request.args.get("lang", "en")
+    is_arabic = lang.startswith("ar")
+
     query, params = build_invoice_report_query(supplier_id, request.args)
 
     conn = get_db_connection()
@@ -856,37 +1004,71 @@ def invoice_report_pdf():
     styles = getSampleStyleSheet()
     elements = []
 
+    # ================= ARABIC STYLE =================
+    arabic_style = ParagraphStyle(
+        name="ArabicNormal",
+        parent=styles["Normal"],
+        fontName="Arabic",   # 🔥 MUST
+        alignment=2,         # RIGHT
+        wordWrap="CJK"
+    )
+
     # ================= TITLE =================
-    elements.append(Paragraph("<b>Invoice Report</b>", styles["Title"]))
+    title = "تقرير الفواتير" if is_arabic else "Invoice Report"
+    title = fix_ar(title) if is_arabic else title
+
+    title_style = ParagraphStyle(
+        name="ArabicTitle",
+        parent=styles["Title"],
+        fontName="Arabic",
+        alignment=2
+    ) if is_arabic else styles["Title"]
+
+    elements.append(Paragraph(f"<b>{title}</b>", title_style))
     elements.append(Spacer(1, 16))
 
-    # ================= TABLE HEADER =================
-    table_data = [[
-        "Invoice No",
-        "Order ID",
-        "Date",
-        "Restaurant",
-        "Product",
-        "Qty",
-        "Price",
-        "Discount",
-        "Item Total",
-        "Subtotal",
-        "Tax",
-        "Grand Total",
-        "Status",
-        "Payment"
-    ]]
+    # ================= HEADERS =================
+    if is_arabic:
+        headers = [
+            ar_para("رقم الفاتورة"),
+            ar_para("رقم الطلب"),
+            ar_para("التاريخ"),
+            ar_para("المطعم"),
+            ar_para("المنتج"),
+            ar_para("الكمية"),
+            ar_para("السعر"),
+            ar_para("الخصم"),
+            ar_para("إجمالي العنصر"),
+            ar_para("المجموع الفرعي"),
+            ar_para("الضريبة"),
+            ar_para("الإجمالي"),
+            ar_para("الحالة"),
+            ar_para("الدفع"),
+        ]
+    else:
+        headers = [
+            "Invoice No", "Order ID", "Date", "Restaurant", "Product",
+            "Qty", "Price", "Discount", "Item Total",
+            "Subtotal", "Tax", "Grand Total", "Status", "Payment"
+        ]
 
+    table_data = [headers]
 
-    # ================= TABLE ROWS =================
+    # ================= DATA =================
     for r in rows:
         table_data.append([
-            wrap(r["invoice_number"], small),          # ✅ wrap
-            wrap(r["order_id"], small),
+            wrap(r["invoice_number"], styles["Normal"]),
+            wrap(r["order_id"], styles["Normal"]),
             r["invoice_date"].strftime("%Y-%m-%d") if r["invoice_date"] else "-",
-            Paragraph(r["restaurant_name_english"] or "-", styles["Normal"]),
-            Paragraph(r["product_name_english"] or "-", styles["Normal"]),
+
+            # 🔥 RESTAURANT
+            ar_para(r["restaurant_name_arabic"]) if is_arabic
+            else Paragraph(r["restaurant_name_english"] or "-", styles["Normal"]),
+
+            # 🔥 PRODUCT
+            ar_para(r["product_name_arabic"]) if is_arabic
+            else Paragraph(r["product_name_english"] or "-", styles["Normal"]),
+
             r["quantity"] or 0,
             f"{r['price_per_unit']:.2f}",
             f"{r['discount']:.2f}",
@@ -894,29 +1076,22 @@ def invoice_report_pdf():
             f"{r['subtotal_amount']:.2f}",
             f"{r['tax_amount']:.2f}",
             f"{r['grand_total']:.2f}",
-            r["invoice_status"],
-            r["payment_status"]
+
+            ar_para(r["invoice_status"]) if is_arabic else r["invoice_status"],
+            ar_para(r["payment_status"]) if is_arabic else r["payment_status"],
         ])
+
+    # ================= RTL FIX =================
+    if is_arabic:
+        table_data = [row[::-1] for row in table_data]
 
     # ================= TABLE =================
     table = Table(
         table_data,
         repeatRows=1,
         colWidths=[
-            80,   # Invoice No
-            85,   # Order ID
-            60,   # Date
-            90,  # Restaurant
-            80,  # Product
-            35,   # Qty
-            45,   # Price
-            40,   # Discount
-            50,   # Item Total
-            50,   # Subtotal
-            40,   # Tax
-            60,   # Grand Total
-            55,   # Status
-            50    # Payment
+            80, 85, 60, 90, 80, 35, 45, 40,
+            50, 50, 40, 60, 55, 50
         ]
     )
 
@@ -924,11 +1099,10 @@ def invoice_report_pdf():
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
 
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME", (0, 0), (-1, -1), "Arabic" if is_arabic else "Helvetica"),
         ("FONTSIZE", (0, 0), (-1, -1), 8),
 
-        ("ALIGN", (5, 1), (-1, -1), "RIGHT"),
+        ("ALIGN", (0, 0), (-1, -1), "RIGHT" if is_arabic else "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
 
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
@@ -936,7 +1110,6 @@ def invoice_report_pdf():
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
-
 
     elements.append(table)
 
@@ -950,4 +1123,3 @@ def invoice_report_pdf():
         download_name="invoice_report.pdf",
         mimetype="application/pdf"
     )
-    

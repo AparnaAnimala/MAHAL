@@ -2,12 +2,87 @@ from flask import Blueprint, jsonify, g, send_file
 from psycopg2.extras import RealDictCursor
 from db import get_db_connection
 from routes.supplier_guard import require_supplier
+from flask import request
 import io
 import json
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+import arabic_reshaper
+from bidi.algorithm import get_display
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import requests
+import os
+from reportlab.lib.styles import ParagraphStyle
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(BASE_DIR, "..", "fonts", "NotoSansArabic-Regular.ttf")
+
+pdfmetrics.registerFont(TTFont('Arabic', font_path))
+def fix_ar(text):
+    if not text:
+        return text
+    reshaped = arabic_reshaper.reshape(str(text))
+    return get_display(reshaped)
+
+def translate_text(text, lang):
+    if lang != "ar" or not text:
+        return text
+
+    try:
+        url = "https://translate.googleapis.com/translate_a/single"
+        params = {
+            "client": "gtx",
+            "sl": "en",
+            "tl": "ar",
+            "dt": "t",
+            "q": text
+        }
+
+        res = requests.get(url, params=params, timeout=3)
+        data = res.json()
+
+        return data[0][0][0]  # translated text
+
+    except Exception as e:
+        print("Translate error:", e)
+        return text
+    
+def t(key, lang):
+    data = {
+        "en": {
+            "receipt": "SUPPLIER PAYMENT RECEIPT",
+            "supplier": "Supplier",
+            "payment_id": "Payment ID",
+            "date": "Date",
+            "mode": "Payment Mode",
+            "reference": "Reference No",
+            "orders": "Orders Paid",
+            "total": "Total",
+            "paid": "Paid",
+            "remaining": "Remaining",
+            "total_due": "Total Due",
+            "amount_paid": "Amount Paid",
+            "remaining_due": "Remaining Due"
+        },
+        "ar": {
+            "receipt": "إيصال دفع المورد",
+            "supplier": "المورد",
+            "payment_id": "رقم الدفع",
+            "date": "التاريخ",
+            "mode": "طريقة الدفع",
+            "reference": "رقم المرجع",
+            "orders": "الطلبات المدفوعة",
+            "total": "الإجمالي",
+            "paid": "المدفوع",
+            "remaining": "المتبقي",
+            "total_due": "إجمالي المستحق",
+            "amount_paid": "المبلغ المدفوع",
+            "remaining_due": "المتبقي"
+        }
+    }
+    return data[lang].get(key, key)
 supplier_credit_bp = Blueprint(
     "supplier_credit_bp",
     __name__,
@@ -21,6 +96,7 @@ supplier_credit_bp = Blueprint(
 @supplier_credit_bp.route("/summary", methods=["GET"])
 @require_supplier()
 def credit_summary():
+    lang = request.args.get("lang", "en")
 
     supplier_id = g.supplier["supplier_id"]
 
@@ -52,6 +128,7 @@ def credit_summary():
 @supplier_credit_bp.route("/orders", methods=["GET"])
 @require_supplier()
 def supplier_orders():
+    lang = request.args.get("lang", "en")
 
     supplier_id = g.supplier["supplier_id"]
 
@@ -66,7 +143,8 @@ def supplier_orders():
             oh.supplier_paid_amount,
             oh.supplier_due_amount,
             oh.supplier_payment_status,
-            r.restaurant_name_english
+            r.restaurant_name_english,
+            r.restaurant_name_arabic
         FROM order_header oh
         JOIN restaurant_registration r
             ON r.restaurant_id = oh.restaurant_id
@@ -76,6 +154,35 @@ def supplier_orders():
     """, (supplier_id,))
 
     rows = cur.fetchall()
+
+    for r in rows:
+        if lang == "ar" and r.get("restaurant_name_arabic"):
+            r["restaurant_name"] = r["restaurant_name_arabic"]
+        else:
+            r["restaurant_name"] = r["restaurant_name_english"]
+
+    status_map = {
+    "UNPAID": {"en": "UNPAID", "ar": "غير مدفوع"},
+    "PAID": {"en": "PAID", "ar": "مدفوع"},
+    "PARTIAL": {"en": "PARTIAL", "ar": "مدفوع جزئياً"}
+    }
+
+    for r in rows:
+        if lang == "ar" and r.get("restaurant_name_arabic"):
+            r["restaurant_name"] = r["restaurant_name_arabic"]
+        else:
+            r["restaurant_name"] = r["restaurant_name_english"]
+
+        status_map = {
+            "UNPAID": {"en": "UNPAID", "ar": "غير مدفوع"},
+            "PAID": {"en": "PAID", "ar": "مدفوع"},
+            "PARTIAL": {"en": "PARTIAL", "ar": "مدفوع جزئياً"}
+        }
+
+        status = r["supplier_payment_status"]
+
+        if status in status_map:
+            r["supplier_payment_status"] = status_map[status][lang]
 
     cur.close()
     conn.close()
@@ -89,6 +196,7 @@ def supplier_orders():
 @supplier_credit_bp.route("/payments", methods=["GET"])
 @require_supplier()
 def payment_history():
+    lang = request.args.get("lang", "en")
 
     supplier_id = g.supplier["supplier_id"]
 
@@ -119,6 +227,11 @@ def payment_history():
         if isinstance(r["order_ids"], str):
             r["order_ids"] = json.loads(r["order_ids"])
 
+        r["payment_mode"] = translate_text(r["payment_mode"], lang)
+        r["paid_by"] = translate_text(r["paid_by"], lang)
+        r["reference_no"] = translate_text(r["reference_no"], lang)
+        r["remarks"] = translate_text(r["remarks"], lang)
+
     cur.close()
     conn.close()
 
@@ -131,6 +244,7 @@ def payment_history():
 @supplier_credit_bp.route("/receipt/<int:payment_id>", methods=["GET"])
 @require_supplier()
 def download_receipt(payment_id):
+    lang = request.args.get("lang", "en")
 
     supplier_id = g.supplier["supplier_id"]
 
@@ -168,6 +282,7 @@ def download_receipt(payment_id):
 @supplier_credit_bp.route("/payment-pdf/<int:payment_id>", methods=["GET"])
 @require_supplier()
 def payment_pdf(payment_id):
+    lang = request.args.get("lang", "en")
 
     supplier_id = g.supplier["supplier_id"]
 
@@ -250,7 +365,7 @@ def payment_pdf(payment_id):
     # HEADER
     header_data = [
         ["MAHAL"],
-        ["SUPPLIER PAYMENT RECEIPT"]
+        [fix_ar(t("receipt", lang))]
     ]
 
     header_table = Table(header_data, colWidths=[500])
@@ -258,7 +373,7 @@ def payment_pdf(payment_id):
         ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#2E86C1")),
         ("TEXTCOLOR", (0,0), (-1,-1), colors.white),
         ("ALIGN", (0,0), (-1,-1), "CENTER"),
-        ("FONTNAME", (0,0), (-1,-1), "Helvetica-Bold"),
+        ("FONTNAME", (0,0), (-1,-1), "Arabic"),
         ("FONTSIZE", (0,0), (-1,-1), 16),
         ("BOTTOMPADDING", (0,0), (-1,-1), 10),
         ("TOPPADDING", (0,0), (-1,-1), 10)
@@ -269,35 +384,54 @@ def payment_pdf(payment_id):
 
     # INFO
     info_data = [
-        ["Supplier", row["company_name_english"]],
-        ["Payment ID", str(row["payment_id"])],
-        ["Date", str(row["created_at"])[:19]],
-        ["Payment Mode", row["payment_mode"]],
-        ["Reference No", row["reference_no"] or "-"]
+        [fix_ar(t("supplier", lang)), fix_ar(translate_text(row["company_name_english"], lang))],
+        [fix_ar(t("payment_id", lang)), str(row["payment_id"])],
+        [fix_ar(t("date", lang)), str(row["created_at"])[:19]],
+        [fix_ar(t("mode", lang)), fix_ar(translate_text(row["payment_mode"], lang))],
+        [fix_ar(t("reference", lang)), row["reference_no"] or "-"]
     ]
 
     info_table = Table(info_data, colWidths=[180,320])
 
     info_table.setStyle(TableStyle([
         ("GRID",(0,0),(-1,-1),0.5,colors.grey),
-        ("BACKGROUND",(0,0),(0,-1),colors.whitesmoke)
+        ("BACKGROUND",(0,0),(0,-1),colors.whitesmoke),
+        ("FONTNAME", (0,0), (-1,-1), "Arabic")   # ✅ ADD THIS
     ]))
 
     elements.append(info_table)
     elements.append(Spacer(1,25))
 
     # ORDERS TABLE
-    elements.append(Paragraph("<b>Orders Paid</b>", styles["Heading3"]))
+    arabic_style = ParagraphStyle(
+        name='ArabicStyle',
+        fontName='Arabic',
+        fontSize=14,
+        alignment=2  # RIGHT ALIGN
+    )
+
+    elements.append(
+        Paragraph(
+            fix_ar(t("Orders Paid", lang)),
+            arabic_style
+        )
+    )
     elements.append(Spacer(1,10))
 
-    table_data = [["Order ID","Total","Paid","Remaining"]] + order_rows
+    table_data = [[
+        fix_ar(t("payment_id", lang)),
+        fix_ar(t("total", lang)),
+        fix_ar(t("paid", lang)),
+        fix_ar(t("remaining", lang))
+    ]] + order_rows
 
     orders_table = Table(table_data, colWidths=[120,120,120,120])
 
     orders_table.setStyle(TableStyle([
         ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#D6EAF8")),
         ("GRID",(0,0),(-1,-1),0.5,colors.grey),
-        ("ALIGN",(1,1),(-1,-1),"RIGHT")
+        ("ALIGN",(1,1),(-1,-1),"RIGHT"),
+        ("FONTNAME", (0,0), (-1,-1), "Arabic")   # ✅ ADD THIS
     ]))
 
     elements.append(orders_table)
@@ -305,16 +439,17 @@ def payment_pdf(payment_id):
 
     # TOTALS
     totals = [
-        ["Total Due", f"QAR {previous_due:.2f}"],
-        ["Amount Paid", f"QAR {float(row['amount']):.2f}"],
-        ["Remaining Due", f"QAR {remaining_due:.2f}"]
+        [fix_ar(t("total_due", lang)), f"QAR  {previous_due:.2f}"],
+        [fix_ar(t("amount_paid", lang)), f"QAR  {float(row['amount']):.2f}"],
+        [fix_ar(t("remaining_due", lang)), f"QAR  {remaining_due:.2f}"]
     ]
 
     totals_table = Table(totals, colWidths=[250,200])
 
     totals_table.setStyle(TableStyle([
         ("GRID",(0,0),(-1,-1),1,colors.black),
-        ("BACKGROUND",(0,0),(-1,-1),colors.HexColor("#F9E79F"))
+        ("BACKGROUND",(0,0),(-1,-1),colors.HexColor("#F9E79F")),
+        ("FONTNAME", (0,0), (-1,-1), "Arabic")   # ✅ ADD THIS
     ]))
 
     elements.append(totals_table)

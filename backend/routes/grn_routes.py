@@ -714,6 +714,7 @@ def get_grn(order_id):
         gh.confirmed_at,
         gh.confirmed_by,
         sr.company_name_english AS supplier_name,
+        sr.company_name_arabic AS supplier_name_arabic,
         CASE WHEN gh.grn_pdf IS NOT NULL THEN true ELSE false END AS has_pdf
 
         FROM grn_header gh
@@ -734,6 +735,7 @@ def get_grn(order_id):
                 gi.grn_item_id,
                 gi.product_id,
                 pm.product_name_english AS product_name,
+                pm.product_name_arabic,
                 pm.unit_of_measure AS uom,
                 gi.ordered_quantity,
                 gi.received_quantity,
@@ -1176,6 +1178,7 @@ def list_grns():
                 gh.status,
                 gh.created_at, 
                 sr.company_name_english AS supplier_name,
+                sr.company_name_arabic AS supplier_name_arabic,
                 CASE WHEN gh.grn_pdf IS NOT NULL THEN true ELSE false END AS has_pdf
             FROM grn_header gh
             JOIN supplier_registration sr ON sr.supplier_id = gh.supplier_id

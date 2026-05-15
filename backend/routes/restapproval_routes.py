@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, current_app, send_file
 import smtplib, traceback, json, base64, mimetypes, io
 from email.mime.text import MIMEText
@@ -156,28 +155,52 @@ def get_pending_restaurants():
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        cur.execute("""
-            SELECT 
-    r.restaurant_id,
-    r.restaurant_name_english AS restaurant_name_en,
-    r.contact_person_name,
-    r.contact_person_email,
-    r.contact_person_mobile,
-    r.approval_status,
-    r.created_at,
-    r.assigned_admin_id,
-    a.name AS assigned_admin_name
+        role = (g.admin.get("role") or "").upper()
+        admin_id = g.admin["admin_id"]
 
-FROM restaurant_registration r
+        if role == "SUPER_ADMIN":
 
-LEFT JOIN admin_users a
-    ON r.assigned_admin_id = a.admin_id
+            cur.execute("""
+                SELECT 
+                    r.restaurant_id,
+                    r.restaurant_name_english AS restaurant_name_en,
+                    r.contact_person_name,
+                    r.contact_person_email,
+                    r.contact_person_mobile,
+                    r.approval_status,
+                    r.created_at,
+                    r.assigned_admin_id,
+                    a.name AS assigned_admin_name
+                FROM restaurant_registration r
+                LEFT JOIN admin_users a
+                    ON r.assigned_admin_id = a.admin_id
+                WHERE r.approval_status IN ('Pending','Assigned','Profile Completed','Under Review')
+                ORDER BY r.created_at DESC
+            """)
 
-WHERE r.approval_status = 'Pending'
+        elif role == "SUPPORT_ADMIN":
 
-ORDER BY r.created_at DESC
+            cur.execute("""
+                SELECT 
+                    r.restaurant_id,
+                    r.restaurant_name_english AS restaurant_name_en,
+                    r.contact_person_name,
+                    r.contact_person_email,
+                    r.contact_person_mobile,
+                    r.approval_status,
+                    r.created_at,
+                    r.assigned_admin_id,
+                    a.name AS assigned_admin_name
+                FROM restaurant_registration r
+                LEFT JOIN admin_users a
+                    ON r.assigned_admin_id = a.admin_id
+                WHERE r.assigned_admin_id = %s
+                AND r.approval_status IN ('Assigned','Profile Completed','Under Review')
+                ORDER BY r.created_at DESC
+            """, (admin_id,))
 
-        """)
+        else:
+            return jsonify({"items": []})
 
         rows = cur.fetchall()
 
@@ -239,6 +262,7 @@ def get_restaurant(restaurant_id):
                    contact_person_mobile,
                    country,
                    city,
+                   approval_status,
                    upload_trade_license_copy,
                    upload_vat_certificate_copy,
                    upload_food_safety_certificate
@@ -268,6 +292,7 @@ def get_restaurant(restaurant_id):
                 "phoneNumber": row["contact_person_mobile"],
                 "country": row["country"],
                 "city": row["city"],
+                "approval_status": row["approval_status"],
                 "tradeLicense": extract_filename(row["upload_trade_license_copy"]),
                 "vatCertificate": extract_filename(row["upload_vat_certificate_copy"]),
                 "foodSafetyCertificate": extract_filename(row["upload_food_safety_certificate"]),
@@ -419,17 +444,29 @@ def review_restaurant(restaurant_id):
         # APPROVE
         # -------------------------------------------------
         if action == "approve":
-            
+
+            role = (g.admin.get("role") or "").upper()
+
+            if role != "SUPER_ADMIN":
+                return jsonify({"error": "Only SUPER ADMIN can approve"}), 403
+
+            if old_status != "Under Review":
+                return jsonify({"error": "Restaurant must be Under Review"}), 400
 
             cur.execute("""
                 UPDATE restaurant_registration
                 SET approval_status='Approved',
+                    approved_by_admin_id = %s,
+                    approved_at = NOW(),
                     rejection_reason=NULL,
                     resubmit_reason=NULL,
                     resubmit_at=NULL,
                     updated_at=NOW()
                 WHERE restaurant_id=%s
-            """, (restaurant_id,))
+            """, (
+                g.admin["admin_id"],
+                restaurant_id
+            ))
 
             cur.execute("""
                 INSERT INTO users (username, role, linked_id, is_first_login, status)
@@ -562,7 +599,9 @@ def review_restaurant(restaurant_id):
         else:
             return jsonify({"error": "invalid action"}), 400
 
-        return jsonify({"message": "Restaurant review updated"})
+        return jsonify({
+    "message": f"Restaurant {restaurant_id} {action}ed successfully"
+})
 
     except Exception as e:
         if conn:
@@ -632,12 +671,17 @@ def admin_get_restaurant_file(restaurant_id, field_name):
             or "application/pdf"
         )
 
-        return send_file(
+        response = send_file(
             io.BytesIO(file_bytes),
             mimetype=mimetype,
             as_attachment=False,
-            download_name=data["filename"],
+            download_name=data.get("filename"),
         )
+
+        response.headers["Content-Disposition"] = f"inline; filename={data.get('filename')}"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+
+        return response
 
     except Exception as e:
         print("❌ admin_get_restaurant_file:", e)
@@ -1136,7 +1180,12 @@ def get_support_admins():
 
             LEFT JOIN restaurant_registration r
                 ON r.assigned_admin_id = a.admin_id
-               AND r.approval_status = 'Pending'
+               AND r.approval_status IN (
+        'Pending',
+        'Assigned',
+        'Profile Completed',
+        'Under Review'
+   )
 
             WHERE ar.role_name = 'SUPPORT_ADMIN'
 
@@ -1185,68 +1234,60 @@ def get_support_admins():
 @require_admin("MANAGE_ADMIN_USERS")
 def assign_restaurant(restaurant_id):
 
-    data = request.get_json() or {}
+    if (g.admin.get("role") or "").upper() != "SUPER_ADMIN":
+        return jsonify({"error": "Only SUPER ADMIN can assign"}), 403
 
+    data = request.get_json() or {}
     admin_id = data.get("admin_id")
 
-    conn = cur = None
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    try:
+    cur.execute("""
+        SELECT assigned_admin_id
+        FROM restaurant_registration
+        WHERE restaurant_id = %s
+        FOR UPDATE
+    """, (restaurant_id,))
 
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("""
-            SELECT assigned_admin_id
-            FROM restaurant_registration
-            WHERE restaurant_id = %s
-            FOR UPDATE
-        """, (restaurant_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"error": "restaurant not found"}), 404
 
-        row = cur.fetchone()
+    old_admin = row["assigned_admin_id"]
 
-        if not row:
-            return jsonify({"error": "restaurant not found"}), 404
-
-        old_admin = row["assigned_admin_id"]
-
+    if admin_id:
+        # ASSIGN
         cur.execute("""
             UPDATE restaurant_registration
             SET assigned_admin_id = %s,
+                approval_status = 'Assigned',
                 updated_at = NOW()
             WHERE restaurant_id = %s
         """, (admin_id, restaurant_id))
+    else:
+        # DEASSIGN
+        cur.execute("""
+            UPDATE restaurant_registration
+            SET assigned_admin_id = NULL,
+                approval_status = 'Pending',
+                updated_at = NOW()
+            WHERE restaurant_id = %s
+        """, (restaurant_id,))
 
-        conn.commit()
+    conn.commit()
 
-        log_admin_action(
-            admin_id=g.admin["admin_id"],
-            action="ASSIGN_RESTAURANT",
-            entity_type="restaurant",
-            entity_id=restaurant_id,
-            old_value={"assigned_admin_id": old_admin},
-            new_value={"assigned_admin_id": admin_id},
-            ip_address=request.remote_addr
-        )
+    log_admin_action(
+        admin_id=g.admin["admin_id"],
+        action="ASSIGN_RESTAURANT",
+        entity_type="restaurant",
+        entity_id=restaurant_id,
+        old_value={"assigned_admin_id": old_admin},
+        new_value={"assigned_admin_id": admin_id},
+        ip_address=request.remote_addr
+    )
 
-        return jsonify({
-            "status": True,
-            "message": "Assignment updated"
-        })
-
-    except Exception as e:
-
-        if conn:
-            conn.rollback()
-
-        print("❌ assign_restaurant:", e)
-        traceback.print_exc()
-
-        return jsonify({"error": "server error"}), 500
-
-    finally:
-
-        if cur: cur.close()
-        if conn: conn.close()
+    return jsonify({"status": True})
 # =========================================================
 # 8️⃣ AUTO ASSIGN RESTAURANTS (LEAST PENDING FIRST)
 # =========================================================
@@ -1319,7 +1360,9 @@ def auto_assign_restaurants():
 
             cur.execute("""
                 UPDATE restaurant_registration
-                SET assigned_admin_id = %s
+                SET assigned_admin_id = %s,
+                    approval_status = 'Assigned',
+                    updated_at = NOW()
                 WHERE restaurant_id = %s
             """, (admin_id, r["restaurant_id"]))
 
@@ -1354,3 +1397,85 @@ def auto_assign_restaurants():
 
         if cur: cur.close()
         if conn: conn.close()
+
+@restapproval_bp.route("/restaurant/<int:restaurant_id>/complete-profile", methods=["PATCH"])
+@require_admin("APPROVE_RESTAURANTS")
+def complete_restaurant_profile(restaurant_id):
+
+    role = (g.admin.get("role") or "").upper()
+
+    if role not in ["SUPPORT_ADMIN", "SUPER_ADMIN"]:
+        return jsonify({"error": "Only SUPPORT ADMIN allowed"}), 403
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE restaurant_registration
+        SET approval_status = 'Profile Completed',
+            profile_completed_at = NOW(),
+            updated_at = NOW()
+        WHERE restaurant_id = %s
+        AND assigned_admin_id = %s
+        AND approval_status IN ('Assigned', 'Profile Completed')
+    """, (
+        restaurant_id,
+        g.admin["admin_id"]
+    ))
+
+    if cur.rowcount == 0:
+        conn.rollback()
+        return jsonify({"error": "Not assigned or invalid status"}), 400
+
+    conn.commit()
+
+    log_admin_action(
+        admin_id=g.admin["admin_id"],
+        action="PROFILE_COMPLETED_RESTAURANT",
+        entity_type="restaurant",
+        entity_id=restaurant_id
+    )
+
+    return jsonify({"status": True})
+
+@restapproval_bp.route("/restaurant/<int:restaurant_id>/send-to-review", methods=["PATCH"])
+@require_admin("APPROVE_RESTAURANTS")
+def send_restaurant_to_review(restaurant_id):
+
+    role = (g.admin.get("role") or "").upper()
+
+    if role not in ["SUPPORT_ADMIN", "SUPER_ADMIN"]:
+        return jsonify({"error": "Only SUPPORT ADMIN allowed"}), 403
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE restaurant_registration
+        SET approval_status = 'Under Review',
+            sent_to_review_at = NOW(),
+            reviewed_by_admin_id = NULL,
+            reviewed_at = NULL,
+            updated_at = NOW()
+        WHERE restaurant_id = %s
+        AND assigned_admin_id = %s
+        AND approval_status IN ('Profile Completed', 'Under Review')
+    """, (
+        restaurant_id,
+        g.admin["admin_id"]
+    ))
+
+    if cur.rowcount == 0:
+        conn.rollback()
+        return jsonify({"error": "Invalid state"}), 400
+
+    conn.commit()
+
+    log_admin_action(
+        admin_id=g.admin["admin_id"],
+        action="RESTAURANT_SENT_TO_REVIEW",
+        entity_type="restaurant",
+        entity_id=restaurant_id
+    )
+
+    return jsonify({"status": True})

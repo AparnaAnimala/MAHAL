@@ -93,7 +93,7 @@
 //   useEffect(() => {
 //     if (!ADMIN_TOKEN) return;
 
-//     fetch("http://127.0.0.1:5000/api/v1/admin/dashboard-metrics", {
+//     fetch("http://192.168.2.9:5000/api/v1/admin/dashboard-metrics", {
 //       headers: {
 //         Authorization: `Bearer ${ADMIN_TOKEN}`,
 //       },
@@ -239,7 +239,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-
+import "../css/approval.css";
 // Icons
 import { FaUsers, FaChartBar, FaClipboardCheck, FaStore, FaProjectDiagram } from "react-icons/fa";
 
@@ -287,27 +287,63 @@ const PlatformMonitoring = () => {
   const [selectedId, setSelectedId] = useState(null);
 
   return (
-    <div className="dashboard_card">
-      <div className="tab_row">
+    <div
+      className="dashboard_card"
+      style={{
+        background: "#fff"
+      }}
+    >
+
+      {/* 🔥 BUTTONS */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "15px"
+        }}
+      >
+        {/* LEFT - Supplier */}
         <button
           onClick={() => {
             setActiveTab("supplier");
             setSelectedId(null);
           }}
+          style={{
+            padding: "14px 30px",
+            border: "none",
+            borderRadius: "25px", // 🔥 FIXED (round shape)
+            cursor: "pointer",
+            fontWeight: "600",
+            background: activeTab === "supplier" ? "#ff6a00" : "#eee", // 🔥 FIXED color
+            color: activeTab === "supplier" ? "#fff" : "#333"
+          }}
         >
           Supplier Monitor
         </button>
 
+        {/* RIGHT - Restaurant */}
         <button
           onClick={() => {
             setActiveTab("restaurant");
             setSelectedId(null);
+          }}
+          style={{
+            padding: "14px 30px",
+            border: "none",
+            borderRadius: "25px", // 🔥 FIXED (round shape)
+            cursor: "pointer",
+            fontWeight: "600",
+            background: activeTab === "restaurant" ? "#ff6a00" : "#eee", // 🔥 FIXED color
+            color: activeTab === "restaurant" ? "#fff" : "#333"
           }}
         >
           Restaurant Monitor
         </button>
       </div>
 
+      {/* INPUT */}
       <input
         type="number"
         placeholder={`Enter ${activeTab} ID`}
@@ -316,6 +352,7 @@ const PlatformMonitoring = () => {
         className="form_input"
       />
 
+      {/* COMPONENT SWITCH */}
       {activeTab === "supplier" && (
         <SupplierMonitor supplierId={selectedId} />
       )}
@@ -339,7 +376,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!ADMIN_TOKEN) return;
 
-    fetch("http://127.0.0.1:5000/api/v1/admin/dashboard-metrics", {
+    fetch("http://192.168.2.9:5000/api/v1/admin/dashboard-metrics", {
       headers: {
         Authorization: `Bearer ${ADMIN_TOKEN}`,
       },
@@ -408,12 +445,12 @@ const AdminDashboard = () => {
       permission: "APPROVE_RESTAURANTS",
     },
     {
-  key: "profileChanges",
-  label: "Profile Changes",
-  icon: <FaClipboardCheck />,
-  component: <AdminProfileChanges />,
-  permission: "VIEW_DASHBOARD",   // you asked for this
-},
+      key: "profileChanges",
+      label: "Profile Changes",
+      icon: <FaClipboardCheck />,
+      component: <AdminProfileChanges />,
+      permission: "VIEW_DASHBOARD",   // you asked for this
+    },
 
     {
       key: "userManagement",
@@ -435,7 +472,7 @@ const AdminDashboard = () => {
       permission: "VIEW_DASHBOARD",
     },
 
-     {
+    {
       key: "adminPromotions",
       label: "Promotions",
       icon: <FaProjectDiagram />,
@@ -458,24 +495,24 @@ const AdminDashboard = () => {
       permission: "VIEW_DASHBOARD"
     },
     {
-  key: "paidPromotions",
-  label: "Paid Promotions",
-  icon: <FaChartBar />,
-  permission: "VIEW_PROMOTIONS",
-},
-// {
-//   key: "couponManagement",
-//   label: "Coupon Management",
-//   icon: <FaClipboardCheck />,
-//   permission: "MANAGE_COUPONS",
-// },
+      key: "paidPromotions",
+      label: "Paid Promotions",
+      icon: <FaChartBar />,
+      permission: "VIEW_PROMOTIONS",
+    },
+    // {
+    //   key: "couponManagement",
+    //   label: "Coupon Management",
+    //   icon: <FaClipboardCheck />,
+    //   permission: "MANAGE_COUPONS",
+    // },
 
-  {
-  key: "supportTickets",
-  label: "Support Tickets",
-  icon: <FaClipboardCheck />,
-  permission: "MANAGE_SUPPORT_TICKETS",
-},
+    {
+      key: "supportTickets",
+      label: "Support Tickets",
+      icon: <FaClipboardCheck />,
+      permission: "MANAGE_SUPPORT_TICKETS",
+    },
   ];
 
   const renderContent = () => {
@@ -506,7 +543,7 @@ const AdminDashboard = () => {
     if (activeView === "paidPromotions")
       return <ManagePaidPromotions />;
     if (activeView === "couponManagement")
-  return <CouponManagement />;
+      return <CouponManagement />;
     // if (activeView === "promotionReview")
     //   return <AdminPromotionReview />;
 

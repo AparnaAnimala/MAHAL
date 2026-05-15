@@ -7,7 +7,7 @@
 // /* IMAGE PLACEHOLDER */
 // import img1 from "../images/cart_view_img_1.png";
 
-// const API_BASE_URL = "http://127.0.0.1:5000/api";
+// const API_BASE_URL = "http://192.168.2.9:5000/api";
 // const RESTAURANT_ID = 1;
 
 // const Cart = () => {
@@ -238,7 +238,7 @@ import "../pages/css/cart.css";
 /* IMAGE PLACEHOLDER */
 import img1 from "../images/cart_view_img_1.png";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = "http://192.168.2.9:5000/api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -251,7 +251,7 @@ const [appliedCoupon, setAppliedCoupon] = useState(null);
 const [showCouponPopup, setShowCouponPopup] = useState(false);
 const [productCoupons, setProductCoupons] = useState({});
 const [cartCoupon, setCartCoupon] = useState(null);
-
+const [productOffers, setProductOffers] = useState({});
 
   // ✅ FIX: READ CORRECT TOKEN KEY
   const getToken = () => localStorage.getItem("token");
@@ -297,7 +297,7 @@ const handleCheckout = () => {
 
 //     setAppliedCoupon(res.data.coupon_id);
 
-//     setCouponMessage(`Coupon Applied - Saved ₹${discountAmount}`);
+//     setCouponMessage(`Coupon Applied - Saved QAR ${discountAmount}`);
 
 //   } catch (err) {
 
@@ -309,6 +309,61 @@ const handleCheckout = () => {
 //   }
 // };
 
+useEffect(() => {
+
+  if (!cartItems.length) return;
+
+  const fetchOffers = async () => {
+
+    const offersMap = {};
+
+    await Promise.all(
+      cartItems.map(async (item) => {
+        try {
+          const res = await axios.get(
+            `${API_BASE_URL}/offers/by-product/${item.product_id}`
+          );
+
+          if (res.data && res.data.offer_status === "ACTIVE") {
+            offersMap[item.product_id] = res.data;
+          }
+
+        } catch (err) {
+          console.log("No offer for product", item.product_id);
+        }
+      })
+    );
+
+    setProductOffers(offersMap);
+  };
+
+  fetchOffers();
+
+}, [cartItems]);
+
+
+const getOfferPrice = (item) => {
+
+  const offer = productOffers[item.product_id];
+  const price = Number(item.price);
+
+  if (!offer) return price;
+
+  if (offer.offer_type === "Percentage") {
+    return price - (price * offer.discount_percentage) / 100;
+  }
+
+  if (offer.offer_type === "Flat") {
+    return price - offer.flat_amount;
+  }
+
+  if (offer.offer_type === "BOGO") {
+    // simple handling → no price change (handled by quantity logic if needed)
+    return price;
+  }
+
+  return price;
+};
 
 const applyCoupon = async (manualCode = null) => {
 
@@ -369,7 +424,7 @@ products.forEach((p) => {
 });
   setProductCoupons(updatedCoupons);
 
-  setCouponMessage(`Product coupon applied - Saved ₹${discountAmount}`);
+  setCouponMessage(`Product coupon applied - Saved QAR ${discountAmount}`);
 } else {
 
       setCartCoupon({
@@ -377,7 +432,7 @@ products.forEach((p) => {
         discount: discountAmount
       });
 
-      setCouponMessage(`Cart coupon applied - Saved ₹${discountAmount}`);
+      setCouponMessage(`Cart coupon applied - Saved QAR ${discountAmount}`);
     }
 
     setCouponCode(codeToApply);
@@ -484,7 +539,9 @@ const removeCoupon = () => {
 /* ================= SUBTOTAL ================= */
 const subtotal = cartItems.reduce((sum, item) => {
 
-  const base = Number(item.price) * item.quantity;
+  const base = getOfferPrice(item) * item.quantity;
+
+ 
 
   const perUnitDiscount =
     productCoupons[item.product_id]?.discount || 0;
@@ -622,6 +679,68 @@ useEffect(() => {
 
 }, [subtotal]);
 
+useEffect(() => {
+  if (!couponCode) return;
+
+  const reApplyCoupon = async () => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/coupons/apply`,
+        {
+          code: couponCode,
+          cart_total: subtotal,
+          restaurant_id: localStorage.getItem("restaurant_id"),
+          cart_items: cartItems.map(item => ({
+            product_id: item.product_id,
+            category_id: item.category_id,
+            supplier_id: item.supplier_id,
+            price: item.price,
+            quantity: item.quantity
+          }))
+        }
+      );
+
+      const scope = res.data.scope_type;
+      const discountAmount = Number(res.data.discount || 0);
+
+      // 🔁 RESET before reapply
+      setCartCoupon(null);
+      setProductCoupons({});
+
+      if (scope === "PRODUCT" || scope === "CATEGORY") {
+        const updatedCoupons = {};
+
+        (res.data.products || []).forEach((p) => {
+          const cartItem = cartItems.find(
+            (item) => item.product_id === p.product_id
+          );
+
+          const qty = cartItem ? cartItem.quantity : 1;
+
+          updatedCoupons[p.product_id] = {
+            coupon_id: res.data.coupon_id,
+            discount: p.discount / qty
+          };
+        });
+
+        setProductCoupons(updatedCoupons);
+
+      } else {
+        setCartCoupon({
+          coupon_id: res.data.coupon_id,
+          discount: discountAmount
+        });
+      }
+
+    } catch (err) {
+      console.log("Auto coupon refresh failed");
+    }
+  };
+
+  reApplyCoupon();
+
+}, [cartItems, subtotal]); // 🔥 IMPORTANT
+
   return (
     <section className="cart_view pt_100 xs_pt_80 pb-80">
       <div className="container">
@@ -643,7 +762,7 @@ useEffect(() => {
 
     <div>
       <strong>
-        Saved ₹{cartCoupon.discount.toFixed(2)} with {couponCode}
+        Saved QAR {cartCoupon.discount.toFixed(2)} with {couponCode}
       </strong>
       <div style={{ fontSize: "13px", color: "#666" }}>
         View all payment offers
@@ -687,6 +806,7 @@ useEffect(() => {
                             src={item.image || img1}
                             alt={item.name}
                             className="img-fluid"
+                            id="cart"
                           />
                         </td>
 
@@ -695,35 +815,35 @@ useEffect(() => {
                         </td>
 
                           <td>
+  {(() => {
 
-                          {productCoupons[item.product_id] ? (
+    const original = Number(item.original_price || item.price);
 
-                          <>
-                          <span
-                          className="price_new"
-                          >
-                          {(
-                          Number(item.price) -
-                          (productCoupons[item.product_id]?.discount || 0)
-                          ).toFixed(2)}
-                          </span>
+    const offerPrice = getOfferPrice(item);
 
-                          <span
-                          className="price_old"
-                          >
-                          QAR{Number(item.price).toFixed(2)}
-                          </span>
-                          </>
+    const couponDiscount =
+      productCoupons[item.product_id]?.discount || 0;
 
-                          ) : (
+    const final = offerPrice - couponDiscount;
 
-                          <span>
-                          QAR{Number(item.price).toFixed(2)}
-                          </span>
+    return (
+      <>
+        {/* ✅ NEW PRICE */}
+        <span className="price_new">
+          QAR {final.toFixed(2)}
+        </span>
 
-                          )}
+        {/* ✅ OLD PRICE (SHOW WHEN DISCOUNT EXISTS) */}
+        {(couponDiscount > 0 || offerPrice < original) && (
+          <span className="price_old">
+             {original.toFixed(2)}
+          </span>
+        )}
+      </>
+    );
 
-                          </td>
+  })()}
+</td>
                         <td>
                           <div className="button_area">
                             <button onClick={() => decreaseQty(item.cart_item_id, item.quantity)}>
@@ -737,11 +857,13 @@ useEffect(() => {
                         </td>
 
                         <td>
-                          ${(
-(Number(item.price) * item.quantity) -
-((productCoupons[item.product_id]?.discount || 0) * item.quantity)
-                          ).toFixed(2)}
-                          </td>
+  QAR {(
+(
+  getOfferPrice(item) -
+  (productCoupons[item.product_id]?.discount || 0)
+) * item.quantity
+  ).toFixed(2)}
+</td>
 
                         <td>
                           <button className="del" onClick={() => removeItem(item.cart_item_id)}>
@@ -805,7 +927,7 @@ Object.entries(productCoupons).map(([pid, coupon]) => {
     >
       <div>
         <strong>
-          Saved ₹{(coupon.discount * (product?.quantity || 1)).toFixed(2)} on {productName}
+          Saved QAR {(coupon.discount * (product?.quantity || 1)).toFixed(2)} on {productName}
         </strong>
 
         <div className="coupon_text">
@@ -837,7 +959,7 @@ Object.entries(productCoupons).map(([pid, coupon]) => {
 
     <div>
       <strong>
-        Saved ₹{cartCoupon.discount.toFixed(2)} with {couponCode}
+        Saved QAR {cartCoupon.discount.toFixed(2)} with {couponCode}
       </strong>
 
       <div style={{ fontSize: "13px", color: "#666" }}>
@@ -867,19 +989,19 @@ Object.entries(productCoupons).map(([pid, coupon]) => {
               <h3>Total Cart ({cartItems.length})</h3>
 
               <div className="cart_sidebar_info">
-                <h4>Subtotal : <span>${subtotal.toFixed(2)}</span></h4>
-                <p>Delivery : <span>${DELIVERY_CHARGE.toFixed(2)}</span></p>
+                <h4>Subtotal : <span>QAR {subtotal.toFixed(2)}</span></h4>
+                <p>Delivery : <span>QAR {DELIVERY_CHARGE.toFixed(2)}</span></p>
                 <p>
                 Coupon Discount :
                 <span>
-                -$
+                -QAR 
                 {(
                 (productCouponTotal || 0) +
                 (cartCoupon?.discount || 0)
                 ).toFixed(2)}
                 </span>
                 </p>
-                <h5>Total : <span>${total.toFixed(2)}</span></h5>
+                <h5>Total : <span>QAR {total.toFixed(2)}</span></h5>
 
                 {/* <Link to="/restaurantdashboard/Checkout" className="common_btn">
                   Checkout <i className="fa fa-long-arrow-right"></i>

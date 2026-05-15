@@ -102,7 +102,7 @@ import { resolveIdentity } from "../../utils/identity";
 
 import "../../pages/css/halfscreen.css";
 
-const API = "http://127.0.0.1:5000/api/v1/orders";
+const API = "http://192.168.2.9:5000/api/v1/orders";
 
 const DashboardLayout = () => {
   const identity = resolveIdentity();

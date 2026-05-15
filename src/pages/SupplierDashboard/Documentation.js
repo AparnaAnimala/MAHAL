@@ -1,96 +1,95 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const Documentation = () => {
+  const { t, i18n } = useTranslation();
+
   return (
-    <div className="help_page">
+    <div className="help_page" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
+      
       {/* HEADER */}
       <div className="help_header">
-        <h2>
-            Dashboard Documentation
-        </h2>
-        <p>
-          Everything you need to manage your business like a modern
-          e-commerce platform.
-        </p>
+        <h2>{t("doc_title")}</h2>
+        <p>{t("doc_subtitle")}</p>
       </div>
 
       {/* GRID */}
       <div className="help_grid">
 
-        {/* PROFILE SETUP */}
+        {/* PROFILE */}
         <div className="help_card">
-          <h4><i className="fas fa-user-cog"></i> Profile Setup</h4>
+          <h4><i className="fas fa-user-cog"></i> {t("profile_setup")}</h4>
           <ul>
-            <li>Basic information (name, email, contact)</li>
-            <li>Supplier / Restaurant details</li>
-            <li>Address & location</li>
-            <li>Bank & payment details</li>
-            <li>Required document uploads</li>
+            <li>{t("profile_1")}</li>
+            <li>{t("profile_2")}</li>
+            <li>{t("profile_3")}</li>
+            <li>{t("profile_4")}</li>
+            <li>{t("profile_5")}</li>
           </ul>
         </div>
 
-        {/* DASHBOARD OVERVIEW */}
+        {/* DASHBOARD */}
         <div className="help_card">
-          <h4><i className="fas fa-chart-line"></i> Dashboard Overview</h4>
+          <h4><i className="fas fa-chart-line"></i> {t("dashboard_overview")}</h4>
           <ul>
-            <li>Revenue – Monthly earnings</li>
-            <li>Pending Orders – Orders waiting for action</li>
-            <li>Low Stock – Products to restock</li>
-            <li>Fulfillment Rate – Order success rate</li>
-            <li>Sales Trends – Graphical insights</li>
-            <li>Inventory Health</li>
+            <li>{t("dash_1")}</li>
+            <li>{t("dash_2")}</li>
+            <li>{t("dash_3")}</li>
+            <li>{t("dash_4")}</li>
+            <li>{t("dash_5")}</li>
+            <li>{t("dash_6")}</li>
           </ul>
         </div>
 
         {/* PRODUCTS */}
         <div className="help_card">
-          <h4><i className="fas fa-box-open"></i> Products Management</h4>
+          <h4><i className="fas fa-box-open"></i> {t("products")}</h4>
           <ul>
-            <li>Add products with images & pricing</li>
-            <li>Edit or disable products anytime</li>
-            <li>Control stock availability</li>
-            <li>Assign categories for visibility</li>
+            <li>{t("prod_1")}</li>
+            <li>{t("prod_2")}</li>
+            <li>{t("prod_3")}</li>
+            <li>{t("prod_4")}</li>
           </ul>
         </div>
 
         {/* ORDERS */}
         <div className="help_card">
-          <h4><i className="fas fa-truck"></i> Orders & Delivery</h4>
+          <h4><i className="fas fa-truck"></i> {t("orders_delivery")}</h4>
           <ul>
-            <li>Accept or reject incoming orders</li>
-            <li>View complete order details</li>
-            <li>Track delivery progress</li>
-            <li>Update order status</li>
+            <li>{t("order_1")}</li>
+            <li>{t("order_2")}</li>
+            <li>{t("order_3")}</li>
+            <li>{t("order_4")}</li>
           </ul>
         </div>
 
         {/* OFFERS */}
         <div className="help_card">
-          <h4><i className="fas fa-tags"></i> Offers & Promotions</h4>
+          <h4><i className="fas fa-tags"></i> {t("offers")}</h4>
           <ul>
-            <li>Create discounts to attract customers</li>
-            <li>Use promo codes for campaigns</li>
-            <li>Run combo offers to increase order value</li>
+            <li>{t("offer_1")}</li>
+            <li>{t("offer_2")}</li>
+            <li>{t("offer_3")}</li>
           </ul>
         </div>
 
         {/* INVENTORY */}
         <div className="help_card">
-          <h4><i className="fas fa-warehouse"></i> Inventory</h4>
+          <h4><i className="fas fa-warehouse"></i> {t("inventories")}</h4>
           <ul>
-            <li>Monitor stock in real time</li>
-            <li>Avoid out-of-stock situations</li>
-            <li>Improve fulfillment rate</li>
+            <li>{t("inv_1")}</li>
+            <li>{t("inv_2")}</li>
+            <li>{t("inv_3")}</li>
           </ul>
         </div>
 
         {/* GUIDED TOUR */}
         <div className="help_card">
-          <h4><i className="fas fa-route"></i> Guided Tours</h4>
+          <h4><i className="fas fa-route"></i> {t("guided_tours")}</h4>
           <ul>
-            <li>Visual walkthroughs for beginners</li>
-            <li>Highlights important actions</li>
-            <li>Step-by-step usage help</li>
+            <li>{t("tour_1")}</li>
+            <li>{t("tour_2")}</li>
+            <li>{t("tour_3")}</li>
           </ul>
         </div>
 
@@ -98,8 +97,9 @@ const Documentation = () => {
 
       {/* FOOTER */}
       <div className="help_footer">
-        <i className="fas fa-heart"></i> Designed to help you grow faster and sell smarter
+        <i className="fas fa-heart"></i> {t("doc_footer")}
       </div>
+
     </div>
   );
 };

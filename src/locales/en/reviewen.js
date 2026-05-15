@@ -1,0 +1,20 @@
+export default{
+promotion_products: "Promotion Products",
+priority_level: "Priority Level",
+off: "OFF",
+loading: "Loading...",
+promotion_accept_success: "Promotion accepted",
+promotion_reject_success: "Promotion rejected",
+promotion_review: "Promotion Review",
+no_promotions: "No promotions found",
+id: "ID",
+title: "Title",
+offer: "Offer",
+action: "Action",
+off: "OFF",
+
+status_invited: "Invited",
+status_accepted: "Accepted",
+status_rejected: "Rejected",
+status_pending: "Pending",
+}

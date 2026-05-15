@@ -54,7 +54,7 @@
 
 //     try {
 //       const res = await fetch(
-//         `http://127.0.0.1:5000/api/offers?supplier_id=${supplierId}`
+//         `http://192.168.2.9:5000/api/offers?supplier_id=${supplierId}`
 //       );
 //       const data = await res.json();
 //       setOffers(Array.isArray(data) ? data : []);
@@ -69,7 +69,7 @@
 
 //     try {
 //       const res = await fetch(
-//         `http://127.0.0.1:5000/api/products?supplier_id=${supplierId}`
+//         `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
 //       );
 //       const data = await res.json();
 //       setProducts(Array.isArray(data) ? data : []);
@@ -84,7 +84,7 @@
 
 //     try {
 //       await fetch(
-//         `http://127.0.0.1:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
+//         `http://192.168.2.9:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
 //         { method: "DELETE" }
 //       );
 //       fetchOffers();
@@ -212,12 +212,18 @@
 import React, { useEffect, useState } from "react";
 import CreateOfferModal from "../../components/Dashboard/CreateOfferModal";
 import "../css/offer.css";
-
+import { useTranslation } from "react-i18next";
 const Offers = () => {
   const [showModal, setShowModal] = useState(false);
   const [offers, setOffers] = useState([]);
   const [products, setProducts] = useState([]);
   const [editingOffer, setEditingOffer] = useState(null);
+  const { t, i18n } = useTranslation();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("ALL");
+  
 
   const supplierId = localStorage.getItem("linked_id");
 
@@ -226,7 +232,7 @@ const Offers = () => {
     if (!supplierId) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/offers?supplier_id=${supplierId}`
+        `http://192.168.2.9:5000/api/offers?supplier_id=${supplierId}`
       );
       const data = await res.json();
       setOffers(Array.isArray(data) ? data : []);
@@ -239,7 +245,7 @@ const Offers = () => {
     if (!supplierId) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/products?supplier_id=${supplierId}`
+        `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
       );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
@@ -258,7 +264,7 @@ const Offers = () => {
     if (!window.confirm("Delete this offer?")) return;
     try {
       await fetch(
-        `http://127.0.0.1:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
+        `http://192.168.2.9:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
         { method: "DELETE" }
       );
       fetchOffers();
@@ -270,7 +276,7 @@ const Offers = () => {
   /* ================= HELPERS ================= */
   const getOfferImage = (o) =>
     o.image_url
-      ? `http://127.0.0.1:5000${o.image_url}`
+      ? `http://192.168.2.9:5000${o.image_url}`
       : "/placeholder.png";
 
   const getCurrentPrice = (productId) => {
@@ -317,40 +323,118 @@ const getOfferLabel = (o) => {
     ? new Date(`${o.end_date}T${o.end_time}`)
     : new Date(`${o.end_date}T23:59:59`);
 
-  // 🔴 EXPIRED
   if (now > endDT) {
-    return { text: "EXPIRED", type: "expired" };
+    return { text: t("expired"), type: "expired" };
   }
 
-  // 🟡 UPCOMING
   if (now < startDT) {
     const mins = Math.ceil((startDT - now) / (1000 * 60));
 
     if (mins <= 60) {
-      return { text: `STARTS IN ${mins} MIN`, type: "upcoming" };
+      return { text: `${t("starts_in")} ${mins} ${t("min")}`, type: "upcoming" };
     }
 
-    return { text: "UPCOMING", type: "upcoming" };
+    return { text: t("upcoming"), type: "upcoming" };
   }
 
-  // 🟠 ENDING SOON
   const minsLeft = Math.ceil((endDT - now) / (1000 * 60));
   if (minsLeft <= 30) {
-    return { text: `ENDING IN ${minsLeft} MIN`, type: "ending" };
+    return { text: `${t("ending_in")} ${minsLeft} ${t("min")}`, type: "ending" };
   }
 
-  // 🟢 ACTIVE
-  return { text: "ACTIVE", type: "active" };
+  return { text: t("active"), type: "active" };
+};
+const isArabic = i18n.language?.startsWith("ar");
+const statusMap = {
+  INACTIVE: isArabic ? "غير نشط" : "Inactive",
+  ACTIVE: isArabic ? "نشط" : "Active",
+  EXPIRED: isArabic ? "منتهي" : "Expired",
+  UPCOMING: isArabic ? "قادم" : "Upcoming",
+};
+const offerTypeMap = {
+  Flat: isArabic ? "خصم ثابت" : "Flat",
+  Percentage: isArabic ? "نسبة مئوية" : "Percentage",
+  BOGO: isArabic ? "اشترِ واحد واحصل على واحد" : "BOGO",
+};
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB"
+  ).format(new Date(date));
+};
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
 };
 
+const filteredOffers = offers.filter((o) => {
+
+  // SEARCH
+  const searchMatch =
+    String(o.offer_id || "")
+      .toLowerCase()
+      .includes(search.toLowerCase()) ||
+
+    String(o.product_name_english || "")
+      .toLowerCase()
+      .includes(search.toLowerCase()) ||
+
+    String(o.product_name_arabic || "")
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+  // STATUS
+  const label =
+    o.is_active === false
+      ? { type: "inactive" }
+      : getOfferLabel(o);
+
+  const statusMatch =
+    statusFilter === "ALL" ||
+    label.type.toUpperCase() === statusFilter;
+
+  // OFFER TYPE
+  const offerType = getOfferType(o);
+
+  const typeMatch =
+    typeFilter === "ALL" ||
+    offerType === typeFilter;
+
+  // DATE
+  const now = new Date();
+
+  const start = new Date(o.start_date);
+  const end = new Date(o.end_date);
+
+  let dateMatch = true;
+
+  if (dateFilter === "TODAY") {
+    dateMatch = now >= start && now <= end;
+  }
+
+  if (dateFilter === "UPCOMING") {
+    dateMatch = now < start;
+  }
+
+  if (dateFilter === "EXPIRED") {
+    dateMatch = now > end;
+  }
+
+  return (
+    searchMatch &&
+    statusMatch &&
+    typeMatch &&
+    dateMatch
+  );
+});
   /* ================= RENDER ================= */
 return (
   <div className="orders_page">
     {/* HEADER (kept – not removed) */}
     <div className="page_header glass">
       <div>
-        <h3 className="page_title">Offers</h3>
-        <p className="sub_text">Manage your offers</p>
+        <h3 className="page_title">{t("offers")}</h3>
+        <p className="sub_text">{t("manage_offers")}</p>
       </div>
 
       <button
@@ -360,44 +444,93 @@ return (
           setShowModal(true);
         }}
       >
-        <i className="fas fa-plus"></i> Add Offer
+        <i className="fas fa-plus"></i> {t("add_offer")}
       </button>
     </div>
-
+    
     {/* ORDERS TABLE DESIGN */}
     <div className="table_wrapper">
+      <div className="filters_bar">
+        <input
+          type="text"
+          placeholder={t("search_offer")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search_input"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="ALL">{t("all")}</option>
+          <option value="ACTIVE">{t("active")}</option>
+          <option value="UPCOMING">{t("upcoming")}</option>
+          <option value="EXPIRED">{t("expired")}</option>
+          <option value="INACTIVE">{t("inactive")}</option>
+        </select>
+
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value="ALL">{t("all")}</option>
+
+          <option value="Flat">
+            {offerTypeMap.Flat}
+          </option>
+
+          <option value="Percentage">
+            {offerTypeMap.Percentage}
+          </option>
+
+          <option value="BOGO">
+            {offerTypeMap.BOGO}
+          </option>
+        </select>
+
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+        >
+          <option value="ALL">{t("all")}</option>
+          <option value="TODAY">{t("today")}</option>
+          <option value="UPCOMING">{t("upcoming")}</option>
+          <option value="EXPIRED">{t("expired")}</option>
+        </select>
+      </div>
       <table className="orders_table">
         <thead>
           <tr>
-            <th>Offer ID</th>
-            <th>Status</th>
-            <th>Product</th>
-            <th>Validity</th>
-            <th>Offer Type</th>
-            <th>Action</th>
+            <th>{t("offer_id")}</th>
+            <th>{t("status")}</th>
+            <th>{t("product")}</th>
+            <th>{t("validity")}</th>
+            <th>{t("offer_type")}</th>
+            <th>{t("action")}</th>
           </tr>
         </thead>
 
         <tbody>
-          {offers.length === 0 && (
+          {filteredOffers.length === 0 && (
             <tr>
               <td colSpan="6" style={{ textAlign: "center" }}>
-                No offers created yet
+                {t("no_offers")}
               </td>
             </tr>
           )}
 
-          {offers.map((o) => {
+          {filteredOffers.map((o) => {
             const offerType = getOfferType(o);
             const label =
               o.is_active === false
-                ? { text: "INACTIVE", type: "inactive" }
+                ? { text: statusMap.INACTIVE, type: "inactive" }
                 : getOfferLabel(o);
 
             return (
               <tr key={o.offer_id}>
                 {/* OFFER ID */}
-                <td>{o.offer_id}</td>
+                <td>{formatNumber(o.offer_id)}</td>
 
                 {/* STATUS */}
                 <td>
@@ -418,16 +551,22 @@ return (
                       objectFit: "cover",
                     }}
                   />
-                  <b>{o.product_name_english || "Category Offer"}</b>
+                  <b>
+                    {i18n.language === "ar"
+                      ? (o.product_name_arabic && o.product_name_arabic.trim()
+                          ? o.product_name_arabic
+                          : o.product_name_english)
+                      : o.product_name_english || t("category_offer")}
+                  </b>
                 </td>
 
                 {/* VALIDITY */}
                 <td className="muted">
-                  {o.start_date} → {o.end_date}
+                  {formatDate(o.start_date)} → {formatDate(o.end_date)}
                 </td>
 
                 {/* OFFER TYPE */}
-                <td className="muted">{offerType}</td>
+                <td>{offerTypeMap[offerType] || offerType}</td>
 
                 {/* ACTIONS */}
                 <td>
@@ -438,7 +577,7 @@ return (
                       setShowModal(true);
                     }}
                   >
-                    Edit
+                    {t("edit")}
                   </button>
 
                   <button

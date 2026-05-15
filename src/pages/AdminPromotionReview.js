@@ -3,40 +3,53 @@ import axios from "axios";
 import "../pages/css/AdminPromotionReview.css";
 import { useOutletContext } from "react-router-dom";
 
-const API = "http://127.0.0.1:5000/api/v1";
+const API = "http://192.168.2.9:5000/api/v1";
 
 const AdminPromotionReview = () => {
-//   const { id } = useParams();
   const promoId = localStorage.getItem("review_promo_id");
+  const token = localStorage.getItem("admin_token");
   const { setActiveView } = useOutletContext();
-  const [editMode, setEditMode] = useState(false);
+
   const [products, setProducts] = useState([]);
   const [promotion, setPromotion] = useState(null);
   const [reason, setReason] = useState("");
+  const [editMode, setEditMode] = useState(false);
 
+  /* FETCH PROMOTION */
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
+    const fetchPromotion = async () => {
+      try {
+        const res = await axios.get(
+          `${API}/admin/promotions/supplier/${promoId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setPromotion(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
-    axios.get(`${API}/admin/promotions/supplier/${promoId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setPromotion(res.data));
-  }, [promoId]);
+    fetchPromotion();
+  }, [promoId, token]);
 
+  /* FETCH PRODUCTS */
   useEffect(() => {
     if (!promotion?.target_ids) return;
 
-    axios.get(`${API}/admin/products/by-ids`, {
-        params: { ids: promotion.target_ids.join(",") }
-    }).then(res => setProducts(res.data));
+    axios
+      .get(`${API}/admin/products/by-ids`, {
+        params: { ids: promotion.target_ids.join(",") },
+      })
+      .then((res) => setProducts(res.data));
   }, [promotion]);
 
+  /* DECISION */
   const decision = async (action) => {
-    const token = localStorage.getItem("admin_token");
-
     if (action === "REJECT" && !reason.trim()) {
-        alert("Please enter rejection reason");
-        return;
+      alert("Enter rejection reason");
+      return;
     }
 
     await axios.post(
@@ -45,9 +58,11 @@ const AdminPromotionReview = () => {
         action,
         priority_level: promotion.priority_level,
         bid_amount: promotion.bid_amount,
-        decision_reason: action === "REJECT" ? reason : null
+        decision_reason: action === "REJECT" ? reason : null,
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
     );
 
     localStorage.removeItem("review_promo_id");
@@ -59,88 +74,78 @@ const AdminPromotionReview = () => {
   return (
     <div className="review_container">
       <div className="review_card">
+        <h2 className="title">Promotion Review</h2>
 
-        <h2>Promotion Review</h2>
+        <div className="review_grid">
 
-        <div className="review_section">
-          <p><strong>Supplier:</strong> {promotion.company_name_english} (ID: {promotion.supplier_ids})</p>
-          <p><strong>Target Type:</strong> {promotion.target_type}</p>
-        </div>
-
-        <div className="review_section">
-          <h4>Products</h4>
-          {products.map(p => (
-            // <p key={p.product_id}>
-            <p>{p.product_name_english} (ID: {p.product_id}) </p>
-          ))}
-        </div>
-
-        <div className="review_section">
-          <h4>Content</h4>
-          <p><strong>Title:</strong> {promotion.title}</p>
-          <p><strong>Headline:</strong> {promotion.headline}</p>
-          <p><strong>Description:</strong> {promotion.description}</p>
-          <p><strong>Cities:</strong> {promotion.location_values?.join(", ")}</p>
-        </div>
-
-        <div className="review_section">
-          {promotion.image_url && (
-            <div className="banner_preview">
-              <img src={promotion.image_url} alt="Banner" />
+          {/* LEFT SIDE */}
+          <div>
+            {/* SUPPLIER */}
+            <div className="box">
+              <h3>Supplier</h3>
+              <p>
+                {promotion.company_name_english} (ID: {promotion.supplier_ids})
+              </p>
+              <p>
+                <strong>Target Type:</strong> {promotion.target_type}
+              </p>
             </div>
-          )}
+
+            {/* PRODUCTS */}
+            <div className="box">
+              <h3>Products</h3>
+              {products.map((p) => (
+                <p key={p.product_id}>
+                  • {p.product_name_english} (ID: {p.product_id})
+                </p>
+              ))}
+            </div>
+
+            {/* CONTENT */}
+            <div className="box">
+              <h3>Content</h3>
+              <p><b>Title:</b> {promotion.title}</p>
+              <p><b>Headline:</b> {promotion.headline}</p>
+              <p><b>Description:</b> {promotion.description}</p>
+              <p><b>Cities:</b> {promotion.location_values?.join(", ")}</p>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div>
+            {/* IMAGE */}
+            {promotion.image_url && (
+              <div className="image_box">
+                <img src={promotion.image_url} alt="banner" />
+              </div>
+            )}
+
+            {/* OFFER DETAILS */}
+            <div className="box">
+              <h3>Offer Details</h3>
+
+              <p><b>Offer:</b> {promotion.offer_type} - {promotion.offer_value}</p>
+              <p><b>Priority:</b> {promotion.priority_level}</p>
+              <p><b>Bid:</b> QAR {promotion.bid_amount}</p>
+              <p><b>Start:</b> {new Date(promotion.start_date).toLocaleDateString()}</p>
+              <p><b>End:</b> {new Date(promotion.end_date).toLocaleDateString()}</p>
+            </div>
+          </div>
+
         </div>
 
-        <div className="review_section">
-          <p><strong>Offer:</strong> {promotion.offer_type} - {promotion.offer_value}</p>
-          {/* <p><strong>Priority:</strong> {promotion.priority_level}</p> */}
-          {editMode ? (
-            <input
-              value={promotion.priority_level}
-              onChange={(e) =>
-                setPromotion({...promotion, priority_level: e.target.value})
-              }
-            />
-          ) : (
-            <p><strong>Priority:</strong> {promotion.priority_level}</p>
-          )}
-          {/* <p><strong>Bid:</strong> QAR{promotion.bid_amount}</p> */}
-          {editMode ? (
-            <input
-              type="number"
-              value={promotion.bid_amount}
-              onChange={(e) =>
-                setPromotion({
-                  ...promotion,
-                  bid_amount: e.target.value
-                })
-              }
-            />
-          ) : (
-            <p><strong>Bid:</strong> QAR{promotion.bid_amount}</p>
-          )}
-          {/* <p><strong>Start:</strong> {promotion.start_date}</p> */}
-          <p><strong>Start:</strong> {new Date(promotion.start_date).toLocaleDateString()}</p>
-          <p><strong>End:</strong> {promotion.end_date}</p>
-        </div>
-
+        {/* BUTTONS */}
         <div className="review_actions">
-          <button 
-            className="approve_btn"
-            onClick={() => decision("APPROVE")}
-          >
+          <button className="approve_btn" onClick={() => decision("APPROVE")}>
             Approve
           </button>
 
-          <button 
-            className="reject_btn"
-            onClick={() => setEditMode(true)}
-          >
+          <button className="reject_btn" onClick={() => setEditMode(true)}>
             Reject
           </button>
-
         </div>
 
+        {/* REJECT BOX */}
         {editMode && (
           <div className="reject_section">
             <textarea
@@ -167,7 +172,6 @@ const AdminPromotionReview = () => {
             </button>
           </div>
         )}
-
       </div>
     </div>
   );

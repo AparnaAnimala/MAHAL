@@ -34,7 +34,7 @@ const Topbar = () => {
                   <option>€EUR</option>
                   <option>¥JPY</option>
                   <option>£GBP</option>
-                  <option>₹INR</option>
+                  <option>QAR INR</option>
                 </select>
 
               </div>

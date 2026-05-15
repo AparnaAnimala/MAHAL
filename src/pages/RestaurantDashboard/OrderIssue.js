@@ -1,7 +1,7 @@
 // import React, { useEffect, useState } from "react";
 // import "../css/OrderIssue.css";
 
-// const API = "http://127.0.0.1:5000/api/v1/orders";
+// const API = "http://192.168.2.9:5000/api/v1/orders";
 
 // export default function OrderIssue({ orderId, onBack }) {
 //   const [issue, setIssue] = useState(null);
@@ -244,7 +244,8 @@
 import React, { useEffect, useState } from "react";
 import "../css/OrderIssue.css";
 import { useParams, useNavigate } from "react-router-dom";
-const API = "http://127.0.0.1:5000/api/v1/orders";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/v1/orders";
 
 export default function OrderIssue() {
   const [orderItems, setOrderItems] = useState([]);
@@ -264,6 +265,21 @@ export default function OrderIssue() {
 
   const previewIssueId = `IR-${new Date().getFullYear()}-${String(orderId).slice(-4)}`;
   const previewReportedAt = new Date().toISOString();
+  const { t, i18n } = useTranslation();
+
+  const formatNumber = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  ).format(value);
+};
+
+const formatOrderId = (id) => {
+  if (i18n.language !== "ar") return id;
+
+  return id.replace(/\d/g, (d) =>
+    new Intl.NumberFormat("ar-QA").format(d)
+  );
+};
 
  // ===============================
 // LOAD ISSUE (IF EXISTS)
@@ -328,12 +344,12 @@ useEffect(() => {
   // ===============================
   const submitIssue = async () => {
     if (!desc.trim()) {
-      alert("Please describe the issue");
+      alert(t("resdescribe_issue_error"));
       return;
     }
 
     if (!selectedProducts.length) {
-      alert("Please select at least one product");
+     alert(t("resselect_product_error"));
       return;
     }
 
@@ -356,7 +372,7 @@ useEffect(() => {
     });
 
     if (!res.ok) {
-      alert("Failed to report issue");
+      alert(t("resissue_failed"));
       return;
     }
 
@@ -386,7 +402,7 @@ useEffect(() => {
   if (!orderId) return;
 
   fetch(
-    `http://127.0.0.1:5000/api/v1/orders/restaurant/orders/${orderId}`,
+    `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${orderId}`,
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -423,28 +439,30 @@ useEffect(() => {
 
     {/* HEADER */}
     <div className="issue_header">
-      <h5 className="page_title">Order Issue Details</h5>
+      <h5 className="page_title">{t("resorder_issue_details")}</h5>
       <button className="back_btn" onClick={() => navigate(-1)}>
-        ← Back to Orders
+       ← {t("resback_to_orders")}
       </button>
     </div>
 
     {/* SUMMARY STRIP */}
     <div className="issue_summary_strip">
       <div>
-        <label>Issue Report ID</label>
-        <span>{issue ? issue.issue_report_id : previewIssueId}</span>
+        <label>{t("resissue_report_id")}</label>
+        {formatOrderId(issue ? issue.issue_report_id : previewIssueId)}
       </div>
 
       <div>
-        <label>Order ID</label>
-        <span>{orderId}</span>
+        <label>{t("resorder_id")}</label>
+        <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+        {formatOrderId(orderId)}
+      </span>
       </div>
 
       <div>
-        <label>Reported on</label>
+        <label>{t("resreported_on")}</label>
         <span>
-          {new Date(issue?.reported_at || previewReportedAt).toLocaleString()}
+          {new Date(issue?.reported_at || previewReportedAt).toLocaleString(i18n.language === "ar" ? "ar-QA" : "en-US")}
         </span>
       </div>
     </div>
@@ -455,20 +473,20 @@ useEffect(() => {
       {/* LEFT PANEL */}
       <div className="col-md-8">
         <div className="card issue_card">
-          <h6 className="section_title">Issue Information</h6>
+          <h6 className="section_title">{t("resissue_information")}</h6>
 
           {!issue && (
             <>
               <div className="mb-3">
-                <label className="form-label">Issue Type</label>
+                <label className="form-label">{t("resissue_type")}</label>
                 <select
                   className="form-select"
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
                 >
-                  <option>Missing Items</option>
-                  <option>Damaged Items</option>
-                  <option>Wrong Items</option>
+                  <option>{t("resmissing_items")}</option>
+                  <option>{t("resdamaged_items")}</option>
+                  <option>{t("reswrong_items")}</option>
                 </select>
               </div>
 
@@ -478,13 +496,15 @@ useEffect(() => {
                   className="form-select"
                   onChange={handleProductSelect}
                 >
-                  <option value="">Select product</option>
+                  <option value="">{t("resselect_product")}</option>
                   {orderItems.map((item) => (
                     <option
                       key={item.product_name_english}
                       value={item.product_name_english}
                     >
-                      {item.product_name_english}
+                        {i18n.language === "ar"
+                          ? item.product_name_arabic || item.product_name_english
+                          : item.product_name_english}
                     </option>
                   ))}
                 </select>
@@ -499,7 +519,11 @@ useEffect(() => {
 
                     return (
                       <span key={idx} className="oi-product-chip">
-                        {product?.product_name_english || pid}
+                        {product
+                          ? (i18n.language === "ar"
+                              ? product.product_name_arabic || product.product_name_english
+                              : product.product_name_english)
+                          : pid}
                         <button
                           type="button"
                           onClick={() => removeProduct(pid)}
@@ -513,11 +537,11 @@ useEffect(() => {
               )}
 
               <div className="mb-4">
-                <label className="form-label">Description</label>
+                <label className="form-label">{t("resdescription")}</label>
                 <textarea
                   className="form-control"
                   rows="4"
-                  placeholder="Describe the issue..."
+                   placeholder={t("resdescribe_issue")}
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                 ></textarea>
@@ -542,7 +566,7 @@ useEffect(() => {
                   }
                 >
                   <i className="fa fa-camera me-2"></i>
-                  Add Photos
+                  {t("resadd_photos")}
                 </button>
               </div>
 
@@ -569,7 +593,7 @@ useEffect(() => {
               <div className="action_buttons d-flex">
                 <button className="btn btn-orange" onClick={submitIssue}>
                   <i className="fa fa-paper-plane me-2"></i>
-                  Submit Issue
+                  {t("ressubmit_issue")}
                 </button>
               </div>
             </>
@@ -579,19 +603,30 @@ useEffect(() => {
             <div className="oi-issue-view">
 
               <div className="mb-3">
-                <label className="form-label">Products</label>
+                <label className="form-label">{t("resproducts")}</label>
 
                 <div className="oi-selected-products">
-                  {issue.damaged_products.map((p, idx) => (
-                    <span key={idx} className="oi-product-chip">
-                      {p.product_name}
-                    </span>
-                  ))}
+                  {issue.damaged_products.map((p, idx) => {
+                    const product = orderItems.find(
+                      (i) => i.product_id === p.product_id
+                    );
+
+                    const name =
+                      i18n.language === "ar"
+                        ? product?.product_name_arabic || product?.product_name_english
+                        : product?.product_name_english ;
+
+                    return (
+                      <span key={idx} className="oi-product-chip">
+                        {name}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Description</label>
+                <label className="form-label">{t("resdescription")}</label>
                 <p>{issue.description}</p>
               </div>
 
@@ -618,28 +653,28 @@ useEffect(() => {
 
               {issue.status !== "UNDER_REVIEW" && (
                 <div className="oi-field oi-supplier-response mt-3">
-                  <h6>Supplier Response</h6>
+                 <h6>{t("ressupplier_response")}</h6>
 
                   {issue.action && (
                     <p>
-                      <b>Action:</b> {issue.action}
+                      <b>{t("resaction")}:</b> {issue.action}
                     </p>
                   )}
 
                   {issue.refund !== null && (
                     <p>
-                      <b>Refund:</b> ${issue.refund}
+                      <b>{t("resrefund")}:</b> ${formatNumber(issue.refund)}
                     </p>
                   )}
 
                   {issue.notes && (
                     <p>
-                      <b>Notes:</b> {issue.notes}
+                      <b>{t("resnotes")}:</b> {issue.notes}
                     </p>
                   )}
 
                   <p>
-                    <b>Status:</b> {issue.status}
+                    <b>{t("resstatus")}:</b> {issue.status}
                   </p>
                 </div>
               )}
@@ -652,25 +687,25 @@ useEffect(() => {
       {/* RIGHT PANEL */}
       <div className="col-md-4">
         <div className="card issue_card h-100">
-          <h6 className="section_title">Recent Activity</h6>
+          <h6 className="section_title">{t("resrecent_activity")}</h6>
 
           {issue && (
             <>
               <div className="oi-activity">
-                <b>Issue Reported</b>
+                <b>{t("resissue_reported")}</b>
                 <small>
                   {new Date(issue.reported_at).toLocaleString()}
                 </small>
               </div>
 
               <div className="oi-activity">
-                <b>Issue Under Review</b>
-                <small>Waiting for supplier response</small>
+               <b>{t("resissue_under_review")}</b>
+                <small>{t("reswaiting_supplier")}</small>
               </div>
 
               {issue.resolved_at && (
                 <div className="oi-activity">
-                  <b>Issue Resolved</b>
+                  <b>{t("resissue_resolved")}</b>
                   <small>
                     {new Date(issue.resolved_at).toLocaleString()}
                   </small>
@@ -681,13 +716,13 @@ useEffect(() => {
 
           <div className="support_box">
             <i className="fa fa-headset support_icon"></i>
-            <p className="fw-bold mb-1">Need Help?</p>
+            <p className="fw-bold mb-1">{t("resneed_help")}</p>
 
             <a
               href={`tel:${issue?.supplier_phone}`}
               className="btn btn-outline-orange btn-sm"
             >
-              Contact Support
+              {t("rescontact_support")}
             </a>
           </div>
         </div>
@@ -697,7 +732,3 @@ useEffect(() => {
   </div>
 );
 }
-
-
-
-

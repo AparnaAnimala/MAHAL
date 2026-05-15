@@ -18,7 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 
-const API_PROFILE = "http://127.0.0.1:5000/api/profile";
+const API_PROFILE = "http://192.168.2.9:5000/api/profile";
 
 function debounce(func, delay) {
   let timeout;
@@ -670,7 +670,7 @@ export default function ProfileSetup({ identity, role, linkedId, adminEdit = fal
     const fetchMaster = async (category) => {
       try {
         const res = await fetch(
-          `http://127.0.0.1:5000/api/profile/master/${category}`,
+          `http://192.168.2.9:5000/api/profile/master/${category}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -769,8 +769,8 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
 
   const url =
     roleLower === "restaurant"
-      ? "http://127.0.0.1:5000/api/profile/request-change-restaurant"
-      : "http://127.0.0.1:5000/api/profile/request-change-supplier";
+      ? "http://192.168.2.9:5000/api/profile/request-change-restaurant"
+      : "http://192.168.2.9:5000/api/profile/request-change-supplier";
 
   // 🔥 **CRITICAL FIX — NO `data:{}` WRAPPER**
   const payload = {
@@ -948,7 +948,7 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
       }
 
       const res = await fetch(
-        `http://127.0.0.1:5000/api/profile/${roleLower}/branch/list/${id}`,
+        `http://192.168.2.9:5000/api/profile/${roleLower}/branch/list/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -997,7 +997,7 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
       }
 
       const res = await fetch(
-        `http://127.0.0.1:5000/api/profile/restaurant/branch/list/${id}`, {
+        `http://192.168.2.9:5000/api/profile/restaurant/branch/list/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
 
@@ -1070,7 +1070,7 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
     if (!text || !text.trim()) return "";
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/profile/translate", {
+      const res = await fetch("http://192.168.2.9:5000/api/profile/translate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2083,7 +2083,7 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
           country: (form.store.country || "").trim(),
         };
 
-        const r = await fetch("http://127.0.0.1:5000/api/profile/supplier/store", {
+        const r = await fetch("http://192.168.2.9:5000/api/profile/supplier/store", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -2138,7 +2138,7 @@ const submitChangeRequest = async (section, newData, extra = {}) => {
           branchName: form.store.branchName || "",
         };
 
-        const r = await fetch("http://127.0.0.1:5000/api/profile/restaurant/store", {
+        const r = await fetch("http://192.168.2.9:5000/api/profile/restaurant/store", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

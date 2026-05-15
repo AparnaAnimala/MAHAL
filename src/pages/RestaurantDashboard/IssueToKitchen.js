@@ -1,13 +1,203 @@
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import "../css/issue_to_kitchen.css";
+// import { useSearchParams } from "react-router-dom";
+// const API = "http://192.168.2.9:5000/api/inventory";
+
+// const IssueToKitchen = () => {
+//   const restaurantId = localStorage.getItem("linked_id");
+//   const navigate = useNavigate();
+
+//   const [items, setItems] = useState([]);
+//   const [issueMap, setIssueMap] = useState({});
+//   const [remarks, setRemarks] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [submitting, setSubmitting] = useState(false);
+  
+
+//   // LOAD INVENTORY
+//   useEffect(() => {
+//     axios
+//       .get(`${API}/restaurant/stock?restaurant_id=${restaurantId}`)
+//       .then(res => {
+//         setItems(res.data || []);
+//         setLoading(false);
+//       })
+//       .catch(() => setLoading(false));
+//   }, [restaurantId]);
+
+//   // UPDATE QTY (KEYED BY product_id)
+//   const updateQty = (productId, value, max) => {
+//     if (value < 0 || value > max) return;
+//     setIssueMap(prev => ({ ...prev, [productId]: value }));
+//   };
+
+//   const totalQty = Object.values(issueMap).reduce(
+//     (sum, qty) => sum + Number(qty || 0),
+//     0
+//   );
+
+//   const totalItems = Object.values(issueMap).filter(q => q > 0).length;
+
+//   // SUBMIT ISSUE
+//   const submitIssue = async () => {
+//     const payload = Object.entries(issueMap)
+//       .filter(([_, qty]) => qty > 0)
+//       .map(([product_id, quantity]) => ({
+//         product_id: Number(product_id),
+//         quantity
+//       }));
+
+//     if (!payload.length) {
+//       alert("Please issue at least one item");
+//       return;
+//     }
+
+//     try {
+//       setSubmitting(true);
+//       await axios.post(`${API}/issue-to-kitchen`, {
+//         restaurant_id: restaurantId,
+//         items: payload,
+//         remarks
+//       });
+
+//       navigate("/restaurantdashboard/inventory");
+//     } catch (e) {
+//       console.error(e);
+//       alert("Failed to issue items");
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   };
+
+//   if (loading) return <div className="issue-loading">Loading inventory…</div>;
+
+//   return (
+//     <div className="issue-container">
+//       {/* HEADER */}
+//       <div className="issue-header">
+//         <h2>🍳 Issue to Kitchen</h2>
+//         <p>Distribute ingredients for daily operations</p>
+//       </div>
+
+//       {/* ITEMS */}
+//       {/* ITEMS */}
+// <div className="issue-table-wrapper">
+//   <table className="issue-table">
+//     <thead>
+//       <tr>
+//         <th>Item</th>
+//         <th>Available</th>
+//         <th>Issue Qty</th>
+//         <th>Action</th>
+//       </tr>
+//     </thead>
+
+//     <tbody>
+//       {items.map(item => {
+//         const available = Number(item.available_qty || 0);
+//         const issued = issueMap[item.product_id] || 0;
+
+//         return (
+//           <tr key={item.product_id}>
+//             <td className="item-name">{item.product_name}</td>
+
+//             <td className="available">
+//               {available.toFixed(2)}
+//             </td>
+
+//             <td>
+//               <input
+//                 type="number"
+//                 min="0"
+//                 max={available}
+//                 value={issued}
+//                 onChange={e =>
+//                   updateQty(
+//                     item.product_id,
+//                     Number(e.target.value),
+//                     available
+//                   )
+//                 }
+//               />
+//             </td>
+
+//             <td className="qty-actions">
+//               <button
+//                 onClick={() =>
+//                   updateQty(item.product_id, issued - 1, available)
+//                 }
+//               >
+//                 −
+//               </button>
+//               <button
+//                 onClick={() =>
+//                   updateQty(item.product_id, issued + 1, available)
+//                 }
+//               >
+//                 +
+//               </button>
+//             </td>
+//           </tr>
+//         );
+//       })}
+//     </tbody>
+//   </table>
+// </div>
+
+
+//       {/* REMARKS */}
+//       <div className="remarks">
+//         <label>Remarks</label>
+//         <textarea
+//           placeholder="Optional notes for kitchen staff"
+//           value={remarks}
+//           onChange={e => setRemarks(e.target.value)}
+//         />
+//       </div>
+
+//       {/* FOOTER */}
+//       <div className="issue-footer">
+//         <div className="summary">
+//           <b>{totalItems}</b> items • <b>{totalQty.toFixed(2)}</b> qty
+//         </div>
+
+//         <div className="actions">
+//             <button
+//             className="btn_save"
+//             disabled={submitting}
+//             onClick={submitIssue}
+//           >
+//             {submitting ? "Issuing…" : "Issue to Kitchen"}
+//           </button>
+//           <button className="btn cancel" onClick={() => navigate(-1)}>
+//             Cancel
+//           </button>
+          
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default IssueToKitchen;
+
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../css/issue_to_kitchen.css";
 import { useSearchParams } from "react-router-dom";
-const API = "http://127.0.0.1:5000/api/inventory";
+import { useTranslation } from "react-i18next";
+
+const API = "http://192.168.2.9:5000/api/inventory";
 
 const IssueToKitchen = () => {
   const restaurantId = localStorage.getItem("linked_id");
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [items, setItems] = useState([]);
   const [issueMap, setIssueMap] = useState({});
@@ -15,6 +205,11 @@ const IssueToKitchen = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
+  const formatNumber = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  ).format(value);
+};
 
   // LOAD INVENTORY
   useEffect(() => {
@@ -25,9 +220,9 @@ const IssueToKitchen = () => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [restaurantId]);
+  }, [restaurantId, i18n.language]);
 
-  // UPDATE QTY (KEYED BY product_id)
+  // UPDATE QTY
   const updateQty = (productId, value, max) => {
     if (value < 0 || value > max) return;
     setIssueMap(prev => ({ ...prev, [productId]: value }));
@@ -50,12 +245,13 @@ const IssueToKitchen = () => {
       }));
 
     if (!payload.length) {
-      alert("Please issue at least one item");
+      alert(t("issueAtLeastOne"));
       return;
     }
 
     try {
       setSubmitting(true);
+
       await axios.post(`${API}/issue-to-kitchen`, {
         restaurant_id: restaurantId,
         items: payload,
@@ -65,93 +261,116 @@ const IssueToKitchen = () => {
       navigate("/restaurantdashboard/inventory");
     } catch (e) {
       console.error(e);
-      alert("Failed to issue items");
+      alert(t("issueFailed"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="issue-loading">Loading inventory…</div>;
+  if (loading) {
+    return <div className="issue-loading">{t("loadingInventory")}</div>;
+  }
 
   return (
-    <div className="issue-container">
+    <div
+      className="issue-container"
+      dir={i18n.language === "ar" ? "rtl" : "ltr"}
+    >
       {/* HEADER */}
       <div className="issue-header">
-        <h2>🍳 Issue to Kitchen</h2>
-        <p>Distribute ingredients for daily operations</p>
+        <h2>🍳 {t("issueKitchenTitle")}</h2>
+        <p>{t("issueKitchenSubtitle")}</p>
       </div>
 
       {/* ITEMS */}
-      {/* ITEMS */}
-<div className="issue-table-wrapper">
-  <table className="issue-table">
-    <thead>
-      <tr>
-        <th>Item</th>
-        <th>Available</th>
-        <th>Issue Qty</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+      <div className="issue-table-wrapper">
+        <table className="issue-table">
+          <thead>
+            <tr>
+              <th>{t("item")}</th>
+              <th>{t("available")}</th>
+              <th>{t("issueQty")}</th>
+              <th>{t("action")}</th>
+            </tr>
+          </thead>
 
-    <tbody>
-      {items.map(item => {
-        const available = Number(item.available_qty || 0);
-        const issued = issueMap[item.product_id] || 0;
+          <tbody>
+            {items.map(item => {
+              const available = Number(item.available_qty || 0);
+              const issued = issueMap[item.product_id] || 0;
 
-        return (
-          <tr key={item.product_id}>
-            <td className="item-name">{item.product_name}</td>
+                const productName =
+                i18n.language === "ar"
+                  ? (item.product_name_arabic?.trim() ||
+                    item.product_name_english ||
+                    item.product_name ||
+                    "No Name")
+                  : (item.product_name_english ||
+                    item.product_name ||
+                    "No Name");
 
-            <td className="available">
-              {available.toFixed(2)}
-            </td>
+              return (
+                <tr key={item.product_id}>
+                  <td className="item-name">{productName}</td>
 
-            <td>
-              <input
-                type="number"
-                min="0"
-                max={available}
-                value={issued}
-                onChange={e =>
-                  updateQty(
-                    item.product_id,
-                    Number(e.target.value),
-                    available
-                  )
-                }
-              />
-            </td>
+                  <td className="available">
+                    {formatNumber(available.toFixed(2))}
+                  </td>
 
-            <td className="qty-actions">
-              <button
-                onClick={() =>
-                  updateQty(item.product_id, issued - 1, available)
-                }
-              >
-                −
-              </button>
-              <button
-                onClick={() =>
-                  updateQty(item.product_id, issued + 1, available)
-                }
-              >
-                +
-              </button>
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max={available}
+                      value={issued}
+                      onChange={e =>
+                        updateQty(
+                          item.product_id,
+                          Number(e.target.value),
+                          available
+                        )
+                      }
+                    />
+                  </td>
 
+                  <td className="qty-actions">
+                    <button
+                      onClick={() =>
+                        updateQty(
+                          item.product_id,
+                          issued - 1,
+                          available
+                        )
+                      }
+                    >
+                      −
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        updateQty(
+                          item.product_id,
+                          issued + 1,
+                          available
+                        )
+                      }
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* REMARKS */}
       <div className="remarks">
-        <label>Remarks</label>
+        <label>{t("remarks")}</label>
+
         <textarea
-          placeholder="Optional notes for kitchen staff"
+          placeholder={t("remarksPlaceholder")}
           value={remarks}
           onChange={e => setRemarks(e.target.value)}
         />
@@ -160,21 +379,27 @@ const IssueToKitchen = () => {
       {/* FOOTER */}
       <div className="issue-footer">
         <div className="summary">
-          <b>{totalItems}</b> items • <b>{totalQty.toFixed(2)}</b> qty
+         <b>{formatNumber(totalItems)}</b> {t("items")} •{" "}
+          <b>{formatNumber(totalQty.toFixed(2))}</b> {t("qty")}
         </div>
 
         <div className="actions">
-            <button
+          <button
             className="btn_save"
             disabled={submitting}
             onClick={submitIssue}
           >
-            {submitting ? "Issuing…" : "Issue to Kitchen"}
+            {submitting
+              ? t("issuingNow")
+              : t("issueKitchenButton")}
           </button>
-          <button className="btn cancel" onClick={() => navigate(-1)}>
-            Cancel
+
+          <button
+            className="btn cancel"
+            onClick={() => navigate(-1)}
+          >
+            {t("cancel")}
           </button>
-          
         </div>
       </div>
     </div>
@@ -182,4 +407,3 @@ const IssueToKitchen = () => {
 };
 
 export default IssueToKitchen;
-

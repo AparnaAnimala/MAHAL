@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 // import * as XLSX from "xlsx";
 // import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -14,6 +15,9 @@ const ProductReport = () => {
   const [stockFilter, setStockFilter] = useState("ALL");
   const [minStock, setMinStock] = useState("");
   const [maxStock, setMaxStock] = useState("");
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === "ar";
+  
   
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -26,7 +30,7 @@ const ProductReport = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://127.0.0.1:5000/api/reports/products",
+        "http://192.168.2.9:5000/api/reports/products",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -43,6 +47,10 @@ const ProductReport = () => {
   useEffect(() => {
     loadReport();
   }, []);
+
+  useEffect(() => {
+  document.documentElement.dir = isArabic ? "rtl" : "ltr";
+}, [isArabic]);
 
   /* ================= FILTER ================= */
   const filteredData = useMemo(() => {
@@ -120,10 +128,18 @@ const ProductReport = () => {
     };
 
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/reports/products/${type}`,
+      `http://192.168.2.9:5000/api/reports/products/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
-        params,              // ✅ FILTERS SENT
+        params: {
+          status: statusFilter,
+          active: activeFilter,
+          name: nameFilter,
+          stock: stockFilter,
+          minStock,
+          maxStock,
+          lang: i18n.language   // ✅ ADD THIS
+        },
         responseType: "blob",
       }
     );
@@ -136,6 +152,22 @@ const ProductReport = () => {
     URL.revokeObjectURL(url);
   };
 
+  const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB"
+  ).format(new Date(date));
+};
+const currencyMap = {
+  QAR: isArabic ? "ر.ق" : "QAR",
+  INR: isArabic ? "₹" : "INR",
+};
+
 
   /* ================= UI ================= */
   return (
@@ -147,14 +179,14 @@ const ProductReport = () => {
 
     {/* HEADER */}
     <div className="page_header glass">
-      <h2>Product Report</h2>
+      <h2>{t("productReport")}</h2>
 
       <div className="header_actions">
         <button className="btn dark bulk_btn" onClick={() => download("excel")}>
-          ⬇ Excel
+          {t("excel")}
         </button>
         <button className="btn dark pdf_btn" onClick={() => download("pdf")}>
-          ⬇ PDF
+          {t("download_pdf")}
         </button>
       </div>
     </div>
@@ -168,14 +200,14 @@ const ProductReport = () => {
           setCurrentPage(1);
         }}
       >
-        <option value="ALL">All Approval Status</option>
-        <option value="Pending Approval">Pending Approval</option>
-        <option value="Approved">Approved</option>
+        <option value="ALL">{t("allStatus")}</option>
+        <option value="Pending Approval">{t("pending")}</option>
+        <option value="Approved">{t("approved")}</option>
       </select>
 
       <input
         type="text"
-        placeholder="Search product..."
+        placeholder={t("search")}
         value={nameFilter}
         onChange={(e) => {
           setNameFilter(e.target.value);
@@ -190,22 +222,22 @@ const ProductReport = () => {
           setCurrentPage(1);
         }}
       >
-        <option value="ALL">All Stock</option>
-        <option value="IN_STOCK">In Stock</option>
-        <option value="LOW_STOCK">Low Stock</option>
-        <option value="OUT_OF_STOCK">Out of Stock</option>
+        <option value="ALL">{t("allStock")}</option>
+        <option value="IN_STOCK">{t("inStock")}</option>
+        <option value="LOW_STOCK">{t("lowStock")}</option>
+        <option value="OUT_OF_STOCK">{t("outOfStock")}</option>
       </select>
 
       <input
         type="number"
-        placeholder="Min stock"
+        placeholder={t("minStock")}
         value={minStock}
         onChange={(e) => setMinStock(e.target.value)}
       />
 
       <input
         type="number"
-        placeholder="Max stock"
+        placeholder={t("maxStock")} 
         value={maxStock}
         onChange={(e) => setMaxStock(e.target.value)}
       />
@@ -213,31 +245,31 @@ const ProductReport = () => {
 
     {/* TABLE */}
     {loading ? (
-      <div className="report-loading">Loading...</div>
+      <div className="report-loading">{t("loading")}</div>
     ) : paginatedData.length === 0 ? (
-      <div className="report-empty">No products found</div>
+      <div className="report-empty">{t("noProducts")}</div>
     ) : (
       <>
         <div className="table_scroll">
           <table className="mini_table">
             <thead>
               <tr>
-                <th>Branch</th>
-                <th>Category</th>
-                <th>Company</th>
-                <th>Created At</th>
-                <th>Currency</th>
-                <th>Expiry Date</th>
-                <th>Price</th>
-                <th>Product ID</th>
-                <th>Product (AR)</th>
-                <th>Product (EN)</th>
-                <th>Status</th>
-                <th>Shelf Life</th>
-                <th>Stock</th>
-                <th>Store</th>
-                <th>Unit</th>
-                <th>Updated</th>
+                <th>{t("table.branch")}</th>
+                <th>{t("table.category")}</th>
+                <th>{t("table.company")}</th>
+                <th>{t("table.createdAt")}</th>
+                <th>{t("table.currency")}</th>
+                <th>{t("table.expiryDate")}</th>
+                <th>{t("table.price")}</th>
+                <th>{t("table.productId")}</th>
+                <th>{t("table.productAr")}</th>
+                <th>{t("table.productEn")}</th>
+                <th>{t("table.status")}</th>
+                <th>{t("table.shelfLife")}</th>
+                <th>{t("table.stock")}</th>
+                <th>{t("table.store")}</th>
+                <th>{t("table.unit")}</th>
+                <th>{t("table.updated")}</th>
               </tr>
             </thead>
 
@@ -249,33 +281,31 @@ const ProductReport = () => {
                   <td>{p.branch_name_english}</td>
 
                   {/* Category */}
-                  <td>{p.category_id}</td>
+                  <td>{formatNumber(p.category_id)}</td>
 
                   {/* Company */}
-                  <td>{p.company_name_english}</td>
+                  <td>
+                    {isArabic ? p.company_name_arabic : p.company_name_english}
+                  </td>
 
                   {/* Created At */}
                   <td>
-                    {p.created_at
-                      ? new Date(p.created_at).toLocaleDateString()
-                      : "-"}
+                    {p.created_at ? formatDate(p.created_at) : "-"}
                   </td>
 
                   {/* Currency */}
-                  <td>{p.currency}</td>
+                  <td>{currencyMap[p.currency] || p.currency}</td>
 
                   {/* Expiry Date */}
                   <td>
-                    {p.expiry_date
-                      ? new Date(p.expiry_date).toLocaleDateString()
-                      : "-"}
+                    {p.expiry_date ? formatDate(p.expiry_date) : "-"}
                   </td>
 
                   {/* Price */}
-                  <td>{p.price_per_unit}</td>
+                  <td>{formatNumber(p.price_per_unit)}</td>
 
                   {/* Product ID */}
-                  <td>{p.product_id}</td>
+                  <td>{formatNumber(p.product_id)}</td>
 
                   {/* Product (AR) */}
                   <td>{p.product_name_arabic}</td>
@@ -291,10 +321,18 @@ const ProductReport = () => {
                   </td>
 
                   {/* Shelf Life */}
-                  <td>{p.shelf_life}</td>
+                  <td>
+                  {isArabic
+                    ? p.shelf_life
+                        ?.replace("days", "أيام")
+                        .replace("day", "يوم")
+                        .replace("months", "أشهر")
+                        .replace("month", "شهر")
+                    : p.shelf_life}
+                </td>
 
                   {/* Stock */}
-                  <td>{p.stock_availability}</td>
+                  <td>{formatNumber(p.stock_availability)}</td>
 
                   {/* Store */}
                   <td>{p.store_name_english}</td>
@@ -304,9 +342,7 @@ const ProductReport = () => {
 
                   {/* Updated */}
                   <td>
-                    {p.updated_at
-                      ? new Date(p.updated_at).toLocaleDateString()
-                      : "-"}
+                    {p.updated_at ? formatDate(p.updated_at) : "-"}
                   </td>
                 </tr>
               ))}
@@ -321,18 +357,18 @@ const ProductReport = () => {
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
+           {t("prev")}
           </button>
 
           <span>
-            Page {currentPage} of {totalPages}
+            {t("page")} {formatNumber(currentPage)} {t("of")} {formatNumber(totalPages)}
           </span>
 
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
+            {t("next")}
           </button>
         </div>
       </>

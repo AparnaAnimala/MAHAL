@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "../css/coupons.css";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = "http://192.168.2.9:5000/api";
 
 const CouponPopup = ({
   onClose,
@@ -139,7 +139,7 @@ const eligible =
 
 <button className="apply_disabled">
   {offer.amount_needed > 0
-    ? `ADD ₹${offer.amount_needed.toFixed(0)}`
+    ? `ADD QAR ${offer.amount_needed.toFixed(0)}`
     : "ADD"}
 </button>
 
@@ -163,16 +163,16 @@ const eligible =
                   <p className="coupon_discount">
                     {offer.discount_type === "PERCENTAGE"
                       ? `Get ${offer.discount_value}% off`
-                      : `Flat ₹${offer.discount_value} off`}
+                      : `Flat QAR ${offer.discount_value} off`}
                   </p>
 
                   <p className="coupon_min">
-                    Min order ₹{offer.min_order_value}
+                    Min order QAR {offer.min_order_value}
                   </p>
 
                   {offer.max_discount && (
                     <p className="coupon_max">
-                      Max discount ₹{offer.max_discount}
+                      Max discount QAR {offer.max_discount}
                     </p>
                   )}
 

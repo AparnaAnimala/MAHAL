@@ -1,231 +1,273 @@
-// import React, { useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-// const Address = () => {
-//   const navigate = useNavigate();
+const API_PROFILE = "http://192.168.2.9:5000/api/profile";
 
-//   const [form, setForm] = useState({
-//     addressLine: "",
-//     street: "",
-//     area: "",
-//     city: "",
-//     zone: "",
-//     country: "India",
-//     pincode: "",
-//   });
+export default function Address() {
 
-//   const handleChange = (e) => {
-//     setForm({ ...form, [e.target.name]: e.target.value });
-//   };
+  const { role, id, adminMode = false, masterData, setMasterData } = useOutletContext();
+  const isAdmin = adminMode || localStorage.getItem("admin_token");
+  const navigate = useNavigate();
+  const dirtyRef = useRef({});
+  const { t, i18n } = useTranslation();
 
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [translatedAddress, setTranslatedAddress] = useState("");
+  const [translatedCity, setTranslatedCity] = useState("");
+  const [translatedCountry, setTranslatedCountry] = useState("");
 
-//     console.log("Address Saved:", form);
+  const [form, setForm] = useState({
+    address: "",
+    street: "",
+    zone: "",
+    area: "",
+    city: "",
+    country: ""
+  });
 
-//     // 👉 NEXT PAGE
-//     navigate("/my-profile/restuarent/bank");
-//   };
-
-//   return (
-//     <div className="profile-card">
-//       <h3 className="profile-title">Address Information</h3>
-
-//       <form onSubmit={handleSubmit} className="profile-form">
-
-//         {/* ROW 1 */}
-//         <div className="form-row three-col">
-//           <div className="form-group">
-//             <label>Address Line</label>
-//             <input
-//               type="text"
-//               name="addressLine"
-//               value={form.addressLine}
-//               onChange={handleChange}
-//               placeholder="Building / Street name"
-//               required
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Street</label>
-//             <input
-//               type="text"
-//               name="street"
-//               value={form.street}
-//               onChange={handleChange}
-//               placeholder="Street / Road"
-//               required
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Area</label>
-//             <input
-//               type="text"
-//               name="area"
-//               value={form.area}
-//               onChange={handleChange}
-//               placeholder="Area / Locality"
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         {/* ROW 2 */}
-//         <div className="form-row three-col">
-//           <div className="form-group">
-//             <label>City</label>
-//             <input
-//               type="text"
-//               name="city"
-//               value={form.city}
-//               onChange={handleChange}
-//               placeholder="City"
-//               required
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Zone</label>
-//             <select
-//               name="zone"
-//               value={form.zone}
-//               onChange={handleChange}
-//               required
-//             >
-//               <option value="">Select Zone</option>
-//               <option value="Central">Central</option>
-//               <option value="North">North</option>
-//               <option value="South">South</option>
-//               <option value="East">East</option>
-//               <option value="West">West</option>
-//             </select>
-//           </div>
-
-//           <div className="form-group">
-//             <label>Country</label>
-//             <input type="text" value="India" disabled />
-//           </div>
-//         </div>
-
-//         {/* ROW 3 */}
-//         <div className="form-row three-col">
-//           <div className="form-group">
-//             <label>Pincode</label>
-//             <input
-//               type="text"
-//               name="pincode"
-//               value={form.pincode}
-//               onChange={handleChange}
-//               placeholder="Postal code"
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         {/* ACTION */}
-//         <div className="form-actions">
-//           <button type="submit" className="btn-primary">
-//             Save & Next →
-//           </button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default Address;
-
-import React, { useEffect } from "react";
-
-const API_PROFILE = "http://127.0.0.1:5000/api/profile";
-
-export default function Address({
-  form = {},
-  setForm = () => {},
-  handleChange = () => () => {},
-  masterData = {
+  const [translatedMaster, setTranslatedMaster] = useState({
     street: [],
     zone: [],
     area: [],
     city: [],
     country: []
-  },
-  setMasterData = () => {},
-  roleLower,
-  id,
-  ro = {}
-}) {
+  });
 
-  /* ---------------- FETCH ADDRESS ---------------- */
+  const translateText = async (text, targetLang = "ar") => {
+    try {
+      const res = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+      );
+      const data = await res.json();
+      return data[0][0][0];
+    } catch {
+      return text;
+    }
+  };
 
   useEffect(() => {
-    if (!roleLower || !id) return;
+    const translateMasters = async () => {
+      if (i18n.language !== "ar") {
+        setTranslatedMaster(masterData);
+        return;
+      }
 
+      const mapList = async (list) =>
+        Promise.all(list.map(item => translateText(item)));
+
+      setTranslatedMaster({
+        street: await mapList(masterData.street || []),
+        zone: await mapList(masterData.zone || []),
+        area: await mapList(masterData.area || []),
+        city: await mapList(masterData.city || []),
+        country: await mapList(masterData.country || [])
+      });
+    };
+
+    translateMasters();
+  }, [masterData, i18n.language]);
+
+  useEffect(() => {
+    const translateAddress = async () => {
+      if (i18n.language !== "ar") {
+        setTranslatedAddress(form.address);
+        return;
+      }
+
+      if (form.address) {
+        const result = await translateText(form.address);
+        setTranslatedAddress(result);
+      }
+    };
+
+    translateAddress();
+  }, [form.address, i18n.language]);
+
+  useEffect(() => {
+    const translateFormValues = async () => {
+      if (i18n.language !== "ar") {
+        setTranslatedCity(form.city);
+        setTranslatedCountry(form.country);
+        return;
+      }
+
+      if (form.city) {
+        const city = await translateText(form.city);
+        setTranslatedCity(city);
+      }
+
+      if (form.country) {
+        const country = await translateText(form.country);
+        setTranslatedCountry(country);
+      }
+    };
+
+    translateFormValues();
+  }, [form.city, form.country, i18n.language]);
+  
+  const ro = (!isAdmin && !editMode)
+    ? { readOnly: true, disabled: true } : {};
+
+  useEffect(() => {
+    const userId = id || localStorage.getItem("linked_id");
+    if (!role || !userId) return;
     const loadAddress = async () => {
       try {
         const res = await fetch(
-          `${API_PROFILE}/${roleLower}/address/${id}`,
+          `${API_PROFILE}/${role}/address/${userId}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
+              Authorization: `Bearer ${
+                isAdmin
+                  ? localStorage.getItem("admin_token")
+                  : localStorage.getItem("token")
+              }`
             }
           }
         );
-
-        if (!res.ok) {
-          console.error("Address API failed");
-          return;
-        }
-
+        if (!res.ok) return;
         const json = await res.json();
 
-        if (!json?.status) return;
-
-        setForm((prev) => ({
-          ...prev,
-          address: prev.address || json.address || "",
-          street: prev.street || json.street || "",
-          zone: prev.zone || json.zone || "",
-          area: prev.area || json.area || "",
-          city: prev.city || json.city || "",
-          country: prev.country || json.country || ""
-        }));
-
+        setForm({
+          address: json.address ?? "",
+          street: json.street ?? "",
+          zone: json.zone ?? "",
+          area: json.area ?? "",
+          city: json.city ?? "",
+          country: json.country ?? ""
+        });
       } catch (err) {
         console.error("Address fetch error:", err);
       }
     };
-
     loadAddress();
+  }, [role, id, isAdmin]);
 
-  }, [roleLower, id, setForm]);
+  const validate = () => {
+    let err = {};
 
+    if (!form.address) {
+      alert(t("validation.required"));
+      return;
+    }
 
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
 
-  /* ---------------- LOAD MASTER DROPDOWNS ---------------- */
+  const handleChangeLocal = (field) => (e) => {
+    dirtyRef.current.address = true;
+
+    const value = e.target.value;
+    setForm((prev) => {
+      let updated = { ...prev, [field]: value };
+
+      // if (field === "area") {
+      //   updated.city = "Banglore";
+      //   updated.country = "India";
+      // }
+      if (field === "area") {
+        const selectedIndex = masterData.area.indexOf(value);
+
+        updated.city = masterData.city[selectedIndex] || "";
+        updated.country = masterData.country[selectedIndex] || "";
+      }
+      return updated;
+    });
+  };
+
+  const handleSave = async () => {
+
+    if (!isAdmin && !editMode) {
+      navigate(`/profile/${role}/${id}/bank`);
+      return;
+    }
+
+    if (!isAdmin && editMode) {
+      if (!dirtyRef.current.address) {
+        // alert("No changes detected in Address");
+        alert(t("alerts.no_changes_address"));
+        navigate(`/profile/${role}/${id}/bank`);
+        return;
+      }
+    }
+
+    if (!validate()) return;
+
+    if (Object.values(form).every(v => !v)) {
+      // alert("No data to save ❌");
+      alert(t("alerts.no_data"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const success = await submitData("address", form);
+      // alert(isAdmin ? "Saved ✅" : "Sent for approval ✅");
+      alert(isAdmin ? t("alerts.saved") : t("alerts.sent_for_approval"));
+      setLoading(false);
+
+      if (!isAdmin) setEditMode(false);
+
+      if (success) {
+        navigate(`/profile/${role}/${id}/bank`); }
+    } catch (err) {
+      console.error("Save error:", err);
+      // alert("Update failed ❌");
+      alert(t("alerts.update_failed"));
+    }
+  };
+  
+  const submitData = async (section, data) => {
+    const token = isAdmin
+      ? localStorage.getItem("admin_token")
+      : localStorage.getItem("token");
+
+    const url = isAdmin
+      ? `${API_PROFILE}/${role}/update/${section}/${id}`
+      : `${API_PROFILE}/request-change-${role}`;
+
+    const payload = isAdmin
+      ? data
+      : {
+          role,
+          entity_id: id,
+          section,
+          new_data: data
+        };
+
+    const res = await fetch(url, {
+      method: isAdmin ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    return json.status;
+  };
 
   useEffect(() => {
-
     const fetchMaster = async (category) => {
       try {
-
         const res = await fetch(
           `${API_PROFILE}/master/${category}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
+              Authorization: `Bearer ${
+                isAdmin
+                  ? localStorage.getItem("admin_token")
+                  : localStorage.getItem("token")
+              }`
             }
           }
         );
-
-        if (!res.ok) return [];
-
         const json = await res.json();
-
-        return json?.data || [];
-
+        return Array.isArray(json?.data) ? json.data : [];
       } catch (err) {
         console.error(`Master ${category} error:`, err);
         return [];
@@ -233,140 +275,167 @@ export default function Address({
     };
 
     const loadMasters = async () => {
+      const [street, zone, area, city, country] = await Promise.all([
+        fetchMaster("street"),
+        fetchMaster("zone"),
+        fetchMaster("area"),
+        fetchMaster("city"),
+        fetchMaster("country")
+      ]);
 
-      const street = await fetchMaster("street");
-      const zone = await fetchMaster("zone");
-      const area = await fetchMaster("area");
-      const city = await fetchMaster("city");
-      const country = await fetchMaster("country");
-
-      setMasterData({
+      setMasterData((prev) => ({
+        ...prev,
         street,
         zone,
         area,
         city,
         country
-      });
-
+      }));
     };
-
     loadMasters();
-
-  }, [setMasterData]);
-
-
+  }, [setMasterData, isAdmin]);
 
   return (
     <div className="profile-card">
+      <h3 className="profile-title">{t("address.title")}</h3>
 
-      <h3 className="profile-title">Address Information</h3>
+      {!isAdmin && !editMode && (
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => setEditMode(true)}
+        >
+          {t("buttons.edit")} ✏️
+        </button>
+      )}
 
       <form className="profile-form">
 
-        {/* ROW 1 */}
         <div className="form-row three-col">
 
           <div className="form-group">
-            <label>Address</label>
+            {/* <label>Address</label> */}
+            <label>{t("address.address")}</label>
             <input
-              value={form?.address || ""}
-              onChange={handleChange("address")}
+              // value={form.address || ""}
+              value={i18n.language === "ar" ? translatedAddress : form.address}
+              onChange={handleChangeLocal("address")}
               {...ro}
             />
           </div>
 
-
           <div className="form-group">
-            <label>Street</label>
-
+            <label>{t("address.street")}</label>
             <select
-              value={form?.street || ""}
-              onChange={handleChange("street")}
+              value={form.street || ""}
+              onChange={handleChangeLocal("street")}
               {...ro}
             >
-              <option value="">-- Select --</option>
-
-              {(masterData?.street || []).map((s, i) => (
-                <option key={i} value={s}>
+              {/* <option value="">-- Select --</option> */}
+              <option value="">-- {t("address.select")} --</option>
+              {/* {(masterData?.street || []).map((s, i) => (
+                <option key={i} value={s}> {s} </option>
+              ))} */}
+              {(i18n.language === "ar"
+                ? translatedMaster.street
+                : masterData.street
+              ).map((s, i) => (
+                <option key={i} value={masterData.street[i]}>
                   {s}
                 </option>
               ))}
-
             </select>
           </div>
-
 
           <div className="form-group">
-            <label>Zone</label>
-
+            <label>{t("address.zone")}</label>
             <select
-              value={form?.zone || ""}
-              onChange={handleChange("zone")}
+              value={form.zone || ""}
+              onChange={handleChangeLocal("zone")}
               {...ro}
             >
-              <option value="">-- Select --</option>
-
-              {(masterData?.zone || []).map((z, i) => (
-                <option key={i} value={z}>
-                  {z}
+              <option value="">-- {t("address.select")} --</option>
+              {/* {(masterData?.zone || []).map((z, i) => (
+                <option key={i} value={z}> {z} </option>
+              ))} */}
+              {(i18n.language === "ar"
+                ? translatedMaster.zone
+                : masterData.zone
+              ).map((s, i) => (
+                <option key={i} value={masterData.zone[i]}>
+                  {s}
                 </option>
               ))}
-
             </select>
           </div>
-
         </div>
 
-
-
-        {/* ROW 2 */}
         <div className="form-row three-col">
 
           <div className="form-group">
-            <label>Area</label>
-
+            <label>{t("address.area")}</label>
             <select
-              value={form?.area || ""}
-              onChange={handleChange("area")}
+              value={form.area || ""}
+              onChange={handleChangeLocal("area")}
               {...ro}
             >
-              <option value="">-- Select --</option>
-
-              {(masterData?.area || []).map((a, i) => (
-                <option key={i} value={a}>
-                  {a}
+              <option value="">-- {t("address.select")} --</option>
+              {/* {(masterData?.area || []).map((a, i) => (
+                <option key={i} value={a}> {a} </option>
+              ))} */}
+              {(i18n.language === "ar"
+                ? translatedMaster.area
+                : masterData.area
+              ).map((s, i) => (
+                <option key={i} value={masterData.area[i]}>
+                  {s}
                 </option>
               ))}
-
             </select>
           </div>
 
-
           <div className="form-group">
-            <label>City</label>
-
+            <label>{t("address.city")}</label>
             <input
-              value={form?.city || ""}
-              readOnly
               className="readonly-field"
+              // value={form.city || ""}
+              value={i18n.language === "ar" ? translatedCity : form.city}
+              onChange={handleChangeLocal("city")}
+              {...ro}
             />
           </div>
 
-
           <div className="form-group">
-            <label>Country</label>
-
+            <label>{t("address.country")}</label>
             <input
-              value={form?.country || ""}
-              readOnly
               className="readonly-field"
+              // value={form.country || ""}
+              value={i18n.language === "ar" ? translatedCountry : form.country}
+              onChange={handleChangeLocal("country")}
+              {...ro}
             />
           </div>
-
         </div>
 
+        <div className="form-actions">
+          <button
+            type="button" className="btn-primary"
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {/* {loading ? "Saving..." : (!editMode ? "Next →" : "Save & Next →")} */}
+            {loading
+              ? t("buttons.saving")
+              : !editMode
+              ? i18n.language === "ar"
+                  ? `${t("buttons.next")} ←`
+                  : `${t("buttons.next")} →`
+              : i18n.language === "ar"
+                  ? `${t("buttons.save_next")} ←`
+                  : `${t("buttons.save_next")} →` }
+          </button>
+        </div>
       </form>
-
     </div>
   );
 }

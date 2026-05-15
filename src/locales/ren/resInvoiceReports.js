@@ -1,0 +1,20 @@
+export default {
+  resinvoice_report: "Invoice Report",
+  restotal_invoices: "Total Invoices:",
+  ressearch_invoice_supplier: "Search Invoice / Order / Supplier...",
+  resall_status: "All Status",
+  respaid: "Paid",
+  resunpaid: "Unpaid",
+  rescancelled: "Cancelled",
+  resinvoice_id: "Invoice ID",
+  resorder_id: "Order ID",
+  ressupplier: "Supplier",
+  resstatus: "Status",
+  resdate: "Date",
+  resno_data_found: "No data found",
+  resloading_invoice_report: "Loading invoice report...",
+  resprev: "Prev",
+  resnext: "Next",
+  respage: "Page",
+  resof: "of"
+};

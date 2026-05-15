@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "../css/suppliercredit.css";
 import { useLocation } from "react-router-dom";
-const API = "http://192.168.1.193:5000/api/supplier/credit";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/supplier/credit";
 
 export default function SupplierCreditWallet() {
 
   const token = localStorage.getItem("token");
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [summary, setSummary] = useState({});
   const [orders, setOrders] = useState([]);
@@ -33,14 +35,18 @@ useEffect(() => {
   }
 }, [payments]);
 
-
+useEffect(() => {
+  document.body.dir = i18n.language === "ar" ? "rtl" : "ltr";
+}, [i18n.language]);
 
 
 
   const loadSummary = async () => {
     try {
 
-      const res = await fetch(`${API}/summary`, {
+      const lang = i18n.language;
+
+      const res = await fetch(`${API}/summary?lang=${lang}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -58,8 +64,9 @@ useEffect(() => {
 
   const loadOrders = async () => {
     try {
+      const lang = i18n.language;
 
-      const res = await fetch(`${API}/orders`, {
+      const res = await fetch(`${API}/orders?lang=${lang}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -77,8 +84,9 @@ useEffect(() => {
 
   const loadPayments = async () => {
     try {
+      const lang = i18n.language;
 
-      const res = await fetch(`${API}/payments`, {
+      const res = await fetch(`${API}/payments?lang=${lang}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -94,38 +102,85 @@ useEffect(() => {
 
 
 
-  const formatCurrency = (val) => {
-    return `QAR ${Number(val || 0).toFixed(2)}`;
+  // const formatCurrency = (val) => {
+  //   const amount = Number(val || 0).toFixed(2);
+
+  //   if (i18n.language === "ar") {
+  //     return `ر.ق ${amount}`;   // Arabic Riyal
+  //   }
+
+  //   return `QAR ${amount}`;
+  // };
+
+  const isArabic = i18n.language?.startsWith("ar");
+
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat(
+      isArabic ? "ar-EG" : "en-US"
+    ).format(num);
   };
 
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat(
+      isArabic ? "ar-EG" : "en-GB"
+    ).format(new Date(date));
+  };
 
+  const formatId = (id, prefix = "") => {
+    if (!isArabic) return `${prefix}${id}`;
+
+    const numbers = String(id).replace(/\D/g, "");
+    return prefix + formatNumber(numbers);
+  };
+
+  const paymentModeMap = {
+    BANK: isArabic ? "تحويل بنكي" : "Bank",
+    CASH: isArabic ? "نقدي" : "Cash",
+  };
+
+  const paidByMap = {
+    "System Admin": isArabic ? "مدير النظام" : "System Admin",
+  };
+  const formatCurrency = (val) => {
+    const num = formatNumber(Number(val || 0));
+    return isArabic ? `ر.ق ${num}` : `QAR ${num}`;
+  };
+
+const formatOrderId = (id) => {
+  if (!isArabic) return id;
+
+  const prefix = String(id).replace(/[0-9]/g, "");
+  const numbers = String(id).replace(/\D/g, "");
+
+  return prefix + formatNumber(numbers);
+};
 
   return (
     <div className="supplier_wallet">
 
-      <h2>Supplier Credit Wallet</h2>
+      <h2>{t("supplier_wallet")}</h2>
 
       {/* SUMMARY CARDS */}
 
       <div className="wallet_cards">
 
         <div className="wallet_card">
-          <h4>Total Orders</h4>
-          <p>{summary.total_orders || 0}</p>
+          <h4>{t("total_orders")}</h4>
+          <p>{formatNumber(summary.total_orders || 0)}</p>
         </div>
 
         <div className="wallet_card">
-          <h4>Total Value</h4>
+          <h4>{t("total_value")}</h4>
           <p>{formatCurrency(summary.total_amount)}</p>
         </div>
 
         <div className="wallet_card paid">
-          <h4>Admin Paid</h4>
+          <h4>{t("admin_paid")}</h4>
           <p>{formatCurrency(summary.paid_amount)}</p>
         </div>
 
         <div className="wallet_card due">
-          <h4>Outstanding</h4>
+          <h4>{t("outstanding")}</h4>
           <p>{formatCurrency(summary.due_amount)}</p>
         </div>
 
@@ -141,14 +196,14 @@ useEffect(() => {
           className={tab === "orders" ? "active" : ""}
           onClick={() => setTab("orders")}
         >
-          Credit Orders
+          {t("credit_orders")}
         </button>
 
         <button
           className={tab === "payments" ? "active" : ""}
           onClick={() => setTab("payments")}
         >
-          Payment History
+          {t("payment_history")}
         </button>
 
       </div>
@@ -159,8 +214,8 @@ useEffect(() => {
           type="text"
           placeholder={
             tab === "orders"
-              ? "Search Order ID / Restaurant..."
-              : "Search Payment ID / Reference..."
+              ? t("search_orders")
+              : t("search_payments")
           }
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -191,12 +246,12 @@ useEffect(() => {
 
           <thead>
             <tr>
-              <th>Order</th>
-              <th>Restaurant</th>
-              <th>Total</th>
-              <th>Paid</th>
-              <th>Due</th>
-              <th>Status</th>
+              <th>{t("order")}</th>
+              <th>{t("restaurant")}</th>
+              <th>{t("total")}</th>
+              <th>{t("paid")}</th>
+              <th>{t("due")}</th>
+              <th>{t("status")}</th>
             </tr>
           </thead>
 
@@ -212,12 +267,17 @@ useEffect(() => {
 
             {orders
                 .filter((o) => {
-                  const search = searchText.toLowerCase();
+                  const normalize = (val) =>
+                    String(val)
+                      .toLowerCase()
+                      .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+
+                  const search = normalize(searchText);
 
                   const searchOk =
                     search === "" ||
                     o.order_id.toString().includes(search) ||
-                    (o.restaurant_name_english || "").toLowerCase().includes(search);
+                    (o.restaurant_name || "").toLowerCase().includes(search);
 
                   const orderDate = new Date(o.created_at || o.order_date);
 
@@ -234,8 +294,8 @@ useEffect(() => {
                 .map(o => (
 
               <tr key={o.order_id}>
-                <td>{o.order_id}</td>
-                <td>{o.restaurant_name_english}</td>
+                <td>{formatOrderId(o.order_id)}</td>
+                <td>{o.restaurant_name}</td>
                 <td>{formatCurrency(o.total_amount)}</td>
                 <td>{formatCurrency(o.supplier_paid_amount)}</td>
                 <td className="text-danger">{formatCurrency(o.supplier_due_amount)}</td>
@@ -264,14 +324,14 @@ useEffect(() => {
 
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Payment ID</th>
-              <th>Amount</th>
-              <th>Mode</th>
-              <th>Reference</th>
-              <th>Orders</th>
-              <th>Paid By</th>
-              <th>Receipt</th>
+              <th>{t("date")}</th>
+              <th>{t("payment_id")}</th>
+              <th>{t("amount")}</th>
+              <th>{t("mode")}</th>
+              <th>{t("reference")}</th>
+              <th>{t("orders")}</th>
+              <th>{t("paid_by")}</th>
+              <th>{t("receipt")}</th>
             </tr>
           </thead>
 
@@ -280,14 +340,19 @@ useEffect(() => {
             {payments.length === 0 && (
               <tr>
                 <td colSpan="8" className="text-center">
-                  No payments yet
+                  {t("no_payments")}
                 </td>
               </tr>
             )}
 
             {payments
                 .filter((p) => {
-                  const search = searchText.toLowerCase();
+                  const normalize = (val) =>
+                    String(val)
+                      .toLowerCase()
+                      .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+
+                  const search = normalize(searchText);
 
                   const searchOk =
                     search === "" ||
@@ -324,18 +389,18 @@ useEffect(() => {
                   >
 
                     <td>
-                      {new Date(p.created_at).toLocaleDateString()}
+                      {formatDate(p.created_at)}
                     </td>
 
                     <td>
-                      PAY-{p.payment_id}
+                      {formatId(p.payment_id, isArabic ? "دفعة-" : "PAY-")}
                     </td>
 
                     <td className="text-success">
                       {formatCurrency(p.amount)}
                     </td>
 
-                    <td>{p.payment_mode}</td>
+                    <td>{paymentModeMap[p.payment_mode] || p.payment_mode}</td>
 
                     <td>{p.reference_no || "-"}</td>
 
@@ -349,7 +414,7 @@ useEffect(() => {
           highlightOrders.includes(id) ? "highlight" : ""
         }`}
       >
-        #{id}
+        #{formatOrderId(id)}
       </span>
     ))}
 
@@ -359,7 +424,7 @@ useEffect(() => {
         className="expand_chip"
         onClick={() => setExpandedRow(p.payment_id)}
       >
-        +{orderIds.length - 3}
+        +{formatOrderId(orderIds.length - 3)}
       </span>
     )}
   </div>
@@ -369,36 +434,36 @@ useEffect(() => {
     <div className="expanded_orders">
       {orderIds.map(id => (
         <div key={id} className="expanded_order_item">
-          Order #{id}
+          {formatOrderId(i18n.language === "ar" ? `طلب #${id}` : `Order #${id}`)}
         </div>
       ))}
     </div>
   )}
 </td>
 
-                    <td>{p.paid_by || "-"}</td>
+                    <td>{paidByMap[p.paid_by] || p.paid_by || "-"}</td>
 
                     <td>
                       <div className="payment_actions">
 
-                        {p.receipt_filename && (
+                        {/* {p.receipt_filename && (
                           <button
                             className="btn_download"
                             onClick={() =>
                               window.open(`${API}/receipt/${p.payment_id}?token=${token}`, "_blank")
                             }
                           >
-                            Receipt
+                            {t("receipt")}
                           </button>
-                        )}
+                        )} */}
 
                         <button
                           className="btn_pdf"
                           onClick={() =>
-                            window.open(`${API}/payment-pdf/${p.payment_id}?token=${token}`, "_blank")
+                            window.open(`${API}/payment-pdf/${p.payment_id}?token=${token}&lang=${i18n.language}`)
                           }
                         >
-                          PDF
+                          {t("pdf")}
                         </button>
 
                       </div>

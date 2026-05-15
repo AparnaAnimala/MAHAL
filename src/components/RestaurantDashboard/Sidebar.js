@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import logo from "../../images/Logo.png";
 import introJs from "intro.js";
 import { restaurantToolsTourSteps } from "../../tours/restaurantToolsTour";
+import { useTranslation } from "react-i18next";
 
 const RestaurantSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -10,6 +11,8 @@ const RestaurantSidebar = () => {
     localStorage.getItem("startRestaurantToolsTour")
   );
   const tourStartedRef = useRef(false);
+  const { t } = useTranslation();
+  
 
 useEffect(() => {
   const startTourIfNeeded = () => {
@@ -94,7 +97,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-dashboard">
               <i className="fas fa-home"></i>
-              {!collapsed && <span>Dashboard</span>}
+              {!collapsed && <span>{t("dashboard")}</span>}
             </li>
           )}
         </NavLink>
@@ -105,7 +108,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""}id="tour-orders">
               <i className="fas fa-receipt"></i>
-              {!collapsed && <span>Orders</span>}
+              {!collapsed && <span>{t("orders")}</span>}
             </li>
           )}
         </NavLink>
@@ -114,7 +117,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-modified-orders">
               <i className="fas fa-boxes"></i>
-              {!collapsed && <span>Modified Orders</span>}
+              {!collapsed && <span>{t("modified_orders")}</span>}
             </li>
           )}
         </NavLink>
@@ -123,7 +126,7 @@ useEffect(() => {
   {({ isActive }) => (
     <li className={isActive ? "active" : ""}id="tour-issues">
       <i className="fas fa-exclamation-triangle"></i>
-      {!collapsed && <span>Order Issues</span>}
+      {!collapsed && <span>{t("order_issues")}</span>}
     </li>
   )}
 </NavLink>
@@ -133,7 +136,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-grn">
               <i className="fas fa-truck-loading"></i>
-              {!collapsed && <span>GRN</span>}
+              {!collapsed && <span>{t("grn")}</span>}
             </li>
           )}
         </NavLink>
@@ -143,7 +146,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-invoices">
               <i className="fas fa-file-invoice"></i>
-              {!collapsed && <span>Invoices</span>}
+              {!collapsed && <span>{t("invoices")}</span>}
             </li>
           )}
         </NavLink>
@@ -153,7 +156,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-reviews">
               <i className="fas fa-star"></i>
-              {!collapsed && <span>Reviews & Ratings</span>}
+              {!collapsed && <span>{t("reviews_ratings")}</span>}
             </li>
           )}
         </NavLink>
@@ -163,7 +166,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-inventory">
               <i className="fas fa-boxes"></i>
-              {!collapsed && <span>Inventory</span>}
+              {!collapsed && <span>{t("inventory")}</span>}
             </li>
           )}
         </NavLink>
@@ -172,16 +175,16 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-payments">
               <i className="fas fa-credit-card"></i>
-              {!collapsed && <span>Issue To Kitchen</span>}
+              {!collapsed && <span>{t("issue_to_kitchen")}</span>}
             </li>
           )}
         </NavLink>
 
         <NavLink to="/restaurantdashboard/credit-wallet" className="menu_link">
           {({ isActive }) => (
-            <li className={isActive ? "active" : ""}>
+            <li className={isActive ? "active" : ""} id="tour-creditwallet">
               <i className="fas fa-wallet"></i>
-              {!collapsed && <span>Credit Wallet</span>}
+              {!collapsed && <span>{t("credit_wallet")}</span>}
             </li>
           )}
         </NavLink>
@@ -191,7 +194,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""}id="tour-menu">
               <i className="fas fa-utensils"></i>
-              {!collapsed && <span>Menu Items</span>}
+              {!collapsed && <span>{t("menu_items")}</span>}
             </li>
           )}
         </NavLink>
@@ -200,7 +203,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""} id="tour-recipe">
               <i className="fas fa-clipboard-list"></i>
-              {!collapsed && <span>Recipe Master</span>}
+              {!collapsed && <span>{t("recipe_master")}</span>}
             </li>
           )}
         </NavLink>
@@ -209,9 +212,9 @@ useEffect(() => {
         
                 <NavLink to="/restaurantdashboard/support" className="menu_link">
           {({ isActive }) => (
-            <li className={isActive ? "active" : ""}>
+            <li className={isActive ? "active" : ""} id="tour-supportticket">
               <i className="fas fa-headset"></i>
-              {!collapsed && <span>Support</span>}
+              {!collapsed && <span>{t("support")}</span>}
             </li>
           )}
         </NavLink>
@@ -250,7 +253,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li className={isActive ? "active" : ""}id="tour-reports">
               <i className="fas fa-chart-line"></i>
-              {!collapsed && <span>Reports</span>}
+              {!collapsed && <span>{t("resreports")}</span>}
             </li>
           )}
         </NavLink>
@@ -259,7 +262,7 @@ useEffect(() => {
                   {({ isActive }) => (
                     <li id="tour-help" className={isActive ? "active" : ""}>
                       <i className="fas fa-question-circle"></i>
-                      {!collapsed && <span>Help</span>}
+                      {!collapsed && <span>{t("help")}</span>}
                     </li>
                   )}
           </NavLink>
@@ -268,7 +271,7 @@ useEffect(() => {
           {({ isActive }) => (
             <li id="tour-docs" className={isActive ? "active" : ""}>
               <i className="fas fa-book"></i>
-              {!collapsed && <span>Documentation</span>}
+              {!collapsed && <span>{t("documentation")}</span>}
             </li>
           )}
         </NavLink>

@@ -1,0 +1,535 @@
+/* ===== PAGE CENTERING (MAIN FIX) ===== */
+.page-center {
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+.page-content {
+  width: 100%;
+  max-width: 1200px;
+  /* 🔥 THIS IS THE KEY */
+  padding: 20px;
+}
+
+
+
+/* ================= ROOT ================= */
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+
+  --primary: #6c63ff;
+  --primary-dark: #4f46e5;
+
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  --radius: 12px;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+/* ================= BASE ================= */
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================= CONTAINER ================= */
+.ct-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ================= HEADER ================= */
+.ct-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ct-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.ct-header p {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ================= ACTION BUTTONS ================= */
+.ct-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.ct-actions button {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #eef2ff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.ct-actions button:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ================= KPI GRID ================= */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  /* 🔥 FIXED LIKE TARGET */
+  gap: 12px;
+}
+
+.kpi-financial-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* ================= KPI CARD ================= */
+.kpi-card {
+  background: var(--card);
+  padding: 12px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--primary);
+  transition: 0.2s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ================= MAIN GRID ================= */
+.ct-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+}
+
+/* LEFT + RIGHT */
+.ct-left,
+.ct-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ================= CARD ================= */
+.ct-card {
+  background: var(--card);
+  padding: 14px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* BIG CARD */
+.ct-card.big {
+  height: auto;
+  /* 🔥 FIXED */
+}
+
+/* ================= RIGHT PANEL ================= */
+.ct-right .ct-card {
+  border-left: 3px solid var(--primary);
+}
+
+/* ================= ALERT ================= */
+.ct-alert-card {
+  background: #fff;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+/* ================= TABLE ================= */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px;
+  background: #f9fafb;
+  color: var(--muted);
+}
+
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.table tr:hover {
+  background: #f3f4f6;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+  .ct-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-row,
+  .kpi-financial-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===== FIX CLASS MISMATCH ===== */
+
+/* map droid → ct layout */
+.droid-container {
+  width: 100%;
+}
+
+.droid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.header-actions button {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #eef2ff;
+  cursor: pointer;
+}
+
+.header-actions button:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* KPI FIX */
+.droid-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* MAIN GRID FIX (THIS WAS MISSING) */
+.droid-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+}
+
+/* LEFT / RIGHT */
+.droid-left,
+.droid-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .droid-main {
+    grid-template-columns: 1fr;
+  }
+
+  .droid-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== PAGE LOOK ===== */
+.page-content {
+  background: #f4f6fb;
+}
+
+/* ===== HEADER STYLE ===== */
+.droid-header {
+  background: #ffffff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.droid-header h2 {
+  font-weight: 600;
+}
+
+/* ===== KPI CARDS (LIKE IMAGE) ===== */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-top: none;
+}
+
+/* gradient strip top */
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #6c63ff, #8b5cf6);
+}
+
+/* subtle hover */
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== CARD DESIGN ===== */
+.ct-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+/* card titles */
+.ct-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* ===== RIGHT PANEL STYLE ===== */
+.droid-right .ct-card {
+  border-left: 4px solid #6c63ff;
+}
+
+/* ===== ALERT CARD ===== */
+.ct-alert-card {
+  background: #fff;
+  border-left: 4px solid #ef4444;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* ===== TABLE STYLE ===== */
+.table {
+  font-size: 13px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table th {
+  background: #f9fafb;
+  font-weight: 500;
+}
+
+.table tr:hover {
+  background: #f3f4f6;
+}
+
+/* ===== CHART CARD LOOK ===== */
+.ct-card.big {
+  padding-bottom: 10px;
+}
+
+/* ===== PIE CENTER ALIGN ===== */
+.recharts-wrapper {
+  display: flex !important;
+  justify-content: center;
+}
+
+/* ===== BUTTON STYLE LIKE IMAGE ===== */
+.header-actions button {
+  background: #eef2ff;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.header-actions button:hover {
+  background: #6c63ff;
+  color: white;
+}
+
+/* ===== SPACING FIX ===== */
+.ct-container {
+  gap: 22px;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 900px) {
+  .droid-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+/* ================= FINAL DESIGN OVERRIDE ================= */
+
+/* GLOBAL BACKGROUND DEPTH */
+.page-content {
+  background: linear-gradient(180deg, #f4f6fb 0%, #eef2ff 100%);
+}
+
+/* HEADER LIKE IMAGE */
+.droid-header {
+  background: white;
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+/* KPI CARDS EXACT STYLE */
+.kpi-card {
+  background: white;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f3f4f6;
+  position: relative;
+}
+
+/* top gradient strip */
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #f77d00, #ffd0a0);
+}
+
+/* KPI typography */
+.kpi-title {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* MAIN CARDS */
+.ct-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  position: relative;
+}
+
+/* subtle top highlight */
+.ct-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #6c63ff, transparent);
+  border-radius: 14px 14px 0 0;
+}
+
+/* BIG CHART CARD */
+.ct-card.big {
+  padding-bottom: 12px;
+}
+
+/* RIGHT PANEL CARDS */
+.droid-right .ct-card {
+  border-left: none;
+  border-top: 4px solid #6c63ff;
+}
+
+/* ALERT CARD */
+.ct-alert-card {
+  background: #fff;
+  border-left: 4px solid #ef4444;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* TABLE EXACT STYLE */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table th {
+  font-size: 12px;
+  font-weight: 500;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table tr:hover {
+  background: #f3f4f6;
+}
+
+/* BUTTON STYLE */
+.header-actions button {
+  background: #eef2ff;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.header-actions button:hover {
+  background: #6c63ff;
+  color: white;
+}
+
+/* CHART CENTER ALIGN */
+.recharts-wrapper {
+  display: flex !important;
+  justify-content: center;
+}
+
+/* SPACING */
+.ct-container {
+  gap: 24px;
+}
+
+/* GRID GAP */
+.droid-main {
+  gap: 22px;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .droid-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

@@ -62,37 +62,45 @@
 
 // export default Categories;
 
+
+
+
+
+
+
 import React, { useEffect, useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
 
-const API_BASE = "http://127.0.0.1:5000";
+const API_BASE = "http://192.168.2.9:5000";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
 
   /* ================= FETCH FROM BACKEND ================= */
-  useEffect(() => {
-    fetch(`${API_BASE}/api/categories`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("CATEGORIES:", data);
+ useEffect(() => {
+  fetch(`${API_BASE}/api/categories`)
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("CATEGORIES:", data);
 
-        const mapped = (data.categories || []).map((cat) => ({
-          id: cat.id,
-          name: cat.name,
-          image: cat.image
-            ? `${API_BASE}${cat.image}`
-            : `${API_BASE}/static/categories/default.png`,
-          items: cat.items || 0,
-        }));
+      const mapped = (data.categories || []).map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        image:
+          cat.image && cat.image.trim() !== ""
+            ? cat.image.startsWith("http")
+              ? cat.image
+              : `${API_BASE}/${cat.image}`
+            : null,
+        items: cat.items || 0,
+      }));
 
-        setCategories(mapped);
-      })
-      .catch((err) => {
-        console.error("CATEGORY API ERROR:", err);
-      });
-  }, []);
-
+      setCategories(mapped);
+    })
+    .catch((err) => {
+      console.error("CATEGORY API ERROR:", err);
+    });
+}, []);
   return (
     <section className="mm-category-section pt-5 pb-5">
       <div className="container">
@@ -113,14 +121,20 @@ const Categories = () => {
               <div className="mm-category-card" key={index}>
 
                 <div className="mm-category-img">
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    onError={(e) => {
-                      e.target.src =
-                        `${API_BASE}/static/categories/default.png`;
-                    }}
-                  />
+                <img
+                src={
+                  cat.image && cat.image.trim() !== ""
+                    ? cat.image.startsWith("http")
+                      ? cat.image
+                      : `${API_BASE}/${cat.image}`
+                    : null
+                }
+                alt={cat.name}
+                onError={(e) => {
+                  console.log("Category image failed:", cat.image);
+                  e.target.style.display = "none";
+                }}
+              />
                 </div>
 
                 <div className="mm-category-content">

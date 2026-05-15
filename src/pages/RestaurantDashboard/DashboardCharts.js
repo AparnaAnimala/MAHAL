@@ -6,10 +6,11 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Tooltip,
   Legend,
 } from "chart.js";
-import { Line, Bar } from "react-chartjs-2";
+import { Line, Bar, Pie } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -17,34 +18,67 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Tooltip,
   Legend
 );
 
-const DashboardCharts = ({ salesTourId, ordersTourId }) => {
+const DashboardCharts = ({ stats }) => {
 
-  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  console.log("DASHBOARD DATA:", stats); // 🔥 DEBUG
 
-  const salesData = {
-    labels,
+  // ---------------- MONTHLY SPEND ----------------
+  const spendData = {
+    labels: stats?.monthly_spend?.map(m => m.month) || [],
     datasets: [
       {
-        label: "Sales (₹)",
-        data: [12000, 19000, 15000, 22000, 18000, 26000],
-        borderColor: "#ff7a00",
-        backgroundColor: "rgba(255, 122, 0, 0.2)",
+        label: "Monthly Spend (QAR)",
+        data: stats?.monthly_spend?.map(m => m.total_spent) || [],
+        borderColor: "#28a745",
+        backgroundColor: "rgba(40,167,69,0.2)",
         tension: 0.4,
       },
     ],
   };
 
+  // ---------------- ORDERS ----------------
   const ordersData = {
-    labels,
+    labels: stats?.monthly_orders?.map(m => m.month) || [],
     datasets: [
       {
         label: "Orders",
-        data: [45, 60, 52, 70, 66, 80],
+        data: stats?.monthly_orders?.map(m => m.total_orders) || [],
         backgroundColor: "#ff7a00",
+      },
+    ],
+  };
+
+  // ---------------- TOP SUPPLIERS ----------------
+const supplierData = {
+  labels: stats?.supplier_spend?.map(s => s.supplier_name) || [],
+  datasets: [
+    {
+      label: "Amount (QAR)",
+      data: stats?.supplier_spend?.map(s => s.total_spent) || [],
+      backgroundColor: "#007bff",
+      yAxisID: "y",   // 👈 LEFT AXIS
+    },
+    {
+      label: "Orders",
+      data: stats?.supplier_spend?.map(s => s.total_orders) || [],
+      backgroundColor: "#28a745",
+      yAxisID: "y1",  // 👈 RIGHT AXIS
+    },
+  ],
+};
+
+  // ---------------- ORDER STATUS ----------------
+  const statusData = {
+    labels: stats?.order_status?.map(s => s.status) || [],
+    datasets: [
+      {
+        data: stats?.order_status?.map(s => s.count) || [],
+        backgroundColor: ["#ffc107", "#28a745", "#dc3545", "#17a2b8"],
       },
     ],
   };
@@ -52,22 +86,22 @@ const DashboardCharts = ({ salesTourId, ordersTourId }) => {
   return (
     <div className="row mt-4">
 
-      {/* SALES CHART */}
+      {/* MONTHLY SPEND */}
       <div className="col-lg-6">
-        <div className="card" id={salesTourId}>
+        <div className="card" id="tour-monthly-spent">
           <div className="card-header">
-            <h5>Sales Overview</h5>
+            <h5>Monthly Spend</h5>
           </div>
           <div className="card-body">
-            <Line data={salesData} />
+            <Line data={spendData} />
           </div>
         </div>
       </div>
 
-      {/* ORDERS CHART */}
+      {/* ORDERS */}
       <div className="col-lg-6">
-        <div className="card" id={ordersTourId}>
-          <div className="card-header">
+        <div className="card" id="tour-Orders-overview">
+          <div className="card-header" >
             <h5>Orders Overview</h5>
           </div>
           <div className="card-body">
@@ -76,9 +110,58 @@ const DashboardCharts = ({ salesTourId, ordersTourId }) => {
         </div>
       </div>
 
+      {/* TOP SUPPLIERS */}
+      <div className="col-lg-6 mt-4">
+        <div className="card" id="tour-Top-suppliers">
+          <div className="card-header">
+            <h5>Top Suppliers</h5>
+          </div>
+          <div className="card-body">
+            <Bar
+              data={supplierData}
+              options={{
+                responsive: true,
+                scales: {
+                  y: {
+                    type: "linear",
+                    position: "left",
+                    title: {
+                      display: true,
+                      text: "Amount (QAR)",
+                    },
+                  },
+                  y1: {
+                    type: "linear",
+                    position: "right",
+                    grid: {
+                      drawOnChartArea: false,
+                    },
+                    title: {
+                      display: true,
+                      text: "Orders",
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ORDER STATUS */}
+      <div className="col-lg-6 mt-4">
+        <div className="card" id="tour-Order-status">
+          <div className="card-header">
+            <h5>Order Status</h5>
+          </div>
+          <div className="card-body">
+            <Pie data={statusData} />
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
-
 
 export default DashboardCharts;

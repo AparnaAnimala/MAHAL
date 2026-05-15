@@ -1,244 +1,259 @@
-// import React, { useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-// const BankDetails = () => {
-//   const navigate = useNavigate();
+const API_PROFILE = "http://192.168.2.9:5000/api/profile";
 
-//   const [form, setForm] = useState({
-//     bankName: "",
-//     accountHolder: "",
-//     accountNumber: "",
-//     iban: "",
-//     branch: "",
-//     swiftCode: "",
-//   });
+export default function BankDetails() {
 
-//   const handleChange = (e) => {
-//     setForm({ ...form, [e.target.name]: e.target.value });
-//   };
+  const { role, id, adminMode = false } = useOutletContext();
+  const isAdmin = adminMode || localStorage.getItem("admin_token");
+  const navigate = useNavigate();
+  const dirtyRef = useRef({});
+  const { t, i18n } = useTranslation();
 
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
+  const translateText = async (text, targetLang = "ar") => {
+    try {
+      const res = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+      );
+      const data = await res.json();
+      return data[0][0][0];
+    } catch {
+      return text;
+    }
+  };
 
-//     console.log("Bank Details Saved:", form);
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [translatedBank, setTranslatedBank] = useState("");
+  const [translatedHolder, setTranslatedHolder] = useState("");
+  const [translatedBranch, setTranslatedBranch] = useState("");
 
-//     // 👉 NEXT PAGE
-//     navigate("/my-profile/restuarent/documents");
-//   };
+  const ro = (!isAdmin && !editMode)
+    ? { readOnly: true, disabled: true } : {};
 
-//   return (
-//     <div className="profile-card">
-//       <h3 className="profile-title">Bank Details</h3>
-
-//       <form onSubmit={handleSubmit} className="profile-form">
-
-//         {/* ROW 1 */}
-//         <div className="form-row three-col">
-//           <div className="form-group">
-//             <label>Bank Name</label>
-//             <input
-//               type="text"
-//               name="bankName"
-//               value={form.bankName}
-//               onChange={handleChange}
-//               placeholder="e.g. HDFC Bank"
-//               required
-//             />
-            
-//           </div>
-
-//           <div className="form-group">
-//             <label>Account Holder Name</label>
-//             <input
-//               type="text"
-//               name="accountHolder"
-//               value={form.accountHolder}
-//               onChange={handleChange}
-//               placeholder="As per bank records"
-//               required
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Account Number</label>
-//             <input
-//               type="text"
-//               name="accountNumber"
-//               value={form.accountNumber}
-//               onChange={handleChange}
-//               placeholder="Account number"
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         {/* ROW 2 */}
-//         <div className="form-row three-col">
-//           <div className="form-group">
-//             <label>IBAN</label>
-//             <input
-//               type="text"
-//               name="iban"
-//               value={form.iban}
-//               onChange={handleChange}
-//               placeholder="Country code + number"
-//             />
-//             <small className="hint-text">
-//               Required for international payments
-//             </small>
-//           </div>
-
-//           <div className="form-group">
-//             <label>Branch</label>
-//             <input
-//               type="text"
-//               name="branch"
-//               value={form.branch}
-//               onChange={handleChange}
-//               placeholder="Branch name"
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>SWIFT Code</label>
-//             <input
-//               type="text"
-//               name="swiftCode"
-//               value={form.swiftCode}
-//               onChange={handleChange}
-//               placeholder="8 or 11 characters"
-//             />
-//             <small className="hint-text">Used for international transfers</small>
-//           </div>
-//         </div>
-
-//         {/* ACTION */}
-//         <div className="form-actions">
-//           <button type="submit" className="btn-primary">
-//             Save & Next →
-//           </button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default BankDetails;
-
-
-
-import React, { useEffect } from "react";
-
-const API_PROFILE = "http://127.0.0.1:5000/api/profile";
-
-export default function BankDetails({
-  form = {},
-  setForm = () => {},
-  handleChange = () => () => {},
-  roleLower,
-  id,
-  ro = {},
-  markDirty = () => {}
-}) {
-
-  /* ---------------- FETCH BANK DATA ---------------- */
+  const [form, setForm] = useState({
+    bankName: "",
+    accountHolder: "",
+    iban: "",
+    swiftCode: "",
+    branch: "",
+  });
 
   useEffect(() => {
-    if (!roleLower || !id) return;
+    const translateBankData = async () => {
+      if (i18n.language !== "ar") {
+        setTranslatedBank(form.bankName);
+        setTranslatedHolder(form.accountHolder);
+        setTranslatedBranch(form.branch);
+        return;
+      }
 
-    fetch(`${API_PROFILE}/${roleLower}/bank/${id}`, {
+      if (form.bankName) {
+        setTranslatedBank(await translateText(form.bankName));
+      }
+      if (form.accountHolder) {
+        setTranslatedHolder(await translateText(form.accountHolder));
+      }
+      if (form.branch) {
+        setTranslatedBranch(await translateText(form.branch));
+      }
+    };
+
+    translateBankData();
+  }, [form, i18n.language]);
+
+  const markDirty = () => {
+    dirtyRef.current.bank = true;
+  };
+
+  const handleChange = (field) => (e) => {
+    markDirty();
+
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [field]: value }));
+  };
+
+  const submitData = async (section, data) => {
+    const token = isAdmin
+      ? localStorage.getItem("admin_token")
+      : localStorage.getItem("token");
+
+    const url = isAdmin
+      ? `${API_PROFILE}/${role}/update/${section}/${id}`
+      : `${API_PROFILE}/request-change-${role}`;
+
+    const payload = isAdmin
+      ? data
+      : {
+          role,
+          entity_id: id,
+          section,
+          new_data: data
+        };
+
+    const res = await fetch(url, {
+      method: isAdmin ? "PUT" : "POST",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    return json.status;
+  };
+
+  const validate = () => {
+    let err = {};
+
+    if (!form.bankName) {
+      alert(t("validation.required"));
+      return;
+    }
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
+
+  const handleSave = async () => {
+
+    if (!isAdmin && !editMode) {
+      navigate(`/profile/${role}/${id}/documents`);
+      return;
+    }
+
+    if (!isAdmin && editMode) {
+      if (!dirtyRef.current.bank) {
+        // alert("No changes detected in Bank Details");
+        alert(t("alerts.no_changes_bank"));
+        navigate(`/profile/${role}/${id}/documents`);
+        return;
+      }
+    }
+
+    if (!validate()) return;
+
+    if (Object.values(form).every(v => !v)) {
+      // alert("No data to save ❌");
+      alert(t("alerts.no_data"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const success = await submitData("bank", form);
+      // alert(isAdmin ? "Saved ✅" : "Sent for approval ✅");
+      alert(isAdmin ? t("alerts.saved") : t("alerts.approval"));
+      setLoading(false);
+
+      if (!isAdmin) setEditMode(false);
+
+      if (success) {
+        navigate(`/profile/${role}/${id}/documents`); }
+    } catch (err) {
+      console.error(err);
+      // alert("Save failed ❌");
+      alert(t("alerts.update_failed"));
+    }
+  };
+
+  useEffect(() => {
+    if (!role || !id) return;
+
+    const token = isAdmin
+      ? localStorage.getItem("admin_token")
+      : localStorage.getItem("token");
+
+    fetch(`${API_PROFILE}/${role}/bank/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.json())
       .then((json) => {
-
         if (!json.status || !json.data) return;
 
-        setForm((f) => ({
-          ...f,
-          bankName: f?.bankName || json.data.bank_name || "",
-          accountHolder: f?.accountHolder || json.data.account_holder_name || "",
-          iban: f?.iban || json.data.iban || "",
-          swiftCode: f?.swiftCode || json.data.swift_code || "",
-          branch: f?.branch || json.data.branch || "",
-        }));
-
+        setForm({
+          bankName: json.data.bank_name || "",
+          accountHolder: json.data.account_holder_name || "",
+          iban: json.data.iban || "",
+          swiftCode: json.data.swift_code || "",
+          branch: json.data.branch || "",
+        });
       })
       .catch((err) => console.error("Bank fetch error:", err));
 
-  }, [roleLower, id, setForm]);
-
-
+  }, [role, id, isAdmin]);
 
   return (
     <div className="profile-card">
+      <h3 className="profile-title">{t("profilebank.title")}</h3>
 
-      <h3 className="profile-title">Bank Details</h3>
-
+      {!isAdmin && !editMode && (
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => setEditMode(true)}
+        >
+          {t("buttons.edit")} ✏️
+        </button>
+      )}
+      
       <form className="profile-form">
 
-        {/* ROW 1 */}
         <div className="form-row three-col">
 
           <div className="form-group">
-            <label>Bank Name</label>
+            {/* <label>Bank Name</label> */}
+            <label>{t("profilebank.bank_name")}</label>
             <input
-              value={form?.bankName || ""}
-              placeholder="e.g. HDFC Bank"
-              onChange={(e) => {
-                markDirty("bank");
-                handleChange("bankName")(e);
-              }}
+              // value={form.bankName}
+              value={i18n.language === "ar" ? translatedBank : form.bankName}
+              // placeholder="e.g. HDFC Bank"
+              placeholder={t("profilebank.bank_name_placeholder")}
+              onChange={handleChange("bankName")}
               {...ro}
             />
           </div>
 
           <div className="form-group">
-            <label>Account Holder</label>
+            <label>{t("profilebank.account_holder")}</label>
             <input
-              value={form?.accountHolder || ""}
-              placeholder="Name as per bank records"
-              onChange={(e) => {
-                markDirty("bank");
-                handleChange("accountHolder")(e);
-              }}
+              // value={form.accountHolder}
+              value={i18n.language === "ar" ? translatedHolder : form.accountHolder}
+              // placeholder="Name as per bank records"
+              placeholder={t("profilebank.account_holder_placeholder")}
+              onChange={handleChange("accountHolder")}
               {...ro}
             />
           </div>
 
           <div className="form-group">
-            <label>Branch</label>
+            <label>{t("profilebank.branch")}</label>
             <input
-              value={form?.branch || ""}
-              placeholder="Branch name"
-              onChange={(e) => {
-                markDirty("bank");
-                handleChange("branch")(e);
-              }}
+              // value={form.branch}
+              value={i18n.language === "ar" ? translatedBranch : form.branch}
+              // placeholder="Branch name"
+              placeholder={t("profilebank.branch_placeholder")}
+              onChange={handleChange("branch")}
               {...ro}
             />
           </div>
-
         </div>
 
-
-
-        {/* ROW 2 */}
         <div className="form-row three-col">
 
           <div className="form-group">
-            <label>IBAN</label>
+            <label>{t("profilebank.iban")}</label>
             <input
-              value={form?.iban || ""}
-              placeholder="Country code + number"
+              value={form.iban}
+              // placeholder="Country code + number"
+              placeholder={t("profilebank.iban_placeholder")}
               onChange={(e) => {
-                markDirty("bank");
-
-                const v = e.target.value
-                  .replace(/\s/g, "")
-                  .toUpperCase();
+                const v = e.target.value.replace(/\s/g, "").toUpperCase();
 
                 handleChange("iban")({
                   target: { value: v }
@@ -247,21 +262,16 @@ export default function BankDetails({
               maxLength={34}
               {...ro}
             />
-
-            <small className="hint">
-              Required for international payments
-            </small>
+            <small className="hint">{t("profilebank.iban_hint")}</small>
           </div>
 
           <div className="form-group">
-            <label>Swift Code</label>
+            <label>{t("profilebank.swift")}</label>
             <input
-              value={form?.swiftCode || ""}
-              placeholder="8 or 11 characters"
+              value={form.swiftCode}
+              // placeholder="8 or 11 characters"
+              placeholder={t("profilebank.swift_placeholder")}
               onChange={(e) => {
-
-                markDirty("bank");
-
                 const v = e.target.value
                   .replace(/[^A-Za-z0-9]/g, "")
                   .toUpperCase();
@@ -269,21 +279,33 @@ export default function BankDetails({
                 handleChange("swiftCode")({
                   target: { value: v }
                 });
-
               }}
               maxLength={11}
               {...ro}
             />
-
-            <small className="hint">
-              Used for international transfers
-            </small>
+            <small className="hint">{t("profilebank.swift_hint")}</small>
           </div>
-
         </div>
 
+        <div className="form-actions">
+          <button
+            type="button" className="btn-primary"
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {/* {loading ? "Saving..." : (!editMode ? "Next →" : "Save & Next →")} */}
+            {loading
+              ? t("buttons.saving")
+              : !editMode
+              ? i18n.language === "ar"
+                  ? `${t("buttons.next")} ←`
+                  : `${t("buttons.next")} →`
+              : i18n.language === "ar"
+                  ? `${t("buttons.save_next")} ←`
+                  : `${t("buttons.save_next")} →` }
+          </button>
+        </div>
       </form>
-
     </div>
   );
 }

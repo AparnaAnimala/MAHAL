@@ -1,0 +1,21 @@
+export default {
+  loadingOrder: "Loading order...",
+  failedToLoadOrder: "Failed to load order",
+  orderNotFound: "Order not found",
+  orderCannotBeModified: "This order can no longer be modified.",
+  goBack: "Go Back",
+  editOrder: "Edit Order",
+  addProducts: "Add Products",
+  product: "Product",
+  qty: "Qty",
+  lineTotal: "Line Total",
+  remove: "Remove",
+  total: "Total",
+  saving: "Saving...",
+  saveChanges: "Save Changes",
+  cancel: "Cancel",
+  orderCannotBeEmpty: "Order cannot be empty",
+  orderUpdatedSuccessfully: "Order updated successfully",
+  failedToUpdateOrder: "Failed to update order",
+  supplierNotFound: "Supplier not found for this order"
+};

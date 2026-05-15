@@ -307,7 +307,7 @@
 #                     r.get("category_id") or '',
 #                     r.get("sub_category_id") or '',
 #                     r.get("unit_of_measure") or '',
-#                     r.get("currency") or 'QAR',
+#                     r.get("currency") or 'QAR ',
 #                     int(r.get("price_per_unit")) if pd.notnull(r.get("price_per_unit")) else None,
 #                     int(r.get("minimum_order_quantity")) if pd.notnull(r.get("minimum_order_quantity")) else None,
 #                     int(r.get("stock_availability")) if pd.notnull(r.get("stock_availability")) else None,
@@ -505,7 +505,7 @@
 #             data.get('sub_category_id'),
 #             data.get('unit_of_measure'),
 #             price_per_unit,
-#             data.get('currency', 'QAR'),
+#             data.get('currency', 'QAR '),
 #             data.get('minimum_order_quantity'),
 #             data.get('stock_availability'),
 #             images_bytes,
@@ -578,7 +578,7 @@
 #                 "sub_category_id": p.get("sub_category_id"),
 
 #                 "unit_of_measure": p.get("unit_of_measure"),
-#                 "currency": p.get("currency") or "QAR",
+#                 "currency": p.get("currency") or "QAR ",
 #                 "price_per_unit": p.get("price_per_unit"),
 #                 "minimum_order_quantity": p.get("minimum_order_quantity"),
 #                 "stock_availability": p.get("stock_availability"),
@@ -679,7 +679,7 @@
 #         ''', (
 #             supplier_id, company_name_english, branch_name_english, store_name_english,
 #             product_name_english, product_name_arabic, data.get('category_id'), data.get('sub_category_id'),
-#             data.get('unit_of_measure'), price_per_unit, data.get('currency', 'QAR'),
+#             data.get('unit_of_measure'), price_per_unit, data.get('currency', 'QAR '),
 #             data.get('minimum_order_quantity'), data.get('stock_availability'), images_bytes,
 #             data.get('expiry_date'), data.get('shelf_life'), data.get('expiry_time'),
 #             data.get('description'), product_id
@@ -1316,7 +1316,7 @@
 #             data.get("category_id"),
 #             data.get("sub_category_id"),
 #             data.get("unit_of_measure"),
-#             data.get("currency", "QAR"),
+#             data.get("currency", "QAR "),
 #             price,
 #             data.get("minimum_order_quantity"),
 #             data.get("stock_availability"),
@@ -1483,7 +1483,7 @@ DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "database": os.getenv("DB_NAME", "MAHALDATABASE"),
     "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "Appu1718"),
+    "password": os.getenv("DB_PASSWORD", "S@ndeep9392"),
 }
 
 _db_pool = pool.SimpleConnectionPool(1, 20, **DB_CONFIG)
@@ -1879,7 +1879,7 @@ def upload_products():
                     sub_category_id,
                     r.get("country_of_origin") or "",
                     r.get("unit_of_measure"),
-                    r.get("currency") or "QAR",
+                    r.get("currency") or "QAR ",
                     int(r.get("price_per_unit")) if pd.notnull(r.get("price_per_unit")) else None,
                     int(r.get("minimum_order_quantity")) if pd.notnull(r.get("minimum_order_quantity")) else None,
                     int(r.get("stock_availability")) if pd.notnull(r.get("stock_availability")) else None,
@@ -1923,18 +1923,27 @@ def translate_text():
     except Exception as e:
         return jsonify({'arabic': text})
 
-# ---------------- Dropdowns ----------------
 @product_bp.route('/companies', methods=['GET'])
 def get_companies():
     conn = get_conn()
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute('SELECT supplier_id, company_name_english AS company_name FROM supplier_registration;')
+
+        cur.execute("""
+            SELECT 
+                supplier_id, 
+                company_name_english,
+                company_name_arabic
+            FROM supplier_registration;
+        """)
+
         companies = cur.fetchall()
         cur.close()
         return jsonify(companies), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
     finally:
         release_conn(conn)
 
@@ -2122,7 +2131,7 @@ def add_product():
             data.get('sub_category_id'),
             data.get('unit_of_measure'),
             price_per_unit,
-            data.get('currency', 'QAR'),
+            data.get('currency', 'QAR '),
             data.get('minimum_order_quantity'),
             data.get('stock_availability'),
             images_bytes,
@@ -2201,7 +2210,7 @@ def get_products():
                 "sub_category_id": p.get("sub_category_id"),
 
                 "unit_of_measure": p.get("unit_of_measure"),
-                "currency": p.get("currency") or "QAR",
+                "currency": p.get("currency") or "QAR ",
                 "price_per_unit": p.get("price_per_unit"),
                 "minimum_order_quantity": p.get("minimum_order_quantity"),
                 "stock_availability": p.get("stock_availability"),
@@ -2305,7 +2314,7 @@ def update_product(product_id):
         ''', (
             supplier_id, company_name_english, branch_name_english, store_name_english,
             product_name_english, product_name_arabic, data.get('category_id'), data.get('sub_category_id'),
-            data.get('unit_of_measure'), price_per_unit, data.get('currency', 'QAR'),
+            data.get('unit_of_measure'), price_per_unit, data.get('currency', 'QAR '),
             data.get('minimum_order_quantity'), data.get('stock_availability'), images_bytes,
             data.get('expiry_date'), data.get('shelf_life'), data.get('expiry_time'),
             data.get('description'), country_of_origin, product_id
@@ -2437,7 +2446,7 @@ def delete_product(product_id):
 
 #             # for idx, img in enumerate(raw_images):
 #             #     image_urls.append(
-#             #         f"http://127.0.0.1:5000/product/image/{row['product_id']}/{idx}"
+#             #         f"http://192.168.2.9:5000/product/image/{row['product_id']}/{idx}"
 #             #     )
 
 #             # row["product_images"] = image_urls
@@ -2455,6 +2464,7 @@ def delete_product(product_id):
 #     finally:
 #         cur.close()
 #         release_conn(conn)
+
 
 @product_bp.route('/inventory', methods=['GET'])
 def get_inventory():
@@ -2476,6 +2486,7 @@ def get_inventory():
                 pm.product_name_english,
                 pm.product_name_arabic,
                 pm.price_per_unit,
+                pm.primary_image,
                 pm.stock_availability,
                 pm.minimum_order_quantity,
                 pm.currency,
@@ -2484,6 +2495,7 @@ def get_inventory():
                 pm.expiry_date,
                 pm.expiry_time,
                 pm.product_images,
+                pm.delivery_time_minutes,
 
                 -- Offer table
                 o.offer_id,
@@ -2668,12 +2680,21 @@ def update_inventory():
 
     data = request.get_json() or {}
 
+
+    name_en = data.get("product_name_english")
+    name_ar = data.get("product_name_arabic")
+
+    # 🔥 AUTO TRANSLATE (CRITICAL FIX)
+    if name_en and (not name_ar or str(name_ar).strip() == ""):
+        name_ar = translate_to_arabic(name_en)
     product_id = data.get("product_id")
     stock = data.get("stock")
     price = data.get("price_per_unit")
     min_qty = data.get("minimum_order_quantity")
     currency = data.get("currency")
     uom = data.get("unit_of_measure")
+    delivery_time_minutes = data.get("delivery_time_minutes")
+    primary_image = data.get("primary_image")
 
     # 🔥 NORMALIZED
     expiry_date = normalize_date(data.get("expiry_date"))
@@ -2714,22 +2735,31 @@ def update_inventory():
         cur.execute("""
             UPDATE product_management
             SET
+                product_name_english = COALESCE(%s, product_name_english),
+                product_name_arabic = COALESCE(%s, product_name_arabic),
                 stock_availability = COALESCE(%s, stock_availability),
                 price_per_unit = COALESCE(%s, price_per_unit),
                 minimum_order_quantity = COALESCE(%s, minimum_order_quantity),
                 currency = COALESCE(%s, currency),
                 unit_of_measure = COALESCE(%s, unit_of_measure),
+                delivery_time_minutes = COALESCE(%s, delivery_time_minutes),
                 country_of_origin = COALESCE(%s, country_of_origin),
+                primary_image = COALESCE(%s, primary_image),
                 expiry_date = COALESCE(%s, expiry_date),
                 expiry_time = %s
             WHERE product_id = %s
         """, (
+            name_en,
+            name_ar,
             stock,
             price,
             min_qty,
             currency,
             uom,
+            delivery_time_minutes,
             data.get("country_of_origin"),
+
+            primary_image,
             expiry_date,
             expiry_time,
             product_id
@@ -2954,7 +2984,7 @@ def add_product_base64():
             data.get("category_id"),
             data.get("sub_category_id"),
             data.get("unit_of_measure"),
-            data.get("currency", "QAR"),
+            data.get("currency", "QAR "),
             price,
             data.get("minimum_order_quantity"),
             data.get("stock_availability"),
@@ -3152,7 +3182,7 @@ def get_featured_grid():
                 "id": p["product_id"],
                 "name": p["product_name_english"],
                 "price": p.get("price_per_unit"),
-                "currency": p.get("currency") or "QAR",
+                "currency": p.get("currency") or "QAR ",
                 "image": image_url
             }
 

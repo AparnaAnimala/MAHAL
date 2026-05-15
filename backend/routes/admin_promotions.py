@@ -949,9 +949,22 @@ def get_promo_products(promo_id):
                     base64_str = base64.b64encode(img).decode("utf-8")
                     images.append(f"data:image/jpeg;base64,{base64_str}")
 
+        # detect language (default = en)
+        lang = request.args.get("lang", "en")
+
+        name_en = p.get("product_name_english")
+        name_ar = p.get("product_name_arabic")
+
         result.append({
             "id": p["product_id"],
-            "name": p["product_name_english"],
+
+            # ✅ KEEP existing behavior
+            "name": name_ar if lang == "ar" and name_ar else name_en,
+
+            # ✅ ADD (optional - useful for frontend)
+            "name_en": name_en,
+            "name_ar": name_ar,
+
             "supplier_id": p["supplier_id"],
             "category": str(p["category_id"]),
             "original_price": original_price,
@@ -978,7 +991,9 @@ def get_supplier_products_self():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     cur.execute("""
-        SELECT product_id, product_name_english
+        SELECT product_id, 
+        product_name_english,
+        product_name_arabic
         FROM product_management
         WHERE supplier_id = %s
         ORDER BY product_name_english ASC
@@ -1030,7 +1045,7 @@ def get_supplier_category_products(category_id):
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     cur.execute("""
-        SELECT product_id, product_name_english, category_id
+        SELECT product_id, product_name_english, product_name_arabic, category_id
         FROM product_management
         WHERE supplier_id = %s
         AND category_id = %s
@@ -1546,7 +1561,7 @@ def get_products_by_ids():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     cur.execute("""
-        SELECT product_id, product_name_english
+        SELECT product_id, product_name_english, product_name_arabic
         FROM product_management
         WHERE product_id = ANY(%s)
     """, (ids,))

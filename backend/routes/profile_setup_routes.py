@@ -1,4 +1,3 @@
-# C:\Users\ADMIN\Desktop\mahal-app - Copy (4)\mahal-app - Copy\backend\routes\profile_setup_routes.py
 from flask import Blueprint, jsonify, request, abort
 from db import get_db_connection
 import traceback
@@ -10,14 +9,13 @@ from flask import send_file
 import re
 from psycopg2.extras import RealDictCursor
 from psycopg2 import errors
-
 import jwt
 
 # ======================================================
 # ✅ AUTH LAYER (FIXED — MATCHES YOUR LOGIN BACKEND)
 # ======================================================
 
-JWT_SECRET = "MAHAL_SUPER_SECRET_2025"   # MUST MATCH /api/auth
+JWT_SECRET = "MAHAL_SUPER_SECRET_2025"  
 
 def decode_jwt(token):
     try:
@@ -67,9 +65,16 @@ ALLOWED_MIME_TYPES = {
     "application/pdf"
 }
 
-def build_file_json_from_base64(data_url, filename="upload"):
-    if not data_url:
+def build_file_json_from_base64(data, default_name="upload"):
+    if not data:
         return None
+
+    if isinstance(data, dict):
+        data_url = data.get("data")
+        filename = data.get("filename") or default_name
+    else:
+        data_url = data
+        filename = default_name
 
     if "," in data_url:
         header, content = data_url.split(",", 1)
@@ -77,8 +82,20 @@ def build_file_json_from_base64(data_url, filename="upload"):
     else:
         return None
 
-    if mimetype not in ALLOWED_MIME_TYPES:
-        raise ValueError("Unsupported file type")
+    filename = filename.strip()
+
+    if not filename:
+        filename = default_name
+
+    if "." not in filename:
+        if "pdf" in mimetype:
+            filename += ".pdf"
+        elif "png" in mimetype:
+            filename += ".png"
+        elif "jpeg" in mimetype or "jpg" in mimetype:
+            filename += ".jpg"
+        elif "webp" in mimetype:
+            filename += ".webp"
 
     return json.dumps({
         "filename": filename,
@@ -196,21 +213,44 @@ def decode_file(data, key):
     except Exception as err:
         print(f"❌ File decode error ({key}):", err)
         return None
-    
+
 def extract_file(blob):
     if not blob:
         return None
 
     try:
-        if isinstance(blob, memoryview):
-            blob = blob.tobytes()
+        if isinstance(blob, str):
+            blob = blob.strip()
+            if not blob or blob.lower() in ["null", "none"]:
+                return None
 
-        obj = json.loads(blob)
+            if not blob.startswith("{"):
+                print("⚠️ Not JSON format:", blob[:50])
+                return None
+
+            obj = json.loads(blob)
+
+        elif isinstance(blob, (bytes, memoryview)):
+            blob = blob.tobytes() if isinstance(blob, memoryview) else blob
+            obj = json.loads(blob.decode("utf-8"))
+
+        else:
+            return None
+
+        content = obj.get("content")
+        mimetype = obj.get("mimetype")
+
+        preview = ""
+        if content and mimetype:
+            preview = f"data:{mimetype};base64,{content}"
+
         return {
             "filename": obj.get("filename"),
-            "preview": f"data:{obj.get('mimetype')};base64,{obj.get('content')}"
+            "preview": preview
         }
-    except Exception:
+
+    except Exception as e:
+        print("❌ extract_file error:", e)
         return None
 
 # -------------------------------------------------------------------
@@ -755,7 +795,6 @@ def restaurant_branch():
                 clean_text(b.get("street")),
                 clean_text(b.get("zone")),
                 clean_text(b.get("building")),
-                # clean_text(b.get("officeNo")),
                 int(b.get("officeNo")) if b.get("officeNo") else None,
                 clean_text(b.get("city")),
                 clean_text(b.get("country")),
@@ -837,7 +876,6 @@ def update_restaurant_branch(branch_id):
             clean_text(data.get("street")),
             clean_text(data.get("zone")),
             clean_text(data.get("building")),
-            # clean_text(data.get("officeNo")),
             int(data.get("officeNo")) if data.get("officeNo") else None,
             data.get("city"),
             data.get("country"),
@@ -1078,7 +1116,6 @@ def get_restaurant_branches(restaurant_id):
 
     conn.close()
     return jsonify({"status": True, "branches": branches})
-
 @profile_master_bp.route("/restaurant/store", methods=["POST"])
 def restaurant_store():
     conn = None
@@ -1532,7 +1569,7 @@ def update_supplier_bank(supplier_id):
             iban = %s,
             account_holder_name = %s,
             swift_code = %s,
-            bank_branch = %s,          -- ✅ ADD
+            bank_branch = %s,  
             updated_at = NOW()
         WHERE supplier_id = %s
     """, (
@@ -1551,7 +1588,7 @@ def update_supplier_bank(supplier_id):
     return jsonify({"status": True})
 
 @profile_master_bp.route("/supplier/update/files/<int:supplier_id>", methods=["PUT"])
-def update_supplier_files(supplier_id):
+def update_supplier_files_v2(supplier_id):
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -1576,13 +1613,13 @@ def update_supplier_files(supplier_id):
             upload_bank_letter,
             certificates
     """, (
-        build_file_json_from_base64(data.get("crCopy"), "cr_copy") if data.get("crCopy") else None,
-        build_file_json_from_base64(data.get("compCardCopy"), "computer_card"),
-        build_file_json_from_base64(data.get("tradeLicenseCopy"), "trade_license"),
-        build_file_json_from_base64(data.get("vatCertificate"), "vat_certificate"),
-        build_file_json_from_base64(data.get("companyLogo"), "company_logo"),
-        build_file_json_from_base64(data.get("bankLetter"), "bank_letter"),
-        build_file_json_from_base64(data.get("certificates"), "certificates"),
+        build_file_json_from_base64(data.get("crCopy"), "cr_copy.pdf") if data.get("crCopy") else None,
+        build_file_json_from_base64(data.get("compCardCopy"), "computer_card.pdf"),
+        build_file_json_from_base64(data.get("tradeLicenseCopy"), "trade_license.pdf"),
+        build_file_json_from_base64(data.get("vatCertificate"), "vat_certificate.pdf"),
+        build_file_json_from_base64(data.get("companyLogo"), "company_logo.png"),
+        build_file_json_from_base64(data.get("bankLetter"), "bank_letter.pdf"),
+        build_file_json_from_base64(data.get("certificates"), "certificates.pdf"),
         supplier_id
     ))
 
@@ -1620,6 +1657,7 @@ def update_restaurant_org(restaurant_id):
             sponsor_name = %s,
             trade_license_name = %s,
             vat_tax_number = %s,
+            restaurant_email_address = %s,
             updated_at = NOW()
         WHERE restaurant_id = %s
     """, (
@@ -1631,6 +1669,7 @@ def update_restaurant_org(restaurant_id):
         clean_text(data.get("sponsorName")),
         clean_text(data.get("tradeLicenseName")),
         validate_vat(data.get("vatNumber")),
+        data.get("restaurant_email_address"),
         restaurant_id
     ))
 
@@ -1701,7 +1740,7 @@ def update_restaurant_bank(restaurant_id):
     return jsonify({"status": True})
 
 @profile_master_bp.route("/restaurant/update/files/<int:restaurant_id>", methods=["PUT"])
-def update_restaurant_files(restaurant_id):
+def update_restaurant_files_v2(restaurant_id):
     try:
         data = request.json
         conn = get_db_connection()
@@ -1725,12 +1764,12 @@ def update_restaurant_files(restaurant_id):
                 upload_food_safety_certificate,
                 upload_company_logo
         """, (
-            build_file_json_from_base64(data.get("crCopy"), "cr_copy") if data.get("crCopy") else None,
-            build_file_json_from_base64(data.get("compCardCopy"), "computer_card") if data.get("compCardCopy") else None,
-            build_file_json_from_base64(data.get("tradeLicenseCopy"), "trade_license") if data.get("tradeLicenseCopy") else None,
-            build_file_json_from_base64(data.get("vatCertificate"), "vat_certificate") if data.get("vatCertificate") else None,
-            build_file_json_from_base64(data.get("foodSafetyCertificate"), "food_safety") if data.get("foodSafetyCertificate") else None,
-            build_file_json_from_base64(data.get("companyLogo"), "company_logo") if data.get("companyLogo") else None,
+            build_file_json_from_base64(data.get("crCopy"), "cr_copy.pdf") if data.get("crCopy") else None,
+            build_file_json_from_base64(data.get("compCardCopy"), "computer_card.pdf") if data.get("compCardCopy") else None,
+            build_file_json_from_base64(data.get("tradeLicenseCopy"), "trade_license.pdf") if data.get("tradeLicenseCopy") else None,
+            build_file_json_from_base64(data.get("vatCertificate"), "vat_certificate.pdf") if data.get("vatCertificate") else None,
+            build_file_json_from_base64(data.get("foodSafetyCertificate"), "food_safety.pdf") if data.get("foodSafetyCertificate") else None,
+            build_file_json_from_base64(data.get("companyLogo"), "company_logo.png") if data.get("companyLogo") else None,
             restaurant_id
         ))
 
@@ -1788,7 +1827,7 @@ def get_supplier_bank(supplier_id):
 
     cur.execute("""
         SELECT bank_name, iban, account_holder_name, swift_code,
-        bank_branch AS branch     -- ✅ ADD
+        bank_branch AS branch    
         FROM supplier_registration
         WHERE supplier_id = %s
     """, (supplier_id,))
@@ -1946,7 +1985,7 @@ def get_restaurant_branches_full(restaurant_id):
 
     cur.execute("""
         SELECT
-            branch_id,   -- 🔥 ADD THIS
+            branch_id, 
             branch_name_english AS "branchNameEn",
             branch_name_arabic AS "branchNameAr",
             branch_manager_name AS "branchManager",
@@ -1979,6 +2018,18 @@ def get_basic():
 
     return jsonify({"status": False}), 403
 
+@profile_master_bp.route("/org", methods=["GET"])
+def get_org():
+    user = get_current_user()
+
+    if user["role"] == "supplier":
+        return get_supplier_org(user["supplier_id"])
+
+    if user["role"] == "restaurant":
+        return get_restaurant_org(user["restaurant_id"])
+
+    return jsonify({"status": False}), 403
+
 @profile_master_bp.route("/address", methods=["GET"])
 def get_address():
     user = get_current_user()
@@ -1998,6 +2049,18 @@ def save_address():
 
     if user["role"] == "restaurant":
         return update_restaurant_address(user["restaurant_id"])
+    
+@profile_master_bp.route("/bank", methods=["GET"])
+def get_bank():
+    user = get_current_user()
+
+    if user["role"] == "supplier":
+        return get_supplier_bank(user["supplier_id"])
+
+    if user["role"] == "restaurant":
+        return get_restaurant_bank(user["restaurant_id"])
+
+    return jsonify({"status": False}), 403
 
 @profile_master_bp.route("/files", methods=["GET"])
 def get_files():
@@ -2030,3 +2093,573 @@ def save_store():
         return restaurant_store()
 
     return jsonify({"status": False, "error": "Forbidden"}), 403
+
+@profile_master_bp.route("/<role>/basic/<int:id>", methods=["GET"])
+def get_basic_by_role(role, id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    table = "restaurant_registration" if role == "restaurant" else "supplier_registration"
+    id_field = "restaurant_id" if role == "restaurant" else "supplier_id"
+
+    cur.execute(f"""
+        SELECT 
+            contact_person_name AS "fullName",
+            { 'restaurant_name_english' if role=='restaurant' else 'company_name_english' } AS "companyName",
+            contact_person_email AS "email",
+            contact_person_mobile AS "phone",
+            city, country
+        FROM {table}
+        WHERE {id_field} = %s
+    """, (id,))
+
+    row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"status": False}), 404
+
+    return jsonify({"status": True, **row})
+
+@profile_master_bp.route("/<role>/org/<int:id>", methods=["GET"])
+def get_org_by_role(role, id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    table = "restaurant_registration" if role == "restaurant" else "supplier_registration"
+    id_field = "restaurant_id" if role == "restaurant" else "supplier_id"
+
+    cur.execute(f"""
+        SELECT 
+            cr_number,
+            vat_tax_number
+        FROM {table}
+        WHERE {id_field} = %s
+    """, (id,))
+
+    row = cur.fetchone()
+    conn.close()
+
+    return jsonify({"status": True, "data": row})
+
+@profile_master_bp.route("/<role>/bank/<int:id>", methods=["GET"])
+def get_bank_by_role(role, id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    table = "restaurant_registration" if role == "restaurant" else "supplier_registration"
+    id_field = "restaurant_id" if role == "restaurant" else "supplier_id"
+
+    cur.execute(f"""
+        SELECT 
+            bank_name,
+            iban
+        FROM {table}
+        WHERE {id_field} = %s
+    """, (id,))
+
+    row = cur.fetchone()
+    conn.close()
+
+    return jsonify({"status": True, "data": row})
+
+@profile_master_bp.route("/supplier/update/basic/<int:supplier_id>", methods=["PUT"])
+def update_supplier_basic(supplier_id):
+    data = request.json
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        UPDATE supplier_registration SET
+            contact_person_name = %s,
+            company_name_english = %s,
+            contact_person_email = %s,
+            contact_person_mobile = %s,
+            city = %s,
+            country = %s,
+            updated_at = NOW()
+        WHERE supplier_id = %s
+    """, (
+        data.get("fullName"),
+        data.get("companyName"),
+        data.get("email"),
+        data.get("phone"),
+        data.get("city"),
+        data.get("country"),
+        supplier_id
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": True})
+
+@profile_master_bp.route("/restaurant/update/basic/<int:restaurant_id>", methods=["PUT"])
+def update_restaurant_basic(restaurant_id):
+    data = request.json
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE restaurant_registration SET
+            contact_person_name = %s,
+            restaurant_name_english = %s,
+            contact_person_email = %s,
+            contact_person_mobile = %s,
+            city = %s,
+            country = %s,
+            updated_at = NOW()
+        WHERE restaurant_id = %s
+    """, (
+        data.get("fullName"),
+        data.get("companyName"),
+        data.get("email"),
+        data.get("phone"),
+        data.get("city"),
+        data.get("country"),
+        restaurant_id
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": True})
+@profile_master_bp.route("/admin/suppliers/pending", methods=["GET"])
+def get_pending_suppliers():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        SELECT supplier_id, company_name_english, contact_person_email, approval_status
+        FROM supplier_registration
+        WHERE approval_status = 'PENDING'
+        ORDER BY supplier_id DESC
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return jsonify({"status": True, "data": rows})
+
+@profile_master_bp.route("/admin/supplier/approve/<int:supplier_id>", methods=["PUT"])
+def approve_supplier(supplier_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE supplier_registration
+        SET approval_status = 'APPROVED',
+            updated_at = NOW()
+        WHERE supplier_id = %s
+    """, (supplier_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": True})
+
+@profile_master_bp.route("/admin/supplier/reject/<int:supplier_id>", methods=["PUT"])
+def reject_supplier(supplier_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE supplier_registration
+        SET approval_status = 'REJECTED'
+        WHERE supplier_id = %s
+    """, (supplier_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": True})
+
+@profile_master_bp.route("/supplier/update/files/<int:id>", methods=["PUT"])
+def update_supplier_files(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    data = request.json
+
+    query = """
+    UPDATE supplier_registration SET
+        upload_cr_company = %s,
+        upload_computer_card_copy = %s,
+        upload_trade_license_copy = %s,
+        upload_vat_certificates_copy = %s,
+        upload_bank_letter = %s,
+        certificates = %s,
+        upload_company_logo = %s,
+        updated_at = NOW()
+    WHERE supplier_id = %s
+    """
+
+    cur.execute(query, (
+        build_file_json_from_base64(data.get("crCopy")),
+        build_file_json_from_base64(data.get("compCardCopy")),
+        build_file_json_from_base64(data.get("tradeLicenseCopy")),
+        build_file_json_from_base64(data.get("vatCertificate")),
+        build_file_json_from_base64(data.get("bankLetter")),
+        build_file_json_from_base64(data.get("certificates")),
+        build_file_json_from_base64(data.get("companyLogo")),
+        id
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": True})
+
+@profile_master_bp.route("/restaurant/update/files/<int:id>", methods=["PUT"])
+def update_restaurant_files(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    data = request.json
+
+    query = """
+    UPDATE restaurant_registration SET
+        upload_cr_copy = %s,
+        upload_computer_card_copy = %s,
+        upload_trade_license_copy = %s,
+        upload_vat_certificate_copy = %s,
+        upload_food_safety_certificate = %s,
+        upload_company_logo = %s,
+        updated_at = NOW()
+    WHERE restaurant_id = %s
+    """
+
+    cur.execute(query, (
+        build_file_json_from_base64(data.get("crCopy")),
+        build_file_json_from_base64(data.get("compCardCopy")),
+        build_file_json_from_base64(data.get("tradeLicenseCopy")),
+        build_file_json_from_base64(data.get("vatCertificate")),
+        build_file_json_from_base64(data.get("foodSafetyCertificate")),
+        build_file_json_from_base64(data.get("companyLogo")),
+        id
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": True})
+
+@profile_master_bp.route("/supplier/update/branch/<int:supplier_id>", methods=["PUT", "OPTIONS"])
+def update_all_supplier_branches(supplier_id):
+
+    if request.method == "OPTIONS":
+        return jsonify({"status": True}), 200
+
+    conn = None
+    try:
+        data = request.json 
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            DELETE FROM supplier_branch_registration
+            WHERE supplier_id = %s
+        """, (supplier_id,))
+
+        for b in data:
+            cur.execute("""
+                INSERT INTO supplier_branch_registration (
+                    supplier_id,
+                    branch_name_english,
+                    branch_name_arabic,
+                    branch_manager_name,
+                    contact_number,
+                    email,
+                    street,
+                    zone,
+                    building,
+                    office_no,
+                    city,
+                    country,
+                    branch_license
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                supplier_id,
+                b.get("branchNameEn"),
+                b.get("branchNameAr"),
+                b.get("branchManager"),
+                clean_mobile(b.get("contactNumber")),
+                b.get("email"),
+                clean_text(b.get("street")),
+                clean_text(b.get("zone")),
+                clean_text(b.get("building")),
+                clean_text(b.get("officeNo")),
+                b.get("city"),
+                b.get("country"),
+                b.get("branchLicense"),
+            ))
+
+        conn.commit()
+        return jsonify({"status": True})
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print("❌ Supplier Bulk Branch Error:", e)
+        return jsonify({"status": False}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+@profile_master_bp.route("/restaurant/update/branch/<int:restaurant_id>", methods=["PUT", "OPTIONS"])
+def update_all_restaurant_branches(restaurant_id):
+
+    if request.method == "OPTIONS":
+        return jsonify({"status": True}), 200
+
+    conn = None
+    try:
+        data = request.json
+
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("""
+            SELECT restaurant_name_english
+            FROM restaurant_registration
+            WHERE restaurant_id = %s
+        """, (restaurant_id,))
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"status": False, "message": "Invalid restaurant"}), 400
+
+        restaurant_name = row["restaurant_name_english"]
+
+        cur.execute("""
+            DELETE FROM restaurant_branch_registration
+            WHERE restaurant_id = %s
+        """, (restaurant_id,))
+
+        for b in data:
+            cur.execute("""
+                INSERT INTO restaurant_branch_registration (
+                    restaurant_id,
+                    restaurant_name,
+                    branch_name_english,
+                    branch_name_arabic,
+                    branch_manager_name,
+                    contact_number,
+                    email,
+                    street,
+                    zone,
+                    building,
+                    office_number,
+                    city,
+                    country
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                restaurant_id,
+                restaurant_name,
+                b.get("branchNameEn"),
+                b.get("branchNameAr"),
+                b.get("branchManager"),
+                clean_mobile(b.get("contactNumber")),
+                b.get("email"),
+                clean_text(b.get("street")),
+                clean_text(b.get("zone")),
+                clean_text(b.get("building")),
+                int(b.get("officeNo")) if b.get("officeNo") else None,
+                b.get("city"),
+                b.get("country"),
+            ))
+
+        conn.commit()
+        return jsonify({"status": True})
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print("❌ Restaurant Bulk Branch Error:", e)
+        return jsonify({"status": False}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+@profile_master_bp.route("/restaurant/update/store/<int:restaurant_id>", methods=["PUT"])
+def update_restaurant_store_bulk(restaurant_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        data = request.json
+
+        cur.execute("""
+            DELETE FROM restaurant_store_registration
+            WHERE restaurant_id = %s
+        """, (restaurant_id,))
+
+        cur.execute("""
+            SELECT restaurant_name_english
+            FROM restaurant_registration
+            WHERE restaurant_id = %s
+        """, (restaurant_id,))
+        name = cur.fetchone()["restaurant_name_english"]
+
+        cur.execute("""
+            INSERT INTO restaurant_store_registration (
+                restaurant_id,
+                restaurant_name,
+                branch_name,
+                store_name_english,
+                store_name_arabic,
+                contact_person_name,
+                contact_person_mobile,
+                email,
+                street,
+                zone,
+                building,
+                shop_no,
+                operating_hours,
+                city,
+                country
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            restaurant_id,
+            name,
+            data.get("branchName"),
+            data.get("storeNameEnglish"),
+            data.get("storeNameArabic"),
+            data.get("contactPersonName"),
+            data.get("contactPersonMobile"),
+            data.get("storeEmail"),
+            data.get("street"),
+            data.get("zone"),
+            data.get("building"),
+            data.get("shopNo"),
+            data.get("operatingHours"),
+            data.get("city"),
+            data.get("country")
+        ))
+
+        conn.commit()
+        return jsonify({"status": True})
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Store Bulk Error:", e)
+        return jsonify({"status": False}), 500
+
+    finally:
+        conn.close()
+
+def get_table_config(role):
+    role = role.lower()
+
+    if role == "supplier":
+        return {
+            "table": "supplier_registration",
+            "pk": "supplier_id",
+            "name_col": "company_name_english"
+        }
+
+    if role == "restaurant":
+        return {
+            "table": "restaurant_registration",
+            "pk": "restaurant_id",
+            "name_col": "restaurant_name_english"
+        }
+
+    return None
+
+@profile_master_bp.route("/<role>/profile-summary/<int:id>", methods=["GET"])
+def profile_summary(role, id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        if role == "supplier":
+            cur.execute("""
+                SELECT 
+                    company_name_english AS name,
+                    profile_image,
+                    approval_status
+                FROM supplier_registration
+                WHERE supplier_id = %s
+            """, (id,))
+        else:
+            cur.execute("""
+                SELECT 
+                    restaurant_name_english AS name,
+                    profile_image,
+                    approval_status
+                FROM restaurant_registration
+                WHERE restaurant_id = %s
+            """, (id,))
+
+        row = cur.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({"status": False}), 404
+
+        return jsonify({
+            "status": True,
+            "data": {
+                "companyName": row.get("name"),
+                "profileImage": extract_file(row["profile_image"]),
+                "approval_status": row.get("approval_status") 
+            }
+        })
+
+    except Exception as e:
+        print("❌ PROFILE SUMMARY ERROR:", str(e))
+        traceback.print_exc()
+        return jsonify({"status": False, "error": str(e)}), 500
+    
+@profile_master_bp.route("/<role>/profile-image/<int:id>", methods=["PUT"])
+def update_profile_image(role, id):
+    try:
+        data = request.json
+        image = build_file_json_from_base64(data.get("image"), "profile.png")
+
+        if not image:
+            return jsonify({"status": False, "message": "No image"}), 400
+
+        file_json = image
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        if role == "restaurant":
+            cur.execute("""
+                UPDATE restaurant_registration
+                SET profile_image = %s,
+                    updated_at = NOW()
+                WHERE restaurant_id = %s
+            """, (image, id))
+
+        elif role == "supplier":
+            cur.execute("""
+                UPDATE supplier_registration
+                SET profile_image = %s,
+                    updated_at = NOW()
+                WHERE supplier_id = %s
+            """, (file_json, id))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"status": True})
+
+    except Exception as e:
+        print("❌ Profile Image Error:", e)
+        return jsonify({"status": False}), 500

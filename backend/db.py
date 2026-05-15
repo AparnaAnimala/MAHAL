@@ -29,7 +29,7 @@
 #             host = os.getenv("DB_HOST", "localhost")
 #             database = os.getenv("DB_NAME", "MAHALDATABASE")
 #             user = os.getenv("DB_USER", "postgres")
-#             password = os.getenv("DB_PASS", "Appu1718")
+#             password = os.getenv("DB_PASS", "S@ndeep9392")
 #             port = os.getenv("DB_PORT", "5432")
 #             sslmode = "disable"  # Local DB usually does not use SSL
 
@@ -101,7 +101,7 @@ def get_db_connection():
         host = os.getenv("DB_HOST", "localhost")
         database = os.getenv("DB_NAME", "MAHALDATABASE")
         user = os.getenv("DB_USER", "postgres")
-        password = os.getenv("DB_PASS", "Appu1718")
+        password = os.getenv("DB_PASS", "S@ndeep9392")
         port = os.getenv("DB_PORT", "5432")
 
         conn = psycopg2.connect(

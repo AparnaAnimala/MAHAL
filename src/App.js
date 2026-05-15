@@ -263,7 +263,8 @@
 
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { LocationContext } from "./pages/LocationContext";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
@@ -372,8 +373,21 @@ import SupplierPromotionGrid from "./pages/AdminDashboard/SupplierPromotionGrid"
 // Styles
 import "./styles/style.css";
 
+
+
 function App() {
   const [locationName, setLocationName] = useState("");
+
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
+  }, [i18n.language]);
+
+  useEffect(() => {
+    const lang = localStorage.getItem("lang") || "en";
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  }, []);
 
   return (
     <LocationContext.Provider value={{ locationName, setLocationName }}>
@@ -514,20 +528,49 @@ function App() {
             <Route path="support" element={<AdminDashboard />} />
           </Route>
           {/* ========== Restuarent PROFILE ========== */}
-        <Route
-          path="/my-profile/Profile"
-          element={<RestaurantProfileLayout />}
-        >
-          <Route index element={<RestaurantOverview />} />
-          <Route path="basic" element={<RestaurantBasicInfo />} />
-          <Route path="company" element={<RestaurantCompanyInfo />} />
-          <Route path="address" element={<RestaurantAddress />} />
-          <Route path="bank" element={<RestaurantBankDetails />} />
-          <Route path="documents" element={<RestaurantDocuments />} />
-          <Route path="branches" element={<RestaurantBranches />} />
-          <Route path="store" element={<RestaurantStore />} />
-          <Route path="settings" element={<RestaurantSettings />} />
-        </Route>
+          <Route
+            path="/profile/:role/:id"
+            element={<RestaurantProfileLayout />}
+          >
+            <Route path="/profile/:role/:id" element={<RestaurantProfileLayout />}></Route>
+            <Route index element={<RestaurantOverview />} />
+            <Route path="overview" element={<RestaurantOverview />} />
+            <Route path="company" element={<RestaurantCompanyInfo />} />
+            <Route path="address" element={<RestaurantAddress />} />
+            <Route path="bank" element={<RestaurantBankDetails />} />
+            <Route path="documents" element={<RestaurantDocuments />} />
+            <Route path="branches" element={<RestaurantBranches />} />
+            <Route path="store" element={<RestaurantStore />} />
+            <Route path="settings" element={<RestaurantSettings />} />
+            <Route
+              path="basic"
+              element={
+                <RestaurantBasicInfo
+                  roleLower={localStorage.getItem("role")}
+                  id={localStorage.getItem("linked_id")}
+                />
+              }
+            />
+          </Route>
+
+          <Route
+            path="/admin/profile/:role/:id"
+            element={
+              <AdminGuard>
+                <RestaurantProfileLayout isAdmin={true} />
+              </AdminGuard>
+            }
+          >
+            <Route index element={<RestaurantOverview />} />
+            <Route path="basic" element={<RestaurantBasicInfo />} />
+            <Route path="company" element={<RestaurantCompanyInfo />} />
+            <Route path="address" element={<RestaurantAddress />} />
+            <Route path="bank" element={<RestaurantBankDetails />} />
+            <Route path="documents" element={<RestaurantDocuments />} />
+            <Route path="branches" element={<RestaurantBranches />} />
+            <Route path="store" element={<RestaurantStore />} />
+            <Route path="settings" element={<RestaurantSettings />} />
+          </Route>
 
         </Routes>
       </BrowserRouter>

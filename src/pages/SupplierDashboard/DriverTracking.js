@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "../css/driverTracking.css";
-
+import { useTranslation } from "react-i18next";
 const API = "/api/v1/orders";
 
 const DriverTracking = () => {
@@ -12,6 +12,7 @@ const DriverTracking = () => {
   const [otp, setOtp] = useState("");
   const [coords, setCoords] = useState(null);
   const [delivered, setDelivered] = useState(false);
+  const { t, i18n } = useTranslation();
 
 
 
@@ -79,7 +80,7 @@ const DriverTracking = () => {
 
 
   /* ================= LOADING ================= */
-  if (!details) return <div className="loading">Loading...</div>;
+  if (!details) return <div className="loading">{t("loading")}</div>;
 
   /* ================= SUCCESS SCREEN ================= */
   if (delivered) {
@@ -91,11 +92,11 @@ const DriverTracking = () => {
             ✔
           </div>
 
-          <h2>Delivery Successful</h2>
-          <p>Order #{details?.order_id}</p>
+          <h2>{t("delivery_success")}</h2>
+          <p>{t("order")} #{details?.order_id}</p>
 
           <p className="sub">
-            Thank you! Delivery has been completed.
+            {t("delivery_completed_msg")}
           </p>
 
         </div>
@@ -108,17 +109,17 @@ const DriverTracking = () => {
 
   if (details.error) {
 
-    let title = "❌ Invalid Link";
-    let msg = "This delivery link is not valid.";
+    let title = t("invalid_link_title");
+    let msg = t("invalid_link_msg");
 
     if (details.error === "Delivery already completed") {
-      title = "✅ Delivery Completed";
-      msg = "This delivery link is no longer active.";
+      title = t("delivery_completed_title");
+      msg = t("delivery_completed_msg_short");
     }
 
     if (details.error === "Link expired") {
-      title = "⌛ Link Expired";
-      msg = "Please contact restaurant.";
+      title = t("link_expired_title");
+      msg = t("contact_restaurant");
     }
 
     return (
@@ -145,20 +146,20 @@ return (
 
     {/* HEADER */}
     <div className="header">
-      <h2>🚚 Delivery</h2>
-      <span className="order-id">Order #{details.order_id}</span>
+      <h2>🚚 {t("delivery")}</h2>
+      <span className="order-id">{t("order")} #{details.order_id}</span>
     </div>
 
     {/* NAVIGATION CARD */}
     <div className="card highlight">
-      <h3>📍 Navigate to Location</h3>
+      <h3>📍 {t("navigate_location")}</h3>
 
       <p>{details.delivery_address}</p>
 
       {/* ✅ VISUAL HINT */}
       {details.delivery_lat && details.delivery_lng && (
         <small style={{ color: "green", fontWeight: "bold" }}>
-          📍 GPS Navigation Enabled
+          {t("gps_enabled")}
         </small>
       )}
 
@@ -168,27 +169,31 @@ return (
         rel="noreferrer"
         className="btn big primary"
       >
-        🧭 Start Navigation
+        🧭 {t("start_navigation")}
       </a>
     </div>
 
     {/* RESTAURANT */}
     <div className="card">
-      <h3>🏪 Restaurant</h3>
+      <h3>🏪 {t("restaurant")}</h3>
       <p>{details.restaurant_name}</p>
 
       <a href={`tel:${details.restaurant_phone}`} className="btn call">
-        📞 Call
+        📞 {t("call")}
       </a>
     </div>
 
     {/* ITEMS */}
     <div className="card">
-      <h3>📦 Order Items</h3>
+      <h3>📦 {t("order_items")}</h3>
 
       {details.items?.map((item, i) => (
         <div key={i} className="item-row">
-          <span>{item.product_name_english}</span>
+          <span>
+            {i18n.language === "ar"
+              ? item.product_name_arabic || item.product_name_english
+              : item.product_name_english}
+          </span>
           <span>x{item.quantity}</span>
         </div>
       ))}
@@ -196,11 +201,11 @@ return (
 
     {/* PAYMENT */}
     <div className="card payment">
-      <h3>💳 Payment</h3>
+      <h3>💳 {t("payment")}</h3>
 
       <p><b>{details.payment_method}</b></p>
-      <p>Status: {details.payment_status}</p>
-      <h2>QAR {details.total_amount}</h2>
+      <p>{t("status")}: {details.payment_status}</p>
+      <h2>QAR  {details.total_amount}</h2>
 
       {details.payment_method === "COD" &&
         details.payment_status !== "PAID" && (
@@ -227,17 +232,17 @@ return (
               }
             }}
           >
-            ✅ Mark Payment Received
+            ✅ {t("mark_payment_received")}
           </button>
         )}
     </div>
 
     {/* DELIVERY COMPLETE */}
     <div className="card complete">
-      <h3>✅ Complete Delivery</h3>
+      <h3>✅ {t("complete_delivery")}</h3>
 
       <input
-        placeholder="Enter OTP"
+        placeholder={t("enter_otp")}
         value={otp}
         onChange={(e) => setOtp(e.target.value)}
         className="otp-input"
@@ -261,7 +266,7 @@ return (
           if (res.ok) setDelivered(true);
         }}
       >
-        🚀 Mark Delivered
+        🚀 {t("mark_delivered")}
       </button>
     </div>
 

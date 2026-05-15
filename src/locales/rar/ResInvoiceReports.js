@@ -1,0 +1,20 @@
+export default {
+  resinvoice_report: "تقرير الفواتير",
+  restotal_invoices: "إجمالي الفواتير:",
+  ressearch_invoice_supplier: "ابحث بالفاتورة / الطلب / المورد...",
+  resall_status: "كل الحالات",
+  respaid: "مدفوع",
+  resunpaid: "غير مدفوع",
+  rescancelled: "ملغي",
+  resinvoice_id: "رقم الفاتورة",
+  resorder_id: "رقم الطلب",
+  ressupplier: "المورد",
+  resstatus: "الحالة",
+  resdate: "التاريخ",
+  resno_data_found: "لا توجد بيانات",
+  resloading_invoice_report: "جاري تحميل تقرير الفواتير...",
+  resprev: "السابق",
+  resnext: "التالي",
+  respage: "الصفحة",
+  resof: "من"
+};

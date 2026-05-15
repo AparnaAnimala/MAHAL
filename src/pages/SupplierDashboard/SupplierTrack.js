@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import "../css/supplierTrack.css";
-
-const API = "http://localhost:5000/api/v1/orders";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/v1/orders";
 
 /* =============================
    SIMPLE OWN DELIVERY FLOW
@@ -14,10 +14,17 @@ const STATUS_FLOW = [
   "DELIVERED"
 ];
 
+// const STATUS_LABELS = {
+//   ASSIGNED: "Driver Assigned",
+//   OUT_FOR_DELIVERY: "On the Way",
+//   DELIVERED: "Delivered"
+// };
+
+
 const STATUS_LABELS = {
-  ASSIGNED: "Driver Assigned",
-  OUT_FOR_DELIVERY: "On the Way",
-  DELIVERED: "Delivered"
+  ASSIGNED: "status_assigned",
+  OUT_FOR_DELIVERY: "status_on_way",
+  DELIVERED: "status_delivered"
 };
 
 const SupplierTrack = () => {
@@ -29,6 +36,7 @@ const SupplierTrack = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [distance, setDistance] = useState(null);
   const [etaLeft, setEtaLeft] = useState("");
+  const { t, i18n } = useTranslation();
 const originLat = Number(location?.lat);
 const originLng = Number(location?.lng);
 const destLat = Number(delivery?.dest_lat);
@@ -130,12 +138,12 @@ const destLng = Number(delivery?.dest_lng);
       const diff = eta - now;
 
       if (diff <= 0) {
-        setEtaLeft("Arriving");
+        setEtaLeft(t("arriving"));
         return;
       }
 
       const mins = Math.floor(diff / 60000);
-      setEtaLeft(`${mins} mins`);
+      setEtaLeft(`${mins} ${t("mins")}`);
 
     }, 1000);
 
@@ -179,21 +187,21 @@ const destLng = Number(delivery?.dest_lng);
       {/* DELIVERY COMPLETED BANNER */}
       {delivery?.status === "DELIVERED" && (
         <div className="delivered-banner">
-          ✅ Delivery Completed Successfully
+          ✅ {t("delivery_completed_success")}
         </div>
       )}
 
       {/* HEADER */}
       <div className="track-header">
         <div>
-          <h2>🚚 Delivery Tracking</h2>
-          <p>Order #{orderId}</p>
+          <h2>🚚 {t("delivery_tracking")}</h2>
+          <p>{t("order")} #{orderId}</p>
         </div>
 
         {delivery?.status !== "DELIVERED" && (
           <div className="live-badge">
             <span className="pulse"></span>
-            Live Tracking
+            {t("live_tracking")}
           </div>
         )}
       </div>
@@ -202,12 +210,12 @@ const destLng = Number(delivery?.dest_lng);
       <div className="track-grid">
 
         <div className="track-card">
-          <h4>Driver</h4>
+          <h4>{t("driver")}</h4>
           <p>{delivery?.driver_name || "-"}</p>
         </div>
 
         <div className="track-card">
-          <h4>Vehicle</h4>
+          <h4>{t("vehicle")}</h4>
           <p>
             {delivery?.vehicle_type || "-"}{" "}
             {delivery?.vehicle_number || ""}
@@ -215,7 +223,7 @@ const destLng = Number(delivery?.dest_lng);
         </div>
 
         <div className="track-card highlight">
-          <h4>ETA</h4>
+          <h4>{t("eta")}</h4>
           <p>
             {delivery?.estimated_delivery_time
               ? new Date(
@@ -226,22 +234,22 @@ const destLng = Number(delivery?.dest_lng);
         </div>
 
         <div className="track-card">
-          <h4>Status</h4>
+          <h4>{t("status")}</h4>
           <span className="status-badge">
-            {STATUS_LABELS[currentStatus] || currentStatus}
+            {t(STATUS_LABELS[currentStatus]) || currentStatus}
           </span>
         </div>
 
         {etaLeft && delivery?.status !== "DELIVERED" && (
           <div className="track-card highlight">
-            <h4>Arriving In</h4>
+            <h4>{t("arriving_in")}</h4>
             <p>{etaLeft}</p>
           </div>
         )}
 
         {distance && (
           <div className="track-card highlight">
-            <h4>Distance</h4>
+            <h4>{t("distance")}</h4>
             <p>{distance} km</p>
           </div>
         )}
@@ -250,7 +258,7 @@ const destLng = Number(delivery?.dest_lng);
 
       {/* DESTINATION */}
       <div className="track-card destination">
-        <h4>Destination</h4>
+        <h4>{t("destination")}</h4>
         <p>{delivery?.delivery_address}</p>
       </div>
 
@@ -265,7 +273,7 @@ const destLng = Number(delivery?.dest_lng);
             }`}
           >
             <div className="circle"></div>
-            <p>{STATUS_LABELS[step]}</p>
+            <p>{t(STATUS_LABELS[step])}</p>
           </div>
         ))}
 
@@ -319,7 +327,7 @@ const destLng = Number(delivery?.dest_lng);
             className="btn primary"
             style={{ marginTop: "10px", display: "inline-block" }}
           >
-            🧭 Open Full Navigation
+            🧭 {t("open_navigation")}
           </a>
 
           {/* ================= DEBUG ================= */}
@@ -333,7 +341,7 @@ const destLng = Number(delivery?.dest_lng);
 
     {lastUpdate && (
       <div className="last-update">
-        Last updated: {lastUpdate.toLocaleTimeString()}
+        {t("last_updated")}: {lastUpdate.toLocaleTimeString()}
       </div>
     )}
 

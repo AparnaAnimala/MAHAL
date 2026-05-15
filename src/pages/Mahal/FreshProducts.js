@@ -147,7 +147,7 @@ import { FaShoppingCart, FaHeart, FaEye } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:5000";
+const API_BASE = "http://192.168.2.9:5000";
 
 const TABS = [
   "Vegetables",
@@ -281,19 +281,26 @@ const FreshProducts = () => {
 
                   <div className="mm-product-img">
                     <img
-                      src={
-                        item.img1 ||
-                        `${API_BASE}/static/products/default.png`
-                      }
-                      alt={item.name}
-                    />
+                    src={
+                      item.img1 && item.img1.trim() !== ""
+                        ? item.img1.startsWith("http")
+                          ? item.img1
+                          : `${API_BASE}/${item.img1}`
+                        : null
+                    }
+                    alt={item.name}
+                    onError={(e) => {
+                      console.log("Image failed:", item.img1);
+                      e.target.style.display = "none";
+                    }}
+                  />
                   </div>
 
                   <div className="mm-product-info">
                     <h4>{item.name}</h4>
 
                     <div className="mm-price">
-                      ₹{item.price_numeric}
+                      QAR {item.price_numeric}
                     </div>
 
                     <div className="mm-actions">

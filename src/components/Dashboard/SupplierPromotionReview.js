@@ -1,7 +1,212 @@
+// import React, { useEffect, useState } from "react";
+// import { useParams } from "react-router-dom";
+// import axios from "axios";
+// import "../../pages/css/SupplierPromotionReview.css";
+
+// const SupplierPromotionReview = () => {
+//   const { promoId } = useParams();
+//   const [promotion, setPromotion] = useState(null);
+//   const [products, setProducts] = useState([]);
+
+//   const token = localStorage.getItem("token");
+
+//   useEffect(() => {
+//     const fetchPromotion = async () => {
+//       try {
+//         const res = await axios.get(
+//           `http://192.168.2.9:5000/api/v1/promotions/${promoId}`,
+//           { headers: { Authorization: `Bearer ${token}` } }
+//         );
+//         setPromotion(res.data);
+//       } catch (err) {
+//         console.log(err);
+//       }
+//     };
+
+//     if (promoId && token) {
+//       fetchPromotion();
+//     }
+//   }, [promoId, token]);
+
+//   useEffect(() => {
+//     const fetchProducts = async () => {
+//       try {
+//         const res = await axios.get(
+//           `http://192.168.2.9:5000/api/v1/promotions/${promoId}/products`,
+//           { headers: { Authorization: `Bearer ${token}` } }
+//         );
+//         setProducts(res.data);
+//       } catch (err) {
+//         console.log(err);
+//       }
+//     };
+
+//     if (promoId && token) {
+//       fetchProducts();
+//     }
+//   }, [promoId, token]);
+
+//   const acceptPromotion = async () => {
+//     try {
+//       const res = await axios.post(
+//         `http://192.168.2.9:5000/api/v1/supplier/promotions/${promoId}/accept`,
+//         {},
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       alert(res.data.message);
+//       window.location.reload();
+
+//       // fetchPromotion(); // 🔥 Refresh status
+//     } catch (err) {
+//       console.log(err);
+//     }
+//   };
+
+//   const rejectPromotion = async () => {
+//     try {
+//       const res = await axios.post(
+//         `http://192.168.2.9:5000/api/v1/supplier/promotions/${promoId}/reject`,
+//         {},
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       alert(res.data.message);
+//       window.location.reload();
+
+//       // fetchPromotion(); // 🔥 Refresh status
+//     } catch (err) {
+//       console.log(err);
+//     }
+//   };
+
+//   if (!promotion) return <p>Loading...</p>;
+
+//   return (
+//     <div className="supplier-promo-page">
+//       <div className="supplier-promo-card">
+
+//         <div className="promo-header">
+//           <div className="promo-title">{promotion.title}</div>
+//           <div className={`status-badge status-${promotion.supplier_status?.toLowerCase()}`}>
+//             {promotion.supplier_status}
+//           </div>
+//         </div>
+
+//         <div className="promo-section">
+//           <p className="promo-description">{promotion.description}</p>
+//         </div>
+
+//         <div className="promo-grid">
+
+//           <div className="grid-box">
+//             <p>Headline</p>
+//             <p>{promotion.headline || "-"}</p>
+//           </div>
+
+//           <div className="grid-box">
+//             <p>Priority Level</p>
+//             <p>{promotion.priority_level || "-"}</p>
+//           </div>
+
+//           <div className="grid-box">
+//             <p>Offer Type</p>
+//             <p>{promotion.offer_type}</p>
+//           </div>
+
+//           <div className="grid-box">
+//             <p>Offer Value</p>
+//             <p>{promotion.offer_value}</p>
+//           </div>
+
+//           <div className="grid-box">
+//             <p>Start Date</p>
+//             <p>{promotion.start_date}</p>
+//           </div>
+
+//           <div className="grid-box">
+//             <p>End Date</p>
+//             <p>{promotion.end_date}</p>
+//           </div>
+
+//         </div>
+
+//         {/* Products Section */}
+//         <div className="products-section">
+//           <h3>Promotion Products</h3>
+
+//           <div className="products-grid">
+//             {products.map((p) => (
+//               <div className="product-card" key={p.id}>
+
+//                 <div className="product-image-wrapper">
+
+//                   {p.images?.[0] && (
+//                     <img src={p.images[0]} alt="" className="product-image" />
+//                   )}
+
+//                   <div className="su-offer-badge">
+//                     {p.offer_type === "PERCENTAGE"
+//                       ? `${p.offer_value}% OFF`
+//                       : `QAR ${p.offer_value} OFF`}
+//                   </div>
+//                 </div>
+
+//                 {/* {p.images?.[0] && (
+//                   <img src={p.images[0]} alt="" className="product-image" />
+//                 )} */}
+
+//                 <div className="product-name">{p.name}</div>
+
+//                 <div className="product-price">
+//                   <span className="original-price">
+//                     QAR {p.original_price}
+//                   </span>
+//                   <span className="discounted-price">
+//                     QAR {p.discounted_price}
+//                   </span>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* {promotion.supplier_status === "INVITED" && ( */}
+//         {promotion.supplier_status?.toUpperCase() === "INVITED" && (
+//           // <div className="button-row">
+//           //   <button className="promo-btn promo-btn-accept" onClick={acceptPromotion}>
+//           //     Accept Promotion
+//           //   </button>
+//           //   <button className="promo-btn promo-btn-reject" onClick={rejectPromotion}>
+//           //     Reject
+//           //   </button>
+//           // </div>
+
+//           <div className="promo-actions">
+//             <button className="btn-corporate btn-accept" onClick={acceptPromotion}>
+//               Accept
+//             </button>
+
+//             <button className="btn-corporate btn-reject" onClick={rejectPromotion}>
+//               Reject
+//             </button>
+//           </div>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default SupplierPromotionReview;
+
+
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import "../../pages/css/SupplierPromotionReview.css";
+import { useTranslation } from "react-i18next";
 
 const SupplierPromotionReview = () => {
   const { promoId } = useParams();
@@ -9,12 +214,13 @@ const SupplierPromotionReview = () => {
   const [products, setProducts] = useState([]);
 
   const token = localStorage.getItem("token");
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchPromotion = async () => {
       try {
         const res = await axios.get(
-          `http://127.0.0.1:5000/api/v1/promotions/${promoId}`,
+          `http://192.168.2.9:5000/api/v1/promotions/${promoId}?lang=${i18n.language}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setPromotion(res.data);
@@ -26,13 +232,13 @@ const SupplierPromotionReview = () => {
     if (promoId && token) {
       fetchPromotion();
     }
-  }, [promoId, token]);
+  }, [promoId, token, i18n.language]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await axios.get(
-          `http://127.0.0.1:5000/api/v1/promotions/${promoId}/products`,
+          `http://192.168.2.9:5000/api/v1/promotions/${promoId}/products?lang=${i18n.language}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setProducts(res.data);
@@ -44,20 +250,18 @@ const SupplierPromotionReview = () => {
     if (promoId && token) {
       fetchProducts();
     }
-  }, [promoId, token]);
+  }, [promoId, token, i18n.language]);
 
   const acceptPromotion = async () => {
     try {
       const res = await axios.post(
-        `http://127.0.0.1:5000/api/v1/supplier/promotions/${promoId}/accept`,
+        `http://192.168.2.9:5000/api/v1/supplier/promotions/${promoId}/accept`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(res.data.message);
+      alert(t("promotion_accept_success"));
       window.location.reload();
-
-      // fetchPromotion(); // 🔥 Refresh status
     } catch (err) {
       console.log(err);
     }
@@ -66,21 +270,44 @@ const SupplierPromotionReview = () => {
   const rejectPromotion = async () => {
     try {
       const res = await axios.post(
-        `http://127.0.0.1:5000/api/v1/supplier/promotions/${promoId}/reject`,
+        `http://192.168.2.9:5000/api/v1/supplier/promotions/${promoId}/reject`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(res.data.message);
+      alert(t("promotion_reject_success"));
       window.location.reload();
-
-      // fetchPromotion(); // 🔥 Refresh status
     } catch (err) {
       console.log(err);
     }
   };
 
-  if (!promotion) return <p>Loading...</p>;
+  if (!promotion) return <p>{t("loading")}</p>;
+
+  const isArabic = i18n.language?.startsWith("ar");
+
+const formatDate = (date) => {
+  if (!date) return "-";
+
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "-";
+
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    }
+  ).format(d);
+};
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
 
   return (
     <div className="supplier-promo-page">
@@ -100,70 +327,78 @@ const SupplierPromotionReview = () => {
         <div className="promo-grid">
 
           <div className="grid-box">
-            <p>Headline</p>
+            <p>{t("headline")}</p>
             <p>{promotion.headline || "-"}</p>
           </div>
 
           <div className="grid-box">
-            <p>Priority Level</p>
+            <p>{t("priority_level")}</p>
             <p>{promotion.priority_level || "-"}</p>
           </div>
 
           <div className="grid-box">
-            <p>Offer Type</p>
+            <p>{t("offer_type")}</p>
             <p>{promotion.offer_type}</p>
           </div>
 
           <div className="grid-box">
-            <p>Offer Value</p>
-            <p>{promotion.offer_value}</p>
+            <p>{t("offer_value")}</p>
+            <p>
+              {promotion.offer_type === "PERCENTAGE"
+                ? `${formatNumber(promotion.offer_value)}٪`
+                : formatNumber(promotion.offer_value)}
+            </p>
           </div>
 
           <div className="grid-box">
-            <p>Start Date</p>
-            <p>{promotion.start_date}</p>
+            <p>{t("start_date")}</p>
+            <p>{formatDate(promotion.start_date)}</p>
           </div>
 
           <div className="grid-box">
-            <p>End Date</p>
-            <p>{promotion.end_date}</p>
+            <p>{t("end_date")}</p>
+            <p>{formatDate(promotion.end_date)}</p>
           </div>
 
         </div>
 
-        {/* Products Section */}
+        {/* PRODUCTS */}
         <div className="products-section">
-          <h3>Promotion Products</h3>
+          <h3>{t("promotion_products")}</h3>
 
           <div className="products-grid">
             {products.map((p) => (
               <div className="product-card" key={p.id}>
 
                 <div className="product-image-wrapper">
-
                   {p.images?.[0] && (
                     <img src={p.images[0]} alt="" className="product-image" />
                   )}
 
                   <div className="su-offer-badge">
                     {p.offer_type === "PERCENTAGE"
-                      ? `${p.offer_value}% OFF`
-                      : `QAR${p.offer_value} OFF`}
+                      ? `${p.offer_value}% ${t("off")}`
+                      : `QAR ${p.offer_value} ${t("off")}`}
                   </div>
                 </div>
 
-                {/* {p.images?.[0] && (
-                  <img src={p.images[0]} alt="" className="product-image" />
-                )} */}
-
-                <div className="product-name">{p.name}</div>
+                {/* ✅ LANGUAGE SWITCH */}
+                  <div className="product-name">
+                    {i18n.language === "ar"
+                      ? (p.name_arabic || p.name || "-")
+                      : (p.name || "-")}
+                  </div>
 
                 <div className="product-price">
                   <span className="original-price">
-                    QAR{p.original_price}
+                    {isArabic
+                      ? `ر.ق ${formatNumber(p.original_price)}`
+                      : `QAR ${formatNumber(p.original_price)}`}
                   </span>
                   <span className="discounted-price">
-                    QAR{p.discounted_price}
+                    {isArabic
+                      ? `ر.ق ${formatNumber(p.discounted_price)}`
+                      : `QAR ${formatNumber(p.discounted_price)}`}
                   </span>
                 </div>
               </div>
@@ -171,24 +406,14 @@ const SupplierPromotionReview = () => {
           </div>
         </div>
 
-        {/* {promotion.supplier_status === "INVITED" && ( */}
         {promotion.supplier_status?.toUpperCase() === "INVITED" && (
-          // <div className="button-row">
-          //   <button className="promo-btn promo-btn-accept" onClick={acceptPromotion}>
-          //     Accept Promotion
-          //   </button>
-          //   <button className="promo-btn promo-btn-reject" onClick={rejectPromotion}>
-          //     Reject
-          //   </button>
-          // </div>
-
           <div className="promo-actions">
             <button className="btn-corporate btn-accept" onClick={acceptPromotion}>
-              Accept
+              {t("accept")}
             </button>
 
             <button className="btn-corporate btn-reject" onClick={rejectPromotion}>
-              Reject
+              {t("reject")}
             </button>
           </div>
         )}

@@ -64,11 +64,11 @@ def get_restaurant_from_token():
     # except Exception:
     #     return None, ("Invalid token", 401)
 
-# =========================================================
-# GET: RESTAURANT ORDERS (LIST)  ✅ UNCHANGED
-# =========================================================
+
+
 # @restaurant_order_bp.route("/restaurant/orders", methods=["GET"])
 # def restaurant_orders():
+
 #     restaurant_id, err = get_restaurant_from_token()
 #     if err:
 #         return jsonify([]), 200
@@ -87,15 +87,30 @@ def get_restaurant_from_token():
 #                 oh.order_date,
 #                 oh.total_amount,
 #                 oh.status,
-#                 sr.company_name_english AS supplier_name
+#                 oh.is_recurring,
+#                 sr.company_name_english,
+#                 sr.company_name_arabic,
+
+
+#                 json_agg(
+#                     json_build_object(
+#                         'product_name_english', oi.product_name_english,
+#                         'product_name_arabic', pm.product_name_arabic,
+#                         'quantity', oi.quantity
+#                     )
+#                 ) AS items
+
 #             FROM order_header oh
+#             JOIN order_items oi ON oi.order_id = oh.order_id
+#             JOIN product_management pm ON pm.product_id = oi.product_id
 #             JOIN supplier_registration sr
-#               ON sr.supplier_id = oh.supplier_id
+#                 ON sr.supplier_id = oh.supplier_id
+
 #             WHERE oh.restaurant_id = %s
 #         """
+
 #         params = [restaurant_id]
 
-#         # 🔍 SEARCH (Order ID OR Supplier)
 #         if search:
 #             query += """
 #               AND (
@@ -105,23 +120,34 @@ def get_restaurant_from_token():
 #             """
 #             params.extend([f"%{search}%", f"%{search}%"])
 
-#         # 📦 STATUS FILTER
 #         if status != "ALL":
 #             query += " AND oh.status = %s"
 #             params.append(status)
 
-#         # 📅 LAST 30 DAYS
-#         if last30 == "1":
-#             query += " AND oh.order_date >= NOW() - INTERVAL '30 days'"
+#         # if last30 == "1":
+#         #     query += " AND oh.order_date >= NOW() - INTERVAL '30 days'"
 
-#         query += " ORDER BY oh.order_date DESC"
+#         query += """
+#             GROUP BY
+#                 oh.order_id,
+#                 oh.order_date,
+#                 oh.total_amount,
+#                 oh.status,
+#                 oh.is_recurring,
+#                 sr.company_name_english,
+#                 sr.company_name_arabic
+#             ORDER BY oh.order_date DESC
+#         """
 
 #         cur.execute(query, params)
+
 #         return jsonify(cur.fetchall() or []), 200
 
 #     finally:
 #         cur.close()
 #         conn.close()
+
+
 
 @restaurant_order_bp.route("/restaurant/orders", methods=["GET"])
 def restaurant_orders():
@@ -140,22 +166,27 @@ def restaurant_orders():
     try:
         query = """
             SELECT
+                oh.master_order_id,
                 oh.order_id,
                 oh.order_date,
                 oh.total_amount,
                 oh.status,
                 oh.is_recurring,
-                sr.company_name_english AS supplier_name,
+                sr.company_name_english,
+                sr.company_name_arabic,
+
 
                 json_agg(
                     json_build_object(
-                        'product_name', oi.product_name_english,
+                        'product_name_english', oi.product_name_english,
+                        'product_name_arabic', pm.product_name_arabic,
                         'quantity', oi.quantity
                     )
                 ) AS items
 
             FROM order_header oh
             JOIN order_items oi ON oi.order_id = oh.order_id
+            JOIN product_management pm ON pm.product_id = oi.product_id
             JOIN supplier_registration sr
                 ON sr.supplier_id = oh.supplier_id
 
@@ -166,38 +197,86 @@ def restaurant_orders():
 
         if search:
             query += """
-              AND (
+            AND (
                 CAST(oh.order_id AS TEXT) ILIKE %s
+                OR CAST(oh.master_order_id AS TEXT) ILIKE %s
                 OR sr.company_name_english ILIKE %s
-              )
+                OR sr.company_name_arabic ILIKE %s
+            )
             """
-            params.extend([f"%{search}%", f"%{search}%"])
+
+            params.extend([
+                f"%{search}%",
+                f"%{search}%",
+                f"%{search}%",
+                f"%{search}%"
+            ])
 
         if status != "ALL":
             query += " AND oh.status = %s"
             params.append(status)
 
-        if last30 == "1":
-            query += " AND oh.order_date >= NOW() - INTERVAL '30 days'"
+        # if last30 == "1":
+        #     query += " AND oh.order_date >= NOW() - INTERVAL '30 days'"
 
         query += """
             GROUP BY
+                oh.master_order_id,
                 oh.order_id,
                 oh.order_date,
                 oh.total_amount,
                 oh.status,
                 oh.is_recurring,
-                sr.company_name_english
+                sr.company_name_english,
+                sr.company_name_arabic
             ORDER BY oh.order_date DESC
         """
 
         cur.execute(query, params)
 
-        return jsonify(cur.fetchall() or []), 200
+        rows = cur.fetchall() or []
+
+        master_orders = {}
+
+        for row in rows:
+
+            master_id = (
+                row["master_order_id"]
+                or row["order_id"]
+            )
+
+            if master_id not in master_orders:
+
+                master_orders[master_id] = {
+                    "master_order_id": master_id,
+                    "order_date": row["order_date"],
+                    "split_orders": [],
+                    "grand_total": 0
+                }
+
+            master_orders[master_id]["split_orders"].append({
+                "order_id": row["order_id"],
+                "order_date": row["order_date"],
+                "total_amount": row["total_amount"],
+                "status": row["status"],
+                "is_recurring": row["is_recurring"],
+                "company_name_english": row["company_name_english"],
+                "company_name_arabic": row["company_name_arabic"],
+                "items": row["items"]
+            })
+
+            master_orders[master_id]["grand_total"] += float(
+                row["total_amount"] or 0
+            )
+
+        result = list(master_orders.values())
+
+        return jsonify(result), 200
 
     finally:
         cur.close()
         conn.close()
+        
 # =========================================================
 # GET: SINGLE ORDER DETAILS  ✅ RESTAURANT ADDED
 # =========================================================
@@ -229,6 +308,7 @@ def restaurant_order_details(order_id):
 
                 -- RESTAURANT BASIC
                 rr.restaurant_name_english,
+                rr.restaurant_name_arabic,
                 rr.contact_person_name  AS restaurant_contact_name,
                 rr.contact_person_mobile AS restaurant_contact_mobile,
                 rr.contact_person_email AS restaurant_contact_email,
@@ -242,7 +322,8 @@ def restaurant_order_details(order_id):
                 rs.country  AS restaurant_country,
 
                 -- SUPPLIER BASIC
-                sr.company_name_english AS supplier_name,
+                sr.company_name_english,
+                sr.company_name_arabic,
                 sr.contact_person_name  AS supplier_contact,
                 sr.contact_person_mobile AS supplier_mobile,
                 sr.contact_person_email AS supplier_email,
@@ -288,15 +369,18 @@ def restaurant_order_details(order_id):
         cur.execute(
             """
             SELECT
-                product_id,
-                product_name_english,
-                quantity,
-                price_per_unit,
-                discount,
-                total_amount
-            FROM order_items
-            WHERE order_id = %s
-            ORDER BY item_id
+                oi.product_id,
+                oi.product_name_english,
+                pm.product_name_arabic,   -- ✅ ADD THIS
+                oi.quantity,
+                oi.price_per_unit,
+                oi.discount,
+                oi.total_amount
+            FROM order_items oi
+            JOIN product_management pm 
+                ON pm.product_id = oi.product_id
+            WHERE oi.order_id = %s
+            ORDER BY oi.item_id
             """,
             (order_id,),
         )
@@ -630,62 +714,125 @@ def restaurant_dashboard():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # -------------------------------------------------
-    # TODAY ORDERS
-    # -------------------------------------------------
+    # ---------------- TODAY ORDERS ----------------
     cur.execute("""
         SELECT COUNT(*) AS today_orders
         FROM order_header
         WHERE restaurant_id = %s
-          AND DATE(created_at) = CURRENT_DATE
+          AND DATE(order_date) = CURRENT_DATE
     """, (restaurant_id,))
     today_orders = cur.fetchone()["today_orders"]
 
-    # -------------------------------------------------
-    # TODAY REVENUE (DELIVERED ONLY)
-    # -------------------------------------------------
+    # ---------------- TODAY SPENT ----------------
     cur.execute("""
-        SELECT COALESCE(SUM(total_amount), 0) AS revenue
+        SELECT COALESCE(SUM(total_amount), 0) AS today_spent
         FROM order_header
         WHERE restaurant_id = %s
-          AND DATE(created_at) = CURRENT_DATE
-          AND status = 'DELIVERED'
+          AND DATE(order_date) = CURRENT_DATE
     """, (restaurant_id,))
-    revenue = cur.fetchone()["revenue"]
+    today_spent = cur.fetchone()["today_spent"]
 
-    # -------------------------------------------------
-    # TOTAL ORDERS (USED AS "CUSTOMERS" FOR NOW)
-    # -------------------------------------------------
+    # ---------------- TOTAL ORDERS ----------------
     cur.execute("""
         SELECT COUNT(*) AS total_orders
         FROM order_header
         WHERE restaurant_id = %s
     """, (restaurant_id,))
-    customers = cur.fetchone()["total_orders"]  # TEMP LOGIC
+    total_orders = cur.fetchone()["total_orders"]
 
-    # -------------------------------------------------
-    # RECENT ORDERS
-    # -------------------------------------------------
+    # ---------------- MONTHLY ORDERS ----------------
     cur.execute("""
-        SELECT
-            order_id,
-            total_amount,
-            status
+        SELECT 
+            TO_CHAR(order_date, 'Mon') AS month,
+            COUNT(*) AS total_orders
         FROM order_header
         WHERE restaurant_id = %s
-        ORDER BY created_at DESC
+        GROUP BY DATE_TRUNC('month', order_date), month
+        ORDER BY DATE_TRUNC('month', order_date)
+    """, (restaurant_id,))
+    monthly_orders = cur.fetchall()
+
+    # ---------------- MONTHLY SPEND ----------------
+    cur.execute("""
+        SELECT 
+            TO_CHAR(order_date, 'Mon') AS month,
+            COALESCE(SUM(total_amount),0) AS total_spent
+        FROM order_header
+        WHERE restaurant_id = %s
+        GROUP BY DATE_TRUNC('month', order_date), month
+        ORDER BY DATE_TRUNC('month', order_date)
+    """, (restaurant_id,))
+    monthly_spend = cur.fetchall()
+
+    # ---------------- TOP SUPPLIERS ----------------
+    cur.execute("""
+        SELECT 
+            sr.company_name_english AS supplier_name,
+            COUNT(DISTINCT oh.order_id) AS total_orders,
+            COALESCE(SUM(oh.total_amount), 0) AS total_spent
+
+        FROM order_header oh
+        JOIN supplier_registration sr 
+            ON oh.supplier_id = sr.supplier_id
+
+        WHERE oh.restaurant_id = %s
+
+        GROUP BY sr.company_name_english
+
+        ORDER BY total_spent DESC
         LIMIT 5
     """, (restaurant_id,))
+    supplier_spend = cur.fetchall()
+
+    # ---------------- ORDER STATUS ----------------
+    cur.execute("""
+        SELECT status, COUNT(*) AS count
+        FROM order_header
+        WHERE restaurant_id = %s
+        GROUP BY status
+    """, (restaurant_id,))
+    order_status = cur.fetchall()
+
+    # ---------------- RECENT ORDERS ----------------
+    cur.execute("""
+        SELECT 
+            oh.order_id,
+            oh.total_amount,
+            oh.status,
+            sr.company_name_english AS supplier_name
+        FROM order_header oh
+        JOIN supplier_registration sr 
+            ON oh.supplier_id = sr.supplier_id
+        WHERE oh.restaurant_id = %s
+        ORDER BY oh.order_date DESC
+        LIMIT 5
+    """, (restaurant_id,))
+
     recent_orders = cur.fetchall()
+
+    
+    cur.execute("""
+        SELECT COUNT(*) AS pending_orders
+        FROM order_header
+        WHERE restaurant_id = %s
+        AND status IN ('PLACED','CONFIRMED','PREPARING','OUT_FOR_DELIVERY')
+    """, (restaurant_id,))
+
+    pending_orders = cur.fetchone()["pending_orders"]
 
     cur.close()
     conn.close()
 
     return jsonify({
         "today_orders": today_orders,
-        "revenue": revenue,
-        "customers": customers,      # TEMP
-        "recent_orders": recent_orders
+        "today_spent": today_spent,
+        "total_orders": total_orders,
+        "monthly_orders": monthly_orders,
+        "monthly_spend": monthly_spend,
+        "supplier_spend": supplier_spend,
+        "order_status": order_status,
+        "recent_orders": recent_orders,
+        "pending_orders": pending_orders
     }), 200
 
 

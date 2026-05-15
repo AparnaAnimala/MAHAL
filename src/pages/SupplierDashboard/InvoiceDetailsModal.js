@@ -135,7 +135,7 @@
 
 // import React from "react";
 
-// const API = "http://127.0.0.1:5000/api/v1/invoice";
+// const API = "http://192.168.2.9:5000/api/v1/invoice";
 
 // const InvoiceDetailsModal = ({ invoice, onClose }) => {
 //   const token = localStorage.getItem("token");
@@ -152,7 +152,7 @@
 
 //   try {
 //     const res = await fetch(
-//       `http://127.0.0.1:5000/api/v1/invoice/${invoiceId}/pdf`,
+//       `http://192.168.2.9:5000/api/v1/invoice/${invoiceId}/pdf`,
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -304,7 +304,7 @@
 
 // import React from "react";
 
-// const API = "http://127.0.0.1:5000/api/v1/invoice";
+// const API = "http://192.168.2.9:5000/api/v1/invoice";
 
 // const InvoiceDetailsModal = ({ invoice, onClose }) => {
 //   const token = localStorage.getItem("token");
@@ -321,7 +321,7 @@
 
 //   try {
 //     const res = await fetch(
-//       `http://127.0.0.1:5000/api/v1/invoice/${invoiceId}/pdf`,
+//       `http://192.168.2.9:5000/api/v1/invoice/${invoiceId}/pdf`,
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -525,227 +525,235 @@
 
 
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api/v1/invoice";
+const API = "http://192.168.2.9:5000/api/v1/invoice";
 
 const InvoiceDetailsModal = ({ invoice, onClose }) => {
-  const token = localStorage.getItem("token");
+  const { t, i18n } = useTranslation();
+
+  // const formatCurrency = (val) => {
+  //   return i18n.language === "ar"
+  //     ? `ر.ق ${val}`
+  //     : `QAR ${val}`;
+  // };
 
   const downloadPDF = async () => {
-  const invoiceId =
-  invoice?.header?.invoice_id || invoice?.header?.invoice_number;
+    const invoiceId =
+      invoice?.header?.invoice_id || invoice?.header?.invoice_number;
 
+    try {
+      const res = await fetch(
+        `${API}/${invoiceId}/pdf?lang=${i18n.language}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-  if (!invoiceId) {
-    alert("Invoice ID not found");
-    return;
-  }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
 
-  try {
-    const res = await fetch(
-      `http://127.0.0.1:5000/api/v1/invoice/${invoiceId}/pdf`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${invoiceId}.pdf`;
+      a.click();
+    } catch {
+      alert(t("pdf_error"));
+    }
+  };
+useEffect(() => {
+  document.body.dir = i18n.language === "ar" ? "rtl" : "ltr";
+}, [i18n.language]);
 
-    if (!res.ok) throw new Error("Unauthorized");
+const isArabic = i18n.language?.startsWith("ar");
 
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
+const formatNumber = (num) =>
+  new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${invoiceId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    alert("Failed to download invoice PDF");
-  }
+const formatCurrency = (val) => {
+  const num = formatNumber(Number(val || 0).toFixed(2));
+  return isArabic ? `ر.ق ${num}` : `QAR ${num}`;
 };
 
+const formatId = (id) => {
+  if (!isArabic) return id;
 
+  const prefix = String(id).replace(/[0-9]/g, "");
+  const numbers = String(id).replace(/\D/g, "");
 
+  return prefix + formatNumber(numbers);
+};
   return (
-  <div className="modal_overlay">
-    <div className="order_modal">
+    <div className="modal_overlay">
+      <div className="order_modal">
 
-      {/* HEADER */}
-      <div className="modal_header">
-        <h4>Invoice Details</h4>
-        <button onClick={onClose}>✖</button>
-      </div>
-
-      {/* BASIC INFO */}
-      <div className="info_grid">
-        <div>
-          <b>Invoice ID</b>
-          <span>{invoice.header.invoice_id}</span>
+        {/* HEADER */}
+        <div className="modal_header">
+          <h4>{t("invoice_details")}</h4>
+          <button onClick={onClose}>✖</button>
         </div>
 
-        <div>
-          <b>Order ID</b>
-          <span>{invoice.header.order_id}</span>
-        </div>
-
-        <div>
-          <b>Status</b>
-          <span className={`status ${invoice.header.invoice_status}`}>
-            {invoice.header.invoice_status}
-          </span>
-        </div>
-
-        <div>
-          <b>Total</b>
-          <span>${invoice.header.grand_total}</span>
-        </div>
-      </div>
-
-
-      {/* SUPPLIER */}
-      <div className="card">
-        <h5>Supplier Details</h5>
-
+        {/* BASIC INFO */}
         <div className="info_grid">
-
           <div>
-            <b>Store</b>
-            <span>{invoice.header.supplier_store}</span>
+            <b>{t("invoice_id")}</b>
+            <span>{formatId(invoice.header.invoice_id)}</span>
           </div>
 
           <div>
-            <b>Contact</b>
-            <span>{invoice.header.supplier_contact_name}</span>
+            <b>{t("order_id")}</b>
+            <span>{formatId(invoice.header.order_id)}</span>
           </div>
 
           <div>
-            <b>Mobile</b>
-            <span>{invoice.header.supplier_contact_mobile}</span>
-          </div>
-
-          <div>
-            <b>Email</b>
-            <span>{invoice.header.supplier_email}</span>
-          </div>
-
-          <div>
-            <b>Address</b>
-            <span>
-              {invoice.header.supplier_street},{" "}
-              {invoice.header.supplier_zone},{" "}
-              {invoice.header.supplier_building},{" "}
-              {invoice.header.supplier_shop_no}
+            <b>{t("status")}</b>
+            <span className={`status ${invoice.header.invoice_status}`}>
+              {t(invoice.header.invoice_status.toLowerCase())}
             </span>
           </div>
 
+          <div>
+            <b>{t("total")}</b>
+            <span>{formatCurrency(invoice.header.grand_total)}</span>
+          </div>
         </div>
-      </div>
 
+        {/* SUPPLIER */}
+        <div className="card">
+          <h5>{t("supplier_details")}</h5>
 
-      {/* RESTAURANT */}
-      <div className="card">
-        <h5>Restaurant Details</h5>
-
-        <div className="info_grid">
-
-          <div>
-            <b>Name</b>
-            <span>{invoice.header.restaurant_name_english}</span>
-          </div>
-
-          <div>
-            <b>Contact</b>
-            <span>{invoice.header.restaurant_contact_name}</span>
-          </div>
-
-          <div>
-            <b>Mobile</b>
-            <span>{invoice.header.restaurant_contact_mobile}</span>
-          </div>
-
-          <div>
-            <b>Email</b>
-            <span>{invoice.header.restaurant_email}</span>
-          </div>
-
-          <div>
-            <b>Address</b>
-            <span>
-              {invoice.header.restaurant_street},{" "}
-              {invoice.header.restaurant_zone},{" "}
-              {invoice.header.restaurant_building},{" "}
-              {invoice.header.restaurant_shop_no}
-            </span>
-          </div>
-
-        </div>
-      </div>
-
-
-      {/* PRODUCTS */}
-      <div className="card">
-        <h5>Products</h5>
-
-        <table className="mini_table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Discount</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {(invoice.items || []).map((p, i) => (
-              <tr key={i}>
-                <td>{p.product_name_english}</td>
-                <td>{p.quantity}</td>
-                <td>{p.price_per_unit}</td>
-                <td>{p.discount}</td>
-                <td>{p.total_amount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-
-      {/* PAYMENTS */}
-      <div className="card">
-        <h5>Payment Details</h5>
-
-        {(invoice.payments || []).length === 0 ? (
-          <span>No payments recorded</span>
-        ) : (
-          invoice.payments.map((p, i) => (
-            <div key={i} className="info_grid">
-              <div>
-                <b>{p.payment_method}</b>
-                <span>${p.paid_amount}</span>
-              </div>
+          <div className="info_grid">
+            <div>
+              <b>{t("supstore")}</b>
+              <span>{invoice.header.supplier_store}</span>
             </div>
-          ))
-        )}
+
+            <div>
+              <b>{t("contact")}</b>
+              <span>{invoice.header.supplier_contact_name}</span>
+            </div>
+
+            <div>
+              <b>{t("mobile")}</b>
+              <span>{invoice.header.supplier_contact_mobile}</span>
+            </div>
+
+            <div>
+              <b>{t("email")}</b>
+              <span>{invoice.header.supplier_email}</span>
+            </div>
+
+            <div>
+              <b>{t("supaddress")}</b>
+              <span>
+                {invoice.header.supplier_street},{" "}
+                {invoice.header.supplier_zone},{" "}
+                {invoice.header.supplier_building},{" "}
+                {invoice.header.supplier_shop_no}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* RESTAURANT */}
+        <div className="card">
+          <h5>{t("restaurant_details")}</h5>
+
+          <div className="info_grid">
+            <div>
+              <b>{t("name")}</b>
+              <span>{invoice.header.restaurant_name}</span>
+            </div>
+
+            <div>
+              <b>{t("contact")}</b>
+              <span>{invoice.header.restaurant_contact_name}</span>
+            </div>
+
+            <div>
+              <b>{t("mobile")}</b>
+              <span>{invoice.header.restaurant_contact_mobile}</span>
+            </div>
+
+            <div>
+              <b>{t("email")}</b>
+              <span>{invoice.header.restaurant_email}</span>
+            </div>
+
+            <div>
+              <b>{t("supaddress")}</b>
+              <span>
+                {invoice.header.restaurant_street},{" "}
+                {invoice.header.restaurant_zone},{" "}
+                {invoice.header.restaurant_building},{" "}
+                {invoice.header.restaurant_shop_no}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* PRODUCTS */}
+        <div className="card">
+          <h5>{t("products")}</h5>
+
+          <table className="mini_table">
+            <thead>
+              <tr>
+                <th>{t("product")}</th>
+                <th>{t("qty")}</th>
+                <th>{t("price")}</th>
+                <th>{t("discount")}</th>
+                <th>{t("total")}</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {(invoice.items || []).map((p, i) => (
+                <tr key={i}>
+                  <td>{p.product_name}</td>
+                  <td>{formatNumber(p.quantity)}</td>
+                  <td>{formatCurrency(p.price_per_unit)}</td>
+                  <td>{formatCurrency(p.discount)}</td>
+                  <td>{formatCurrency(p.total_amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAYMENTS */}
+        <div className="card">
+          <h5>{t("payment_details")}</h5>
+
+          {(invoice.payments || []).length === 0 ? (
+            <span>{t("no_payments")}</span>
+          ) : (
+            invoice.payments.map((p, i) => (
+              <div key={i} className="info_grid">
+                <div>
+                  <b>{p.payment_method}</b>
+                  <span>{formatCurrency(p.paid_amount)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* DOWNLOAD */}
+        <div className="modal_actions">
+          <button className="btn accept" onClick={downloadPDF}>
+            {t("download_pdf")}
+          </button>
+        </div>
+
       </div>
-
-
-      {/* DOWNLOAD BUTTON */}
-      <div className="modal_actions">
-        <button className="btn accept" onClick={downloadPDF}>
-          Download Invoice PDF
-        </button>
-      </div>
-
     </div>
-  </div>
-);
+  );
 };
 
 export default InvoiceDetailsModal;

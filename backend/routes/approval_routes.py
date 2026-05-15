@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 import smtplib, traceback, json
@@ -159,7 +158,7 @@ SELECT
 FROM admin_users a
 LEFT JOIN supplier_registration s
   ON s.assigned_admin_id = a.admin_id
- AND s.approval_status ILIKE 'Pending'
+ AND s.approval_status IN ('Assigned', 'Profile Completed')
 WHERE a.role_id = 2        -- <<< ASSUMING 2 = OPS_ADMIN in admin_roles
 GROUP BY a.admin_id, a.name
 ORDER BY pending ASC;
@@ -219,7 +218,7 @@ def get_pending_suppliers():
             LEFT JOIN admin_users a
                 ON a.admin_id = s.assigned_admin_id
 
-            WHERE s.approval_status NOT IN ('Approved', 'Rejected')
+            WHERE s.approval_status IN ('Pending', 'Assigned', 'Profile Completed', 'Under Review')
 
             ORDER BY s.created_at DESC
         """)
@@ -244,7 +243,7 @@ def get_pending_suppliers():
                 ON a.admin_id = s.assigned_admin_id
 
             WHERE s.assigned_admin_id = %s
-            AND s.approval_status NOT IN ('Approved', 'Rejected')
+            AND s.approval_status IN ('Assigned', 'Profile Completed')
 
             ORDER BY s.created_at DESC
         """, (admin_id,))
@@ -511,7 +510,7 @@ def review_supplier(supplier_id):
                 }), 403
 
             # Must be Under Review state
-            if old_status != "Under Review":
+            if old_status not in ["Under Review"]:
                 return jsonify({
                     "error": "Supplier must be Under Review before approval"
                 }), 400
@@ -1316,7 +1315,7 @@ def assign_supplier(supplier_id):
 
     # 🔥 LOCK ROW
     cur.execute("""
-        SELECT assigned_admin_id
+        SELECT assigned_admin_id, approval_status
         FROM supplier_registration
         WHERE supplier_id = %s
         FOR UPDATE
@@ -1335,7 +1334,7 @@ def assign_supplier(supplier_id):
         cur.execute("""
             UPDATE supplier_registration
             SET assigned_admin_id = %s,
-                approval_status = 'Assigned',
+            approval_status = 'Assigned',
                 updated_at = NOW()
             WHERE supplier_id = %s
         """, (admin_id, supplier_id))
@@ -1371,7 +1370,7 @@ def assign_supplier(supplier_id):
 # AUTO ASSIGN SUPPLIERS (LEAST PENDING OPS ADMIN FIRST)
 # =========================================================
 @approval_bp.route("/suppliers/auto-assign", methods=["PATCH"])
-@require_admin("MANAGE_ADMIN_USERS")
+@require_admin("APPROVE_SUPPLIERS")
 def auto_assign_suppliers():
 
     conn = None
@@ -1387,7 +1386,7 @@ def auto_assign_suppliers():
                 a.admin_id,
 
                 COUNT(s.supplier_id) FILTER (
-                    WHERE s.approval_status ILIKE 'Pending'
+                    WHERE s.approval_status IN ('Assigned', 'Profile Completed')
                 ) AS pending
 
             FROM admin_users a
@@ -1395,9 +1394,9 @@ def auto_assign_suppliers():
             JOIN admin_roles ar
                 ON ar.role_id = a.role_id
 
-            LEFT JOIN supplier_registration s
-                ON s.assigned_admin_id = a.admin_id
-               AND s.approval_status ILIKE 'Pending'
+LEFT JOIN supplier_registration s
+ON s.assigned_admin_id = a.admin_id
+AND s.approval_status IN ('Assigned', 'Profile Completed')
 
             WHERE ar.role_name = 'OPS_ADMIN'
 
@@ -1417,8 +1416,8 @@ def auto_assign_suppliers():
         cur.execute("""
             SELECT supplier_id
             FROM supplier_registration
-            WHERE approval_status ILIKE 'Pending'
-              AND assigned_admin_id IS NULL
+            WHERE approval_status = 'Pending'
+            AND assigned_admin_id IS NULL
             ORDER BY created_at ASC
         """)
 
@@ -1493,27 +1492,29 @@ def complete_profile(supplier_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # 🔥 DEBUG LOG
+    print("ADMIN ID:", g.admin["admin_id"], "SUPPLIER:", supplier_id)
+
     cur.execute("""
-    UPDATE supplier_registration
-    SET approval_status = 'Profile Completed',
-        profile_completed_at = NOW(),
-        updated_at = NOW()
-    WHERE supplier_id = %s
-    AND assigned_admin_id = %s
-    AND approval_status = 'Assigned'
+        UPDATE supplier_registration
+        SET approval_status = 'Profile Completed',
+            profile_completed_at = NOW(),
+            updated_at = NOW()
+        WHERE supplier_id = %s
+        AND assigned_admin_id = %s
+        AND approval_status IN ('Assigned', 'Profile Completed')
     """, (
-    supplier_id,
-    g.admin["admin_id"]
+        supplier_id,
+        g.admin["admin_id"]
     ))
 
     if cur.rowcount == 0:
         conn.rollback()
         return jsonify({
-            "error": "Supplier not assigned to you OR invalid current status"
+            "error": "Not assigned OR wrong status OR already processed"
         }), 400
 
     conn.commit()
-
 
     log_admin_action(
         admin_id=g.admin["admin_id"],
@@ -1526,6 +1527,8 @@ def complete_profile(supplier_id):
     conn.close()
 
     return jsonify({"status": True})
+
+
 @approval_bp.route("/supplier/<int:supplier_id>/send-to-review", methods=["PATCH"])
 @require_admin("APPROVE_SUPPLIERS")
 def send_to_review(supplier_id):
@@ -1536,34 +1539,32 @@ def send_to_review(supplier_id):
         return jsonify({
             "error": f"Only OPS or SUPPORT can send for review. Your role: {admin_role}"
         }), 403
-    
+
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
-    UPDATE supplier_registration
-    SET approval_status = 'Under Review',
-        sent_to_review_at = NOW(),
-        reviewed_by_admin_id = %s,
-        reviewed_at = NOW(),
-        updated_at = NOW()
-    WHERE supplier_id = %s
-    AND assigned_admin_id = %s
-    AND approval_status = 'Profile Completed'
+        UPDATE supplier_registration
+        SET approval_status = 'Under Review',
+            sent_to_review_at = NOW(),
+            reviewed_by_admin_id = NULL,
+            reviewed_at = NULL,
+            updated_at = NOW()
+        WHERE supplier_id = %s
+        AND assigned_admin_id = %s
+        AND approval_status IN ('Profile Completed', 'Under Review')
     """, (
-    g.admin["admin_id"],
-    supplier_id,
-    g.admin["admin_id"]
+        supplier_id,
+        g.admin["admin_id"]
     ))
 
     if cur.rowcount == 0:
         conn.rollback()
         return jsonify({
-            "error": "Supplier must be Profile Completed and assigned to you"
+            "error": "Supplier not ready OR not assigned"
         }), 400
 
     conn.commit()
-
 
     log_admin_action(
         admin_id=g.admin["admin_id"],

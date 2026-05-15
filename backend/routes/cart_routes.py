@@ -317,7 +317,7 @@ def get_my_cart():
             offer_label = f"{r['discount_percentage']}% OFF"
 
         elif r["offer_type"] == "Flat":
-            offer_label = f"₹{r['flat_amount']} OFF"
+            offer_label = f"QAR {r['flat_amount']} OFF"
 
         elif r["offer_type"] == "BOGO":
             offer_label = f"BUY {r['buy_quantity']} GET {r['get_quantity']}"
@@ -375,78 +375,6 @@ def get_my_cart():
 
 
 
-# =====================================================
-# ADD TO CART (USED BY PRODUCT PAGE)
-# =====================================================
-# @cart_bp.route("/cart/add", methods=["POST"])
-# def add_to_cart():
-#     restaurant_id = get_restaurant_id_from_token()
-#     if not restaurant_id:
-#         return jsonify({"error": "Unauthorized"}), 401
-
-#     data = request.get_json() or {}
-#     if "product_id" not in data or "quantity" not in data or "price" not in data:
-#         return jsonify({"error": "product_id, quantity, price required"}), 400
-
-#     conn = get_db_connection()
-#     cur = conn.cursor(cursor_factory=RealDictCursor)
-
-#     try:
-#         cur.execute("""
-#             SELECT supplier_id
-#             FROM product_management
-#             WHERE product_id = %s
-#         """, (data["product_id"],))
-#         product = cur.fetchone()
-
-#         if not product:
-#             return jsonify({"error": "Product not found"}), 404
-
-#         supplier_id = product["supplier_id"]
-#         cart_id = get_or_create_cart(restaurant_id, cur)
-
-#         cur.execute("""
-#             SELECT cart_item_id
-#             FROM cart_items
-#             WHERE cart_id = %s
-#               AND product_id = %s
-#               AND supplier_id = %s
-#         """, (cart_id, data["product_id"], supplier_id))
-
-#         item = cur.fetchone()
-
-#         if item:
-#             cur.execute("""
-#                 UPDATE cart_items
-#                 SET quantity = quantity + %s
-#                 WHERE cart_item_id = %s
-#             """, (data["quantity"], item["cart_item_id"]))
-#         else:
-#             cur.execute("""
-#                 INSERT INTO cart_items (
-#                     cart_id, product_id, supplier_id, quantity, price_per_unit
-#                 )
-#                 VALUES (%s, %s, %s, %s, %s)
-#             """, (
-#                 cart_id,
-#                 data["product_id"],
-#                 supplier_id,
-#                 data["quantity"],
-#                 data["price"]
-#             ))
-
-#         conn.commit()
-#         return jsonify({"message": "Added to cart"}), 201
-
-#     except Exception as e:
-#         conn.rollback()
-#         return jsonify({"error": str(e)}), 500
-
-#     finally:
-#         cur.close()
-#         conn.close()
-
-
 @cart_bp.route("/cart/add", methods=["POST"])
 def add_to_cart():
     restaurant_id = get_restaurant_id_from_token()
@@ -500,7 +428,7 @@ def add_to_cart():
             elif offer["offer_type"] == "Flat":
                 flat = float(offer.get("flat_amount") or 0)
                 final_price = max(base_price - flat, 0)
-                offer_label = f"₹{flat} OFF"
+                offer_label = f"QAR {flat} OFF"
 
             elif offer["offer_type"] == "BOGO":
                 offer_label = f"BUY {offer['buy_quantity']} GET {offer['get_quantity']}"

@@ -20,8 +20,8 @@ const AdminDashboardLayout = () => {
       return Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed?.permissions)
-        ? parsed.permissions
-        : ["VIEW_DASHBOARD"];
+          ? parsed.permissions
+          : ["VIEW_DASHBOARD"];
     } catch {
       return ["VIEW_DASHBOARD"];
     }

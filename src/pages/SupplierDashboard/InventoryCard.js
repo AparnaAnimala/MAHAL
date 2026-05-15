@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
 const InventoryCard = ({ product, onClick }) => {
+
+  const { t, i18n  } = useTranslation();
 
   /* ================= HELPERS ================= */
   const getMinutesDiff = (target) => {
@@ -18,7 +21,7 @@ const InventoryCard = ({ product, onClick }) => {
 
   const formatDate = (date) => {
     if (!date) return "";
-    return new Date(date).toLocaleDateString("en-GB", {
+    return new Date(date).toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -60,7 +63,7 @@ const InventoryCard = ({ product, onClick }) => {
       if (endDateTime) {
         const minsLeft = getMinutesDiff(endDateTime);
         if (minsLeft > 0 && minsLeft <= 30) {
-          badgeText = `ENDS IN ${minsLeft} MIN`;
+          badgeText = t("ends_in", { count: minsLeft });
           badgeType = "ending";
           hasTimeBadge = true;
         }
@@ -73,16 +76,19 @@ const InventoryCard = ({ product, onClick }) => {
         finalPrice =
           product.price -
           (product.price * offer.discount_percentage) / 100;
-        badgeText = `${offer.discount_percentage}% OFF`;
+        badgeText = t("percent_off", { value: offer.discount_percentage });
       }
 
       if (offer.offer_type === "Flat") {
         finalPrice = product.price - offer.flat_amount;
-        badgeText = `QAR${offer.flat_amount} OFF`;
+        badgeText = t("flat_off", { value: offer.flat_amount });
       }
 
       if (offer.offer_type === "BOGO") {
-        badgeText = `BUY ${offer.buy_quantity} GET ${offer.get_quantity}`;
+        badgeText = t("buy_get", {
+          buy: offer.buy_quantity,
+          get: offer.get_quantity
+        });
       }
     }
 
@@ -97,13 +103,13 @@ const InventoryCard = ({ product, onClick }) => {
 
       // fallback if date is invalid
       if (!startDateTime) {
-        badgeText = "UPCOMING";
+        badgeText = t("upcoming");
       } else {
         const diffMinutes = getMinutesDiff(startDateTime);
 
         // starts within 1 hour
         if (diffMinutes > 0 && diffMinutes <= 60) {
-          badgeText = `STARTS IN ${diffMinutes} MIN`;
+          badgeText = t("starts_in_min", { value: formatNumber(diffMinutes) });
         } else {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -113,13 +119,42 @@ const InventoryCard = ({ product, onClick }) => {
           );
 
           badgeText =
-            diffDays === 1
-              ? "STARTS TOMORROW"
-              : `STARTS IN ${diffDays} DAYS`;
+          diffDays === 1
+            ? t("starts_tomorrow")
+            : t("starts_in_days", { value: formatNumber(diffDays) });
         }
       }
     }
   }
+
+  const isArabic = i18n.language?.startsWith("ar");
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+
+const formatCurrency = (num) => {
+  const value = formatNumber(Number(num || 0).toFixed(2));
+  return isArabic ? `ر.ق ${value}` : `QAR ${value}`;
+};
+
+const formatTime = (time) => {
+  if (!time) return "";
+
+  const date = new Date(`1970-01-01T${time}`);
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-US",
+    { hour: "numeric", minute: "2-digit" }
+  ).format(date);
+};
+
+const countryMap = {
+  Qatar: isArabic ? "قطر" : "Qatar",
+  QATAR: isArabic ? "قطر" : "QATAR",
+  INDIA: isArabic ? "الهند" : "India",
+};
 
   /* ================= RENDER ================= */
   return (
@@ -132,27 +167,56 @@ const InventoryCard = ({ product, onClick }) => {
       )}
 
       <div className="card_image">
-        <img src={product.image} alt={product.name} />
+        <img
+          src={
+            product.primary_image ||
+            product.image ||
+            product.images?.[0]
+          }
+          alt={product.name}
+        />
       </div>
 
       <div className="card_details">
-        <h4>{product.name}</h4>
+        <h4>
+          {i18n.language === "ar"
+            ? product.product_name_arabic || product.product_name_english || "-"
+            : product.product_name_english || "-"}
+        </h4>
 
         <div className="row-list">
           <div className="list_tag">
-            <span>Country:</span>
-            {product.country || "-"}
+            <span>{t("country")}:</span>
+            {countryMap[product.country] || product.country || "-"}
           </div>
         </div>
 
         <div className="row-list">
           <div className="list_tag">
-            <span>Currency:</span>
-            {product.currency}
+            <span>{t("Supcurrency")}:</span>
+            {isArabic ? "ر.ق" : product.currency}
           </div>
         </div>
 
         <div className="row-list">
+          <div className="list_tag">
+            <span>{t("price")}:</span>
+            {offer?.offer_status === "ACTIVE" && finalPrice !== originalPrice ? (
+              <>
+                <span style={{ textDecoration: "line-through", color: "#999" }}>
+                  {formatCurrency(originalPrice)}
+                </span>
+                <b style={{ color: "#2e7d32" }}>
+                  {formatCurrency(finalPrice)}
+                </b>
+              </>
+            ) : (
+              <b>{formatCurrency(originalPrice)}</b>
+            )}
+          </div>
+        </div>
+
+        {/* <div className="row-list">
           <div className="list_tag">
             <span>Price:</span>
             {offer?.offer_status === "ACTIVE" && finalPrice !== originalPrice ? (
@@ -168,37 +232,20 @@ const InventoryCard = ({ product, onClick }) => {
               <b>QAR {originalPrice}</b>
             )}
           </div>
-        </div>
-
-        {/* <div className="row-list">
-          <div className="list_tag">
-            <span>Price:</span>
-            {offer?.offer_status === "ACTIVE" && finalPrice !== originalPrice ? (
-              <>
-                <span style={{ textDecoration: "line-through", color: "#999" }}>
-                  QAR{originalPrice}
-                </span>
-                <b style={{ color: "#2e7d32" }}>
-                  QAR{finalPrice.toFixed(2)}
-                </b>
-              </>
-            ) : (
-              <b>QAR{originalPrice}</b>
-            )}
-          </div>
         </div> */}
 
         <div className="row-list">
           <div className="list_tag">
-            <span>Expiry:</span>
-            {new Date(product.expiry_date).toLocaleDateString("en-GB", {
+            <span>{t("expiry")}:</span>
+            {new Date(product.expiry_date).toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-GB", {
               day: "2-digit",
               month: "short",
               year: "numeric",
             })}
+            {formatDate(product.expiry_date)}
             {product.expiry_time && (
               <span style={{ marginLeft: 8, fontWeight: 600 }}>
-                {formatTimeAMPM(product.expiry_time)}
+                {formatTime(product.expiry_time)}
               </span>
             )}
           </div>
@@ -206,29 +253,29 @@ const InventoryCard = ({ product, onClick }) => {
 
         <div className="row-list">
           <div className="list_tag">
-            <span>MOQ:</span>
-            <b>{product.moq}</b>
+            <span>{t("moq")}:</span>
+            <b>{formatNumber(product.moq)}</b>
           </div>
         </div>
 
         <div className="row-list">
           <div className="list_tag">
-            <span>UOM:</span>
+            <span>{t("uom")}:</span>
             {product.uom}
           </div>
         </div>
 
         <div className="row-list">
           <div className="list_tag">
-            <span>Units:</span>
-            <b>{product.units}</b>
+            <span>{t("units")}:</span>
+            <b>{formatNumber(product.units)}</b>
           </div>
         </div>
         {offer?.offer_status === "ACTIVE" && offer?.start_date && offer?.end_date && (
           <div className="row-list">
             <div className="list_tag">
-              <span>Offer Valid:</span>
-              {formatDate(offer.start_date)} → {formatDate(offer.end_date)}
+              <span>{t("offer_valid")}:</span>
+              {formatDate(offer.start_date)} {i18n.language === "ar" ? "←" : "→"} {formatDate(offer.end_date)}
             </div>
           </div>
         )}
@@ -236,8 +283,8 @@ const InventoryCard = ({ product, onClick }) => {
         {offer?.offer_status === "ACTIVE" && offer?.start_time && (
           <div className="row-list">
             <div className="list_tag">
-              <span>Offer Time:</span>
-              {formatTimeAMPM(offer.start_time)} → {formatTimeAMPM(offer.end_time)}
+              <span>{t("offer_time")}:</span>
+              {formatTimeAMPM(offer.start_time)} {i18n.language === "ar" ? "←" : "→"} {formatTimeAMPM(offer.end_time)}
             </div>
           </div>
         )}
@@ -245,7 +292,7 @@ const InventoryCard = ({ product, onClick }) => {
         {offer?.offer_status === "UPCOMING" && offer?.start_date && (
           <div className="row-list">
             <div className="list_tag">
-              <span>Offer Starts:</span>
+              <span>{t("offer_starts")}:</span>
               {formatDate(offer.start_date)}
             </div>
           </div>
@@ -253,10 +300,10 @@ const InventoryCard = ({ product, onClick }) => {
 
         <div className="badges">
           <span className={`badge ${product.stockStatus}`}>
-            {product.stockStatus.replace("_", " ")}
+            {t(product.stockStatus.toLowerCase())}
           </span>
           <span className={`badge ${product.expiryStatus}`}>
-            {product.expiryStatus}
+            {t(product.expiryStatus.toLowerCase())}
           </span>
         </div>
 

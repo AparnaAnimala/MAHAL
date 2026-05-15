@@ -1,22 +1,290 @@
-import React, { useState,useEffect } from "react";
+// import React, { useState,useEffect } from "react";
+// import "../css/status.css";
+
+// // const API = "http://192.168.2.9:5000/api/v1/orders";
+// const API = "http://192.168.2.9:5000/api/v1/orders";
+
+
+// /* ================================
+//    CONFIG — CHANGE HERE ONLY
+// ================================ */
+// // const LOCAL_IP = "192.168.2.21";   // your laptop IP
+// // const LOCAL_PORT = "3000";
+// // const PROD_URL = "";               // example: https://app.mahal.qa
+// // ================================
+// // NGROK PUBLIC URL (IMPORTANT)
+// // ================================
+// const PROD_URL = "https://anthracotic-rootlike-evelina.ngrok-free.dev";
+
+// const AssignDeliveryModal = ({ order, onClose, onAssigned }) => {
+
+//   const [deliveryType, setDeliveryType] = useState("OWN");
+//   const [driverName, setDriverName] = useState("");
+//   const [driverMobile, setDriverMobile] = useState("");
+//   const [vehicleType, setVehicleType] = useState("");
+//   const [vehicleNumber, setVehicleNumber] = useState("");
+//   const [partnerName, setPartnerName] = useState("");
+//   const [estimatedTime, setEstimatedTime] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [deliveryBoys, setDeliveryBoys] = useState([]);
+//   const [selectedBoy, setSelectedBoy] = useState("");
+
+
+//   /* ================================
+//      DRIVER LINK BUILDER
+//      DEV → uses local IP
+//      PROD → uses domain
+//   ================================= */
+//  const getDriverLink = (token) => {
+//   return `${PROD_URL}/driver?token=${token}`;
+// };
+
+// useEffect(() => {
+//   fetch("http://192.168.2.9:5000/api/v1/delivery-boys", {
+//     headers: {
+//       Authorization: `Bearer ${localStorage.getItem("token")}`,
+//     },
+//   })
+//     .then((res) => res.json())
+//     .then((data) => setDeliveryBoys(data));
+// }, []);
+
+
+//   /* ================================
+//      HANDLE ASSIGN
+//   ================================= */
+//   const handleAssign = async () => {
+
+//   try {
+//     setLoading(true);
+
+//     const res = await fetch(
+//       `${API}/${order.id}/assign-delivery`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${localStorage.getItem("token")}`,
+//         },
+//         body: JSON.stringify({
+//           delivery_type: deliveryType,
+//           driver_name: driverName,
+//           driver_mobile: driverMobile,
+//           vehicle_type: vehicleType,
+//           vehicle_number: vehicleNumber,
+//           partner_name: partnerName,
+//           estimated_delivery_time: estimatedTime,
+//         }),
+//       }
+//     );
+
+//     const data = await res.json();
+
+//     if (!res.ok) {
+//       alert(data.error || "Failed");
+//       return;
+//     }
+
+//     alert("🚚 Delivery Assigned Successfully");
+
+
+//     // ===============================
+//     // DRIVER WHATSAPP
+//     // ===============================
+// if (driverMobile) {
+
+//   const cleanMobile = driverMobile.replace(/\D/g, "");
+
+//   const driverLink = getDriverLink(data.driver_token);
+
+//   const message = encodeURIComponent(
+// `🚚 *Delivery Assigned*
+
+// Order ID: ${order.id}
+// Driver: ${driverName}
+
+// 👉 Start Delivery:
+// ${driverLink}
+
+// Please keep location ON during delivery.`
+// );
+
+
+//   window.open(
+//     `https://wa.me/${cleanMobile}?text=${message}`,
+//     "_blank"
+//   );
+// }
+
+
+
+//     // ===============================
+//     // RESTAURANT OTP WHATSAPP
+//     // ===============================
+//     if (data.restaurant_otp_link) {
+//       setTimeout(() => {
+//         window.open(data.restaurant_otp_link, "_blank");
+//       }, 800);
+//     }
+
+
+
+//     onAssigned && onAssigned();
+//     onClose();
+
+//   } catch (err) {
+//     console.error(err);
+//     alert("Server error");
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
+
+//   /* ================================
+//      UI
+//   ================================= */
+//   return (
+//     <div className="modal_overlay">
+//       <div className="order_modal">
+
+//         <div className="modal_header">
+//           <h4>🚚 Assign Delivery</h4>
+//           <button onClick={onClose}>✖</button>
+//         </div>
+
+//         {/* ETA */}
+//         <div className="card">
+//           <h5>Estimated Delivery Time</h5>
+//           <input
+//             type="datetime-local"
+//             value={estimatedTime}
+//             onChange={(e) => setEstimatedTime(e.target.value)}
+//             className="form-control"
+//           />
+//         </div>
+
+//         <select
+//           value={selectedBoy}
+//           onChange={(e) => {
+//             const boyId = e.target.value;
+//             setSelectedBoy(boyId);
+
+//             const boy = deliveryBoys.find((b) => b.id == boyId);
+
+//             if (boy) {
+//               setDriverName(boy.name);
+//               setDriverMobile(boy.mobile);
+//               setVehicleType(boy.vehicle_type);
+//               setVehicleNumber(boy.vehicle_number);
+//             }
+//           }}
+//           className="form-control mb-2"
+//         >
+//           <option value="">-- Select Saved Delivery Boy --</option>
+
+//           {deliveryBoys.map((b) => (
+//             <option key={b.id} value={b.id}>
+//               {b.name} ({b.mobile})
+//             </option>
+//           ))}
+//         </select>
+
+//         {/* TYPE */}
+//         <div className="card">
+//           <h5>Delivery Type</h5>
+//           <select
+//             value={deliveryType}
+//             onChange={(e) => setDeliveryType(e.target.value)}
+//             className="form-control"
+//           >
+//             <option value="OWN">Own Delivery</option>
+//             <option value="PARTNER">Partner</option>
+//           </select>
+//         </div>
+
+//         {/* OWN DELIVERY */}
+//         {deliveryType === "OWN" && (
+//           <div className="card">
+
+//             <input
+//               placeholder="Driver Name"
+//               value={driverName}
+//               onChange={(e) => setDriverName(e.target.value)}
+//               className="form-control mb-2"
+//             />
+
+//             <input
+//               placeholder="Driver Mobile"
+//               value={driverMobile}
+//               onChange={(e) => setDriverMobile(e.target.value)}
+//               className="form-control mb-2"
+//             />
+
+//             <input
+//               placeholder="Vehicle Type (Bike/Van/Truck)"
+//               value={vehicleType}
+//               onChange={(e) => setVehicleType(e.target.value)}
+//               className="form-control mb-2"
+//             />
+
+//             <input
+//               placeholder="Vehicle Number (Optional)"
+//               value={vehicleNumber}
+//               onChange={(e) => setVehicleNumber(e.target.value)}
+//               className="form-control"
+//             />
+
+//           </div>
+//         )}
+
+//         {/* PARTNER */}
+//         {deliveryType === "PARTNER" && (
+//           <div className="card">
+//             <input
+//               placeholder="Partner Name"
+//               value={partnerName}
+//               onChange={(e) => setPartnerName(e.target.value)}
+//               className="form-control"
+//             />
+//           </div>
+//         )}
+
+//         {/* ACTION */}
+//         <div className="modal_actions">
+//           <button
+//             className="btn delivered"
+//             onClick={handleAssign}
+//             disabled={loading}
+//           >
+//             {loading ? "Assigning..." : "Confirm Delivery"}
+//           </button>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default AssignDeliveryModal;
+
+
+
+
+import React, { useState, useEffect } from "react";
 import "../css/status.css";
+import { useTranslation } from "react-i18next";
 
-// const API = "http://127.0.0.1:5000/api/v1/orders";
-const API = "http://127.0.0.1:5000/api/v1/orders";
-
-
-/* ================================
-   CONFIG — CHANGE HERE ONLY
-================================ */
-// const LOCAL_IP = "192.168.2.21";   // your laptop IP
-// const LOCAL_PORT = "3000";
-// const PROD_URL = "";               // example: https://app.mahal.qa
-// ================================
-// NGROK PUBLIC URL (IMPORTANT)
-// ================================
+const API = "http://192.168.2.9:5000/api/v1/orders";
+// const PROD_URL = "https://anthracotic-rootlike-evelina.ngrok-free.dev";
+// const PROD_URL = window.location.origin;
 const PROD_URL = "https://anthracotic-rootlike-evelina.ngrok-free.dev";
-
 const AssignDeliveryModal = ({ order, onClose, onAssigned }) => {
+
+  const { t, i18n } = useTranslation();
+
+  const isRTL = i18n.language === "ar";
 
   const [deliveryType, setDeliveryType] = useState("OWN");
   const [driverName, setDriverName] = useState("");
@@ -29,38 +297,33 @@ const AssignDeliveryModal = ({ order, onClose, onAssigned }) => {
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [selectedBoy, setSelectedBoy] = useState("");
 
+  // const getDriverLink = (token) => {
+  //   return `${PROD_URL}/driver?token=${token}`;
+  // };
 
-  /* ================================
-     DRIVER LINK BUILDER
-     DEV → uses local IP
-     PROD → uses domain
-  ================================= */
- const getDriverLink = (token) => {
-  return `${PROD_URL}/driver?token=${token}`;
-};
+  // const getDriverLink = (token) => {
+  //   return `${window.location.origin}/driver?token=${token}`;
+  // };
 
-useEffect(() => {
-  fetch("http://127.0.0.1:5000/api/v1/delivery-boys", {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  })
-    .then((res) => res.json())
-    .then((data) => setDeliveryBoys(data));
-}, []);
+  const getDriverLink = (token) => {
+    return `${PROD_URL}/driver?token=${token}`;
+  };
 
+  useEffect(() => {
+    fetch("http://192.168.2.9:5000/api/v1/delivery-boys", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setDeliveryBoys(data));
+  }, []);
 
-  /* ================================
-     HANDLE ASSIGN
-  ================================= */
   const handleAssign = async () => {
+    try {
+      setLoading(true);
 
-  try {
-    setLoading(true);
-
-    const res = await fetch(
-      `${API}/${order.id}/assign-delivery`,
-      {
+      const res = await fetch(`${API}/${order.id}/assign-delivery`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -75,88 +338,62 @@ useEffect(() => {
           partner_name: partnerName,
           estimated_delivery_time: estimatedTime,
         }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Failed");
+        return;
       }
-    );
 
-    const data = await res.json();
+      alert("🚚 Delivery Assigned Successfully");
 
-    if (!res.ok) {
-      alert(data.error || "Failed");
-      return;
-    }
+      if (driverMobile) {
+        const cleanMobile = driverMobile.replace(/\D/g, "");
+        const driverLink = getDriverLink(data.driver_token);
 
-    alert("🚚 Delivery Assigned Successfully");
-
-
-    // ===============================
-    // DRIVER WHATSAPP
-    // ===============================
-if (driverMobile) {
-
-  const cleanMobile = driverMobile.replace(/\D/g, "");
-
-  const driverLink = getDriverLink(data.driver_token);
-
-  const message = encodeURIComponent(
-`🚚 *Delivery Assigned*
+        const message = encodeURIComponent(
+`🚚 Delivery Assigned
 
 Order ID: ${order.id}
 Driver: ${driverName}
 
-👉 Start Delivery:
-${driverLink}
+Start Delivery:
+${driverLink}`
+        );
 
-Please keep location ON during delivery.`
-);
+        window.open(`https://wa.me/${cleanMobile}?text=${message}`, "_blank");
+      }
 
+      if (data.restaurant_otp_link) {
+        setTimeout(() => {
+          window.open(data.restaurant_otp_link, "_blank");
+        }, 800);
+      }
 
-  window.open(
-    `https://wa.me/${cleanMobile}?text=${message}`,
-    "_blank"
-  );
-}
+      onAssigned && onAssigned();
+      onClose();
 
-
-
-    // ===============================
-    // RESTAURANT OTP WHATSAPP
-    // ===============================
-    if (data.restaurant_otp_link) {
-      setTimeout(() => {
-        window.open(data.restaurant_otp_link, "_blank");
-      }, 800);
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    } finally {
+      setLoading(false);
     }
+  };
 
-
-
-    onAssigned && onAssigned();
-    onClose();
-
-  } catch (err) {
-    console.error(err);
-    alert("Server error");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-  /* ================================
-     UI
-  ================================= */
   return (
-    <div className="modal_overlay">
+    <div className="modal_overlay" dir={isRTL ? "rtl" : "ltr"}>
       <div className="order_modal">
 
         <div className="modal_header">
-          <h4>🚚 Assign Delivery</h4>
+          <h4>🚚 {t("assign_delivery")}</h4>
           <button onClick={onClose}>✖</button>
         </div>
 
-        {/* ETA */}
         <div className="card">
-          <h5>Estimated Delivery Time</h5>
+          <h5>{t("estimated_delivery_time")}</h5>
           <input
             type="datetime-local"
             value={estimatedTime}
@@ -172,7 +409,6 @@ Please keep location ON during delivery.`
             setSelectedBoy(boyId);
 
             const boy = deliveryBoys.find((b) => b.id == boyId);
-
             if (boy) {
               setDriverName(boy.name);
               setDriverMobile(boy.mobile);
@@ -182,8 +418,7 @@ Please keep location ON during delivery.`
           }}
           className="form-control mb-2"
         >
-          <option value="">-- Select Saved Delivery Boy --</option>
-
+          <option value="">{t("select_saved_driver")}</option>
           {deliveryBoys.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name} ({b.mobile})
@@ -191,59 +426,54 @@ Please keep location ON during delivery.`
           ))}
         </select>
 
-        {/* TYPE */}
         <div className="card">
-          <h5>Delivery Type</h5>
+          <h5>{t("delivery_type")}</h5>
           <select
             value={deliveryType}
             onChange={(e) => setDeliveryType(e.target.value)}
             className="form-control"
           >
-            <option value="OWN">Own Delivery</option>
-            <option value="PARTNER">Partner</option>
+            <option value="OWN">{t("own_delivery")}</option>
+            <option value="PARTNER">{t("partner")}</option>
           </select>
         </div>
 
-        {/* OWN DELIVERY */}
         {deliveryType === "OWN" && (
           <div className="card">
-
             <input
-              placeholder="Driver Name"
+              placeholder={t("driver_name")}
               value={driverName}
               onChange={(e) => setDriverName(e.target.value)}
               className="form-control mb-2"
             />
 
             <input
-              placeholder="Driver Mobile"
+              placeholder={t("driver_mobile")}
               value={driverMobile}
               onChange={(e) => setDriverMobile(e.target.value)}
               className="form-control mb-2"
             />
 
             <input
-              placeholder="Vehicle Type (Bike/Van/Truck)"
+              placeholder={t("vehicle_type")}
               value={vehicleType}
               onChange={(e) => setVehicleType(e.target.value)}
               className="form-control mb-2"
             />
 
             <input
-              placeholder="Vehicle Number (Optional)"
+              placeholder={t("vehicle_number")}
               value={vehicleNumber}
               onChange={(e) => setVehicleNumber(e.target.value)}
               className="form-control"
             />
-
           </div>
         )}
 
-        {/* PARTNER */}
         {deliveryType === "PARTNER" && (
           <div className="card">
             <input
-              placeholder="Partner Name"
+              placeholder={t("partner_name")}
               value={partnerName}
               onChange={(e) => setPartnerName(e.target.value)}
               className="form-control"
@@ -251,14 +481,13 @@ Please keep location ON during delivery.`
           </div>
         )}
 
-        {/* ACTION */}
         <div className="modal_actions">
           <button
             className="btn delivered"
             onClick={handleAssign}
             disabled={loading}
           >
-            {loading ? "Assigning..." : "Confirm Delivery"}
+            {loading ? t("assigning") : t("confirm_delivery")}
           </button>
         </div>
 
@@ -267,4 +496,4 @@ Please keep location ON during delivery.`
   );
 };
 
-export default AssignDeliveryModal;
+export default AssignDeliveryModal; 

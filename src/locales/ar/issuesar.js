@@ -1,0 +1,54 @@
+export default {
+order_issues: "مشاكل الطلبات",
+loading_issues: "جاري تحميل المشاكل...",
+
+report_id: "رقم البلاغ",
+order_id: "رقم الطلب",
+restaurant: "المطعم",
+issue: "المشكلة",
+description: "الوصف",
+status: "الحالة",
+action: "الإجراء",
+
+resolve: "حل المشكلة",
+view: "عرض",
+
+no_issues: "لا توجد مشاكل",
+
+issue_resolved: "تم الحل",
+issue_pending: "قيد الانتظار",
+issue_open: "مفتوح",
+issue_details: "تفاصيل المشكلة",
+action_taken: "الإجراء المتخذ",
+resolved_on: "تم الحل في",
+under_review: "قيد المراجعة",
+
+resolve_issue: "حل المشكلة",
+damaged_products: "المنتجات التالفة",
+
+select_action: "اختر الإجراء",
+refund_issued: "تم إصدار استرجاع",
+replacement_sent: "تم إرسال بديل",
+issue_fixed: "تم حل المشكلة",
+
+refund_amount: "مبلغ الاسترجاع",
+mark_resolved: "تحديد كمحلولة",
+close: "إغلاق",
+refund: "المبلغ المسترجع",
+notes: "ملاحظات",
+currency_code: "ر.ق",
+
+refund_issued: "تم إصدار استرجاع",
+replacement_sent: "تم إرسال بديل",
+issue_fixed: "تم حل المشكلة",
+under_review: "قيد المراجعة",
+resolved: "تم الحل",
+last_7_days: "آخر 7 أيام",
+last_15_days: "آخر 15 يوم",
+last_30_days: "آخر 30 يوم",
+last_1_month: "آخر شهر",
+last_3_months: "آخر 3 أشهر",
+last_6_months: "آخر 6 أشهر",
+last_1_year: "آخر سنة",
+issue_search:"ابحث عن مطاعم",
+}

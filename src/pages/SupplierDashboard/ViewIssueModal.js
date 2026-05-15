@@ -14,7 +14,7 @@
 //         <hr />
 
 //         <p><b>Action:</b> {issue.action}</p>
-//         <p><b>Refund:</b> ₹{issue.refund}</p>
+//         <p><b>Refund:</b> QAR {issue.refund}</p>
 //         <p><b>Notes:</b> {issue.notes}</p>
 //         <p><b>Resolved On:</b> {issue.resolvedOn}</p>
 
@@ -32,40 +32,54 @@
 
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const ViewIssueModal = ({ issue, onClose }) => {
+  const { t, i18n } = useTranslation();
+
   return (
     <div className="modal_overlay">
       <div className="modal_box">
-        <h4>Issue Details</h4>
+        <h4>{t("issue_details")}</h4>
 
-        <p><b>Order:</b> {issue.order_id}</p>
-        <p><b>Restaurant:</b> {issue.restaurant_name_english}</p>
-        <p><b>Issue:</b> {issue.issue_type}</p>
-        <p><b>Description:</b> {issue.description || "—"}</p>
+        <p><b>{t("order")}:</b> {issue.order_id}</p>
+
+        <p>
+          <b>{t("restaurant")}:</b>{" "}
+          {i18n.language === "ar"
+            ? issue.restaurant_name_arabic || issue.restaurant_name_english
+            : issue.restaurant_name_english}
+        </p>
+
+        <p><b>{t("issue")}:</b> {issue.issue_type}</p>
+        <p><b>{t("description")}:</b> {issue.description || "—"}</p>
 
         <hr />
 
         <p>
-          <b>Status:</b>{" "}
+          <b>{t("status")}:</b>{" "}
           <span className={`issue_status ${issue.status?.toLowerCase()}`}>
-            {issue.status}
+            {t(issue.status?.toLowerCase())}
           </span>
         </p>
 
-        <p><b>Action Taken:</b> {issue.action || "—"}</p>
+        <p><b>{t("action_taken")}:</b> {issue.action || "—"}</p>
+
+       
+          <p>
+            <b>{t("refund")}:</b>{" "}
+            {issue.refund !== null && issue.refund !== undefined
+              ? `${t("currency_code")} ${issue.refund}`
+              : "—"}
+          </p>
+
+          <p>
+            <b>{t("notes")}:</b>{" "}
+            {issue.notes || "—"}
+          </p>
 
         <p>
-          <b>Refund:</b>{" "}
-          {issue.refund !== null && issue.refund !== undefined
-            ? `₹${issue.refund}`
-            : "—"}
-        </p>
-
-        <p><b>Notes:</b> {issue.notes || "—"}</p>
-
-        <p>
-          <b>Resolved On:</b>{" "}
+          <b>{t("resolved_on")}:</b>{" "}
           {issue.resolved_at
             ? new Date(issue.resolved_at).toLocaleDateString()
             : "—"}
@@ -73,7 +87,7 @@ const ViewIssueModal = ({ issue, onClose }) => {
 
         <div className="modal_actions">
           <button className="btn cancel" onClick={onClose}>
-            Close
+            {t("close")}
           </button>
         </div>
       </div>

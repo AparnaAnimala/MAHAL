@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "jspdf-autotable";
-
+import { useTranslation } from "react-i18next";
 const ITEMS_PER_PAGE = 5;
 
 const OrderReport = () => {
@@ -13,13 +13,15 @@ const OrderReport = () => {
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [productFilter, setProductFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const { t, i18n } = useTranslation();
+const isArabic = i18n.language?.startsWith("ar");
 
   const token = localStorage.getItem("token");
 
   /* ================= FETCH ================= */
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:5000/api/reports/orders", {
+      .get("http://192.168.2.9:5000/api/reports/orders", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setData(res.data || []))
@@ -38,9 +40,16 @@ const OrderReport = () => {
   );
 
   const products = useMemo(
-    () => [...new Set(data.map((d) => d.product_name_english))],
-    [data]
-  );
+  () =>
+    [
+      ...new Set(
+        data.map((d) =>
+          isArabic ? d.product_name_arabic : d.product_name_english
+        )
+      ),
+    ],
+  [data, isArabic]
+);
 
   /* ================= FILTER ================= */
   const filtered = useMemo(() => {
@@ -51,7 +60,9 @@ const OrderReport = () => {
         (paymentFilter === "ALL" ||
           r.payment_status === paymentFilter) &&
         (productFilter === "ALL" ||
-          r.product_name_english === productFilter)
+          (isArabic
+  ? r.product_name_arabic === productFilter
+  : r.product_name_english === productFilter))
     );
   }, [
     data,
@@ -90,7 +101,7 @@ const OrderReport = () => {
   /* ================= DOWNLOAD ================= */
   const download = async (type) => {
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/reports/orders/${type}`,
+      `http://192.168.2.9:5000/api/reports/orders/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         params: {
@@ -98,6 +109,7 @@ const OrderReport = () => {
           status: statusFilter,
           payment: paymentFilter,
           product: productFilter,
+          lang: i18n.language 
         },
         responseType: "blob",
       }
@@ -110,25 +122,57 @@ const OrderReport = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+const statusMap = {
+  PLACED: isArabic ? "تم الطلب" : "Placed",
+  PACKED: isArabic ? "تم التعبئة" : "Packed",
+  DELIVERED: isArabic ? "تم التسليم" : "Delivered",
+  OUT_FOR_DELIVERY: isArabic ? "خرج للتوصيل" : "Out for Delivery",
+};
+
+const paymentMap = {
+  PAID: isArabic ? "مدفوع" : "Paid",
+  UNPAID: isArabic ? "غير مدفوع" : "Unpaid",
+  PENDING: isArabic ? "قيد الانتظار" : "Pending",
+  PARTIAL: isArabic ? "مدفوع جزئياً" : "Partial",
+};
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB"
+  ).format(new Date(date));
+};
+const formatOrderId = (id) => {
+  if (!isArabic) return id;
+
+  const prefix = id.replace(/[0-9]/g, "");
+  const numbers = id.replace(/\D/g, "");
+
+  return prefix + formatNumber(numbers);
+};
 
   /* ================= UI ================= */
   return (
     <div className="report_page">
       <div className="page_header glass">
-        <h2>Order Report</h2>
+        <h2>{t("orde.title")}</h2>
 
         <div className="header_actions">
           <button
             className="btn dark bulk_btn"
             onClick={() => download("excel")}
           >
-            ⬇ Excel
+            {t("excel")}
           </button>
           <button
             className="btn dark pdf_btn"
             onClick={() => download("pdf")}
           >
-            ⬇ PDF
+            {t("download_pdf")}
           </button>
         </div>
       </div>
@@ -142,10 +186,10 @@ const OrderReport = () => {
             setCurrentPage(1);
           }}
         >
-          <option value="ALL">All Status</option>
+          <option value="ALL">{t("orde.allStatus")}</option>
           {statuses.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {statusMap[s] || s}
             </option>
           ))}
         </select>
@@ -157,10 +201,10 @@ const OrderReport = () => {
             setCurrentPage(1);
           }}
         >
-          <option value="ALL">All Payments</option>
+          <option value="ALL">{t("orde.allPayments")}</option>
           {payments.map((p) => (
             <option key={p} value={p}>
-              {p}
+              {paymentMap[p] || p}
             </option>
           ))}
         </select>
@@ -172,7 +216,7 @@ const OrderReport = () => {
             setCurrentPage(1);
           }}
         >
-          <option value="ALL">All Products</option>
+          <option value="ALL">{t("orde.allProducts")}</option>
           {products.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -191,23 +235,21 @@ const OrderReport = () => {
           <table className="mini_table">
             <thead>
               <tr>
-                <th>Order ID</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Payment</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Total</th>
+                <th>{t("orde.orderId")}</th>
+                <th>{t("orde.date")}</th>
+                <th>{t("orde.status")}</th>
+                <th>{t("orde.payment")}</th>
+                <th>{t("orde.product")}</th>
+                <th>{t("orde.qty")}</th>
+                <th>{t("orde.price")}</th>
+                <th>{t("orde.total")}</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((r) => (
                 <tr key={r.order_id}>
-                  <td>{r.order_id}</td>
-                  <td>
-                    {new Date(r.order_date).toLocaleDateString()}
-                  </td>
+                  <td>{formatOrderId(r.order_id)}</td>
+                  <td>{formatDate(r.order_date)}</td>
                   <td>
                     <span
                       className={`status ${
@@ -216,7 +258,7 @@ const OrderReport = () => {
                           : "warn"
                       }`}
                     >
-                      {r.order_status}
+                      {statusMap[r.order_status] || r.order_status}
                     </span>
                   </td>
                   <td>
@@ -227,13 +269,15 @@ const OrderReport = () => {
                           : "danger"
                       }`}
                     >
-                      {r.payment_status}
+                      {paymentMap[r.payment_status] || r.payment_status}
                     </span>
                   </td>
-                  <td>{r.product_name_english}</td>
-                  <td>{r.quantity}</td>
-                  <td>{r.price_per_unit}</td>
-                  <td>{r.item_total}</td>
+                  <td>
+                    {isArabic ? r.product_name_arabic : r.product_name_english}
+                  </td>
+                  <td>{formatNumber(r.quantity)}</td>
+                  <td>{formatNumber(r.price_per_unit)}</td>
+                  <td>{formatNumber(r.item_total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -247,11 +291,11 @@ const OrderReport = () => {
                 setCurrentPage((p) => Math.max(p - 1, 1))
               }
             >
-              Prev
+              {t("prev")}
             </button>
 
             <span>
-              Page {currentPage} of {totalPages}
+              {t("page")} {formatNumber(currentPage)} {t("of")} {formatNumber(totalPages)}
             </span>
 
             <button
@@ -262,7 +306,7 @@ const OrderReport = () => {
                 )
               }
             >
-              Next
+             {t("next")}
             </button>
           </div>
         </>

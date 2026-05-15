@@ -547,7 +547,8 @@ def get_restaurant_stock():
     cur.execute("""
         SELECT
             pm.product_id,
-            pm.product_name_english AS product_name,
+            pm.product_name_english AS product_name_english,
+            pm.product_name_arabic AS product_name_arabic,
             COALESCE(SUM(s.available_qty), 0) AS available_qty,
             MAX(encode(pm.product_images[1], 'base64')) AS product_image,
             pm.price_per_unit AS price   -- ✅ FIXED

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../pages/css/status.css";
 
-const API = "http://127.0.0.1:5000/api/v1/orders/restaurant";
+const API = "http://192.168.2.9:5000/api/v1/orders/restaurant";
 
 const RestaurantNotificationPopup = ({ notification: n, onClose }) => {
   const navigate = useNavigate();

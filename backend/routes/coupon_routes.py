@@ -81,7 +81,7 @@
 
 #     if cart_total < coupon["min_order_value"]:
 #         return jsonify({
-#             "message": f"Minimum order ₹{coupon['min_order_value']}"
+#             "message": f"Minimum order QAR {coupon['min_order_value']}"
 #         }), 400
 
 #     if coupon["usage_limit"] and coupon["used_count"] >= coupon["usage_limit"]:

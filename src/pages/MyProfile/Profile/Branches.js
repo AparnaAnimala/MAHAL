@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const emptyBranch = {
   branchNameEn: "",
@@ -12,18 +13,21 @@ const emptyBranch = {
   building: "",
   officeNo: "",
   city: "",
-  country: "India",
+  country: "",
   branchLicense: "",
 };
 
-const Branches = ({ editMode = true }) => {
+const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+
+const Branches = () => {
 
   const navigate = useNavigate();
-
-  const ro = editMode ? {} : { readOnly: true, disabled: true };
-
+  const { role: finalRole, id: finalId, adminMode = false } = useOutletContext();
+  const { setBranchList } = useOutletContext();
+  const isAdmin = adminMode || localStorage.getItem("admin_token");
+  const { t, i18n } = useTranslation();
+  
   const dirtyRef = useRef({});
-
   const markDirty = () => {
     dirtyRef.current.branch = true;
   };
@@ -32,31 +36,82 @@ const Branches = ({ editMode = true }) => {
   const [totalBranches, setTotalBranches] = useState(1);
   const [branchCount, setBranchCount] = useState(1);
   const [branches, setBranches] = useState([{ ...emptyBranch }]);
-
   const currentBranch = branches[branchCount - 1];
 
-  /* GENERATE BRANCHES */
-  const updateBranchCount = (count) => {
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [translatedBranches, setTranslatedBranches] = useState([]);
 
+  const ro = (!isAdmin && !editMode)
+    ? { readOnly: true, disabled: true } : {};
+
+  const translateToArabic = async (text) => {
+    try {
+      const res = await fetch("http://192.168.2.9:5000/api/profile/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const json = await res.json();
+      return json.arabic || "";
+    } catch {
+      return "";
+    }
+  };
+
+  useEffect(() => {
+    const translateAll = async () => {
+      if (i18n.language !== "ar") {
+        setTranslatedBranches(branches);
+        return;
+      }
+
+      const result = await Promise.all(
+        branches.map(async (b) => ({
+          ...b,
+          branchNameEn: await translateToArabic(b.branchNameEn),
+          branchManager: await translateToArabic(b.branchManager),
+          city: await translateToArabic(b.city),
+          country: await translateToArabic(b.country),
+          street: await translateToArabic(b.street),
+          zone: await translateToArabic(b.zone),
+          building: await translateToArabic(b.building),
+        }))
+      );
+
+      // setTranslatedBranches(result);
+      setTranslatedBranches(result || []);
+    };
+
+    translateAll();
+  }, [branches, i18n.language]);
+
+  const updateBranchCount = (count) => {
     const safeCount = Math.max(1, count);
 
-    const updated = [...branches];
+    setBranches(prev => {
+      let updated = [...prev];
 
-    while (updated.length < safeCount) {
-      updated.push({ ...emptyBranch });
-    }
+      if (updated.length > safeCount) {
+        for (let i = safeCount; i < updated.length; i++) {
+          if (updated[i].branch_id) {
+            updated[i] = { ...updated[i], isDeleted: true };
+          }
+        }
+      }
 
-    updated.length = safeCount;
+      while (updated.length < safeCount) {
+        updated.push({ ...emptyBranch });
+      }
+      return updated.slice(0, safeCount);
+    });
 
-    setBranches(updated);
     setTotalBranches(safeCount);
     setBranchCount(1);
   };
 
   const handleBranchChange = (index, key, value) => {
-
     markDirty();
-
     setBranches((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [key]: value };
@@ -64,20 +119,204 @@ const Branches = ({ editMode = true }) => {
     });
   };
 
-  /* FAKE TRANSLATION (replace later with API) */
-  const translateToArabic = async (text) => {
-    return text + " (AR)";
+  const submitData = async (section, data) => {
+    const token = isAdmin
+      ? localStorage.getItem("admin_token")
+      : localStorage.getItem("token");
+
+    let url, method, payload;
+
+    let actions = branches.map(b => {
+      if (!b.branch_id) {
+        return { action: "add", data: b };
+      } else if (b.isDeleted) {
+        return { action: "delete", branch_id: b.branch_id, data: b };
+      } else {
+        return { action: "update", data: b, branch_id: b.branch_id };
+      }
+    });
+
+    if (isAdmin) {
+      url = `${API_PROFILE}/${finalRole}/update/${section}/${finalId}`;
+      method = "PUT";
+      payload = data;
+    } else {
+      url = `${API_PROFILE}/request-change-${finalRole}`;
+      method = "POST";
+
+      payload = {
+        role: finalRole,
+        entity_id: finalId,
+        section,
+        new_data: {
+          branches: actions
+        }
+      };
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    return json.status;
   };
 
-  const handleSaveNext = (e) => {
+  useEffect(() => {
+    if (!finalRole || !finalId) return;
+    const fetchBranches = async () => {
+      try {
+        const res = await fetch(
+          `http://192.168.2.9:5000/api/profile/${finalRole}/branch/${finalId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${
+                isAdmin
+                  ? localStorage.getItem("admin_token")
+                  : localStorage.getItem("token")
+              }`
+            }
+          }
+        );
 
+        const json = await res.json();
+        if (json.status && json.branches?.length) {
+
+          const mapped = await Promise.all(
+            json.branches.map(async (b) => {
+              let arabic = b.branchNameAr;
+
+              if (!arabic && b.branchNameEn) {
+                arabic = await translateToArabic(b.branchNameEn);
+              }
+
+              return {
+                branch_id: b.branch_id,
+                branchNameEn: b.branchNameEn || "",
+                branchNameAr: arabic || "",
+                branchManager: b.branchManager || "",
+                contactNumber: b.contactNumber || "",
+                email: b.email || "",
+                street: b.street || "",
+                zone: b.zone || "",
+                building: b.building || "",
+                officeNo: b.officeNo || "",
+                city: b.city || "",
+                country: b.country || "India",
+                branchLicense: b.branchLicense || "",
+              };
+            })
+          );
+          setBranches(mapped);
+          setTotalBranches(mapped.length);
+          setBranchCount(1);
+          setMultiBranch(mapped.length > 1 ? "Yes" : "No");
+        }
+      } catch (err) {
+        console.error("Branch fetch error:", err);
+      }
+    };
+    fetchBranches();
+  }, [finalRole, finalId, isAdmin]);
+
+  const handleSaveNext = async (e) => {
     e.preventDefault();
 
+    if (!isAdmin && !editMode) {
+
+      if (branchCount < totalBranches) {
+        setBranchCount(prev => prev + 1);
+        return;
+      }
+
+      navigate(`/profile/${finalRole}/${finalId}/store`);
+      return;
+    }
+
+    if (!isAdmin && editMode) {
+
+      if (!dirtyRef.current.branch) {
+
+        // alert("No changes detected in Branches ❌");
+        alert(t("alerts.no_changes_branch"));
+
+        if (branchCount < totalBranches) {
+          setBranchCount(prev => prev + 1);
+          return;
+        }
+
+        navigate(`/profile/${finalRole}/${finalId}/store`);
+        return;
+      }
+    }
+
+    // const current = branches[branchCount - 1];
+    const currentBranch = branches[branchCount - 1] || emptyBranch;
+
+    const requiredFields = [
+      "branchNameEn", "branchManager", "contactNumber",
+      "email", "street", "zone", "building",
+      "officeNo", "city", "country"
+    ];
+
+    for (let field of requiredFields) {
+      if (!current[field]) {
+        // alert(`${field} is required ❌`);
+
+        const fieldLabelMap = {
+          branchNameEn: t("branch.branch_name_en"),
+          branchManager: t("branch.manager"),
+          contactNumber: t("branch.contact"),
+          email: t("branch.email"),
+          street: t("branch.street"),
+          zone: t("branch.zone"),
+          building: t("branch.building"),
+          officeNo: t("branch.office"),
+          city: t("branch.city"),
+          country: t("branch.country"),
+        };
+
+        const label = fieldLabelMap[field] || field;
+        alert(t("validation.required_field", { field: label }));
+        return;
+      }
+    }
+
     if (branchCount < totalBranches) {
-      setBranchCount((c) => c + 1);
-    } else {
-      console.log("All Branches:", branches);
-      navigate("/my-profile/Profile/settings");
+      setBranchCount(prev => prev + 1);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const success = await submitData("branch", branches);
+
+      // alert(isAdmin ? "Saved ✅" : "Sent for approval ✅");
+      alert(isAdmin ? t("alerts.saved") : t("alerts.sent_for_approval"));
+
+      setLoading(false);
+
+      if (success) {
+        dirtyRef.current.branch = false;
+        const activeBranches = branches.filter(b => !b.isDeleted);
+
+        localStorage.setItem("branchList", JSON.stringify(activeBranches));
+
+        setBranchList(activeBranches);
+        navigate(`/profile/${finalRole}/${finalId}/store`);
+      }
+
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+      // alert("Save failed ❌");
+      alert(t("alerts.save_failed"));
     }
   };
 
@@ -89,14 +328,25 @@ const Branches = ({ editMode = true }) => {
 
   return (
     <div className="profile-card">
+      <h3 className="profile-title">
+        {finalRole === "supplier"
+          ? t("branch.title_supplier")
+          : t("branch.title_restaurant")} </h3>
 
-      <h3 className="profile-title">Restaurant Branch Registration</h3>
+      {!isAdmin && !editMode && (
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => setEditMode(true)}
+        >
+          {t("buttons.edit")} ✏️
+        </button>
+      )}
 
-      {/* ===== MULTI BRANCH TOGGLE ===== */}
       <div className="form-row">
-
         <div className="form-group">
-          <label>Multiple Branches?</label>
+          {/* <label>Multiple Branches?</label> */}
+          <label>{t("branch.multiple")}</label>
 
           <select
             value={multiBranch}
@@ -108,18 +358,16 @@ const Branches = ({ editMode = true }) => {
                 updateBranchCount(1);
               }
             }}
+            {...ro}
           >
-            <option value="No">No</option>
-            <option value="Yes">Yes</option>
+            <option value="No">{t("common.no")}</option>
+            <option value="Yes">{t("common.yes")}</option>
           </select>
-
         </div>
 
         {multiBranch === "Yes" && (
           <div className="form-group">
-
-            <label>Total Branches</label>
-
+            <label>{t("branch.total")}</label>
             <input
               type="number"
               min="1"
@@ -127,76 +375,83 @@ const Branches = ({ editMode = true }) => {
               onChange={(e) =>
                 updateBranchCount(parseInt(e.target.value, 10) || 1)
               }
+              {...ro}
             />
-
           </div>
         )}
-
       </div>
 
-      {/* ===== BRANCH PROGRESS ===== */}
-      <div className="branch-progress">
+      {/* <div className="branch-progress">
         Branch {branchCount} of {totalBranches}
+      </div> */}
+
+      <div className="branch-progress">
+        {t("branch.branch_progress", {
+          current: branchCount,
+          total: totalBranches
+        })}
       </div>
 
-
-      {/* ===== FORM ===== */}
       <form className="profile-form" onSubmit={handleSaveNext}>
 
-        {/* ROW 1 */}
         <div className="form-row">
 
           <div className="form-group">
-            <label>Branch Name (EN)</label>
+            {/* <label>Branch Name (EN)</label> */}
+            <label>{t("branch.branch_name_en")}</label>
             <input
-              value={currentBranch.branchNameEn}
+              // value={currentBranch.branchNameEn}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.branchNameEn || ""
+                  : currentBranch.branchNameEn || ""
+              }
               onChange={async (e) => {
-
                 const val = e.target.value;
-
                 handleBranchChange(branchCount - 1, "branchNameEn", val);
-
                 if (val.trim()) {
                   const ar = await translateToArabic(val);
                   handleBranchChange(branchCount - 1, "branchNameAr", ar);
                 }
-
               }}
               {...ro}
             />
           </div>
 
           <div className="form-group">
-            <label>Branch Name (AR)</label>
+            <label>{t("branch.branch_name_ar")}</label>
             <input
-              value={currentBranch.branchNameAr}
+              className="readonly-field"
+              value={currentBranch.branchNameAr || ""}
               dir="rtl"
               readOnly
-              className="readonly-field"
+              {...ro}
             />
           </div>
 
           <div className="form-group">
-            <label>Branch Manager</label>
+            <label>{t("branch.manager")}</label>
             <input
-              value={currentBranch.branchManager}
+              // value={currentBranch.branchManager}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.branchManager || ""
+                  : currentBranch.branchManager || ""
+              }
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "branchManager", e.target.value)
               }
               {...ro}
             />
           </div>
-
         </div>
 
-
-        {/* ROW 2 */}
         <div className="form-row">
 
           <div className="form-group">
-            <label>Contact</label>
+            <label>{t("branch.contact")}</label>
             <input
-              value={currentBranch.contactNumber}
+              value={currentBranch.contactNumber || ""}
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "contactNumber", e.target.value)
               }
@@ -205,9 +460,9 @@ const Branches = ({ editMode = true }) => {
           </div>
 
           <div className="form-group">
-            <label>Email</label>
+            <label>{t("branch.email")}</label>
             <input
-              value={currentBranch.email}
+              value={currentBranch.email || ""}
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "email", e.target.value)
               }
@@ -216,26 +471,33 @@ const Branches = ({ editMode = true }) => {
           </div>
 
           <div className="form-group">
-            <label>Street</label>
+            <label>{t("branch.street")}</label>
             <input
-              value={currentBranch.street}
+              // value={currentBranch.street}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.street || ""
+                  : currentBranch.street || ""
+              }
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "street", e.target.value)
               }
               {...ro}
             />
           </div>
-
         </div>
 
-
-        {/* ROW 3 */}
         <div className="form-row">
 
           <div className="form-group">
-            <label>Zone</label>
+            <label>{t("branch.zone")}</label>
             <input
-              value={currentBranch.zone}
+              // value={currentBranch.zone}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.zone || ""
+                  : currentBranch.zone || ""
+              }
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "zone", e.target.value)
               }
@@ -244,9 +506,14 @@ const Branches = ({ editMode = true }) => {
           </div>
 
           <div className="form-group">
-            <label>Building</label>
+            <label>{t("branch.building")}</label>
             <input
-              value={currentBranch.building}
+              // value={currentBranch.building}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.building || ""
+                  : currentBranch.building || ""
+              }
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "building", e.target.value)
               }
@@ -255,26 +522,28 @@ const Branches = ({ editMode = true }) => {
           </div>
 
           <div className="form-group">
-            <label>Office No</label>
+            <label>{t("branch.office")}</label>
             <input
-              value={currentBranch.officeNo}
+              value={currentBranch.officeNo || ""}
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "officeNo", e.target.value)
               }
               {...ro}
             />
           </div>
-
         </div>
 
-
-        {/* ROW 4 */}
         <div className="form-row">
 
           <div className="form-group">
-            <label>City</label>
+            <label>{t("branch.city")}</label>
             <input
-              value={currentBranch.city}
+              // value={currentBranch.city}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.city || ""
+                  : currentBranch.city || ""
+              }
               onChange={(e) =>
                 handleBranchChange(branchCount - 1, "city", e.target.value)
               }
@@ -283,25 +552,35 @@ const Branches = ({ editMode = true }) => {
           </div>
 
           <div className="form-group">
-            <label>Country</label>
-            <input value="India" disabled />
-          </div>
-
-          <div className="form-group">
-            <label>Branch License</label>
+            <label>{t("branch.country")}</label>
             <input
-              value={currentBranch.branchLicense}
+              // value={currentBranch.country}
+              value={
+                i18n.language === "ar"
+                  ? translatedBranches[branchCount - 1]?.country || ""
+                  : currentBranch.country || ""
+              }
               onChange={(e) =>
-                handleBranchChange(branchCount - 1, "branchLicense", e.target.value)
+                handleBranchChange(branchCount - 1, "country", e.target.value)
               }
               {...ro}
             />
           </div>
 
+          {finalRole === "supplier" && (
+            <div className="form-group">
+              <label>{t("branch.license")}</label>
+              <input
+                value={currentBranch.branchLicense || ""}
+                onChange={(e) =>
+                  handleBranchChange(branchCount - 1, "branchLicense", e.target.value)
+                }
+                {...ro}
+              />
+            </div>
+          )}
         </div>
 
-
-        {/* ===== ACTIONS ===== */}
         <div className="form-actions">
 
           {branchCount > 1 && (
@@ -310,415 +589,32 @@ const Branches = ({ editMode = true }) => {
               className="btn-secondary btn"
               onClick={handleBranchBackStep}
             >
-              Previous Branch
+              {t("buttons.previous")}
             </button>
           )}
 
-          <button type="submit" className="btn-primary">
-            {branchCount < totalBranches ? "Save & Next Branch →" : "Finish →"}
+          <button 
+            // disabled={loading}
+            type="submit" className="btn-primary">
+            {loading
+              ? t("buttons.saving")
+              : !editMode
+              ? i18n.language === "ar"
+                ? `${t("buttons.next")} ←`
+                : `${t("buttons.next")} →`
+              : branchCount < totalBranches
+              ? i18n.language === "ar"
+                ? `${t("buttons.next_branch")} ←`
+                : `${t("buttons.next_branch")} →`
+              : i18n.language === "ar"
+                ? `${t("buttons.finish")} ←`
+                : `${t("buttons.finish")} →`}
           </button>
 
         </div>
-
       </form>
-
     </div>
   );
 };
 
 export default Branches;
-
-// import React, { useState, useRef } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// const emptyBranch = {
-//   branchNameEn: "",
-//   branchNameAr: "",
-//   branchManager: "",
-//   contactNumber: "",
-//   email: "",
-//   street: "",
-//   zone: "",
-//   building: "",
-//   officeNo: "",
-//   city: "",
-//   country: "India",
-//   branchLicense: "",
-// };
-
-// const Branches = ({ editMode = true }) => {
-//   const navigate = useNavigate();
-
-//   const ro = editMode ? {} : { readOnly: true, disabled: true };
-
-//   const dirtyRef = useRef({});
-
-//   const markDirty = () => {
-//     dirtyRef.current.branch = true;
-//   };
-
-//   const [multiBranch, setMultiBranch] = useState("No");
-//   const [totalBranches, setTotalBranches] = useState(1);
-//   const [branchCount, setBranchCount] = useState(1);
-//   const [branches, setBranches] = useState([{ ...emptyBranch }]);
-
-//   const currentBranch = branches[branchCount - 1];
-
-//   /* GENERATE BRANCHES */
-//   const updateBranchCount = (count) => {
-//     const safeCount = Math.max(1, count);
-
-//     const updated = [...branches];
-
-//     while (updated.length < safeCount) {
-//       updated.push({ ...emptyBranch });
-//     }
-
-//     updated.length = safeCount;
-
-//     setBranches(updated);
-//     setTotalBranches(safeCount);
-//     setBranchCount(1);
-//   };
-
-//   const handleBranchChange = (index, key, value) => {
-//     markDirty();
-
-//     setBranches((prev) => {
-//       const updated = [...prev];
-//       updated[index] = { ...updated[index], [key]: value };
-//       return updated;
-//     });
-//   };
-
-//   /* FAKE TRANSLATION (replace with API if needed) */
-//   const translateToArabic = async (text) => {
-//     return text + " (AR)";
-//   };
-
-//   const handleSaveNext = () => {
-//     if (branchCount < totalBranches) {
-//       setBranchCount((c) => c + 1);
-//     } else {
-//       console.log("All Branches:", branches);
-//       navigate("/my-profile/restuarent/settings");
-//     }
-//   };
-
-//   const handleBranchBackStep = () => {
-//     if (branchCount > 1) {
-//       setBranchCount((c) => c - 1);
-//     }
-//   };
-
-//   return (
-//     <div className="profile-card">
-//       <h3 className="profile-title">Restaurant Branch Registration</h3>
-
-//       {/* TOGGLES */}
-//       <div className="form-row">
-//         <div className="toggle-group">
-//           <label>
-//             <input
-//               type="radio"
-//               value="No"
-//               checked={multiBranch === "No"}
-//               onChange={() => {
-//                 setMultiBranch("No");
-//                 updateBranchCount(1);
-//               }}
-//               {...ro}
-//             />
-//             No
-//           </label>
-
-//           <label>
-//             <input
-//               type="radio"
-//               value="Yes"
-//               checked={multiBranch === "Yes"}
-//               onChange={() => setMultiBranch("Yes")}
-//               {...ro}
-//             />
-//             Yes
-//           </label>
-//         </div>
-
-//         <div className="form-group">
-//           <label>Total Branches</label>
-
-//           <input
-//             type="number"
-//             min="1"
-//             value={totalBranches}
-//             onChange={(e) => updateBranchCount(Number(e.target.value))}
-//             {...ro}
-//           />
-//         </div>
-
-//         <div className="form-group">
-//           <label>Status</label>
-//           <input value="Active" disabled />
-//         </div>
-//       </div>
-
-//       {/* BRANCH TABS */}
-//       {branches.length > 1 && (
-//         <div className="branch-tabs">
-//           {branches.map((_, i) => (
-//             <button
-//               key={i}
-//               type="button"
-//               className={i === branchCount - 1 ? "tab active" : "tab"}
-//               onClick={() => setBranchCount(i + 1)}
-//             >
-//               Branch {i + 1}
-//             </button>
-//           ))}
-//         </div>
-//       )}
-
-//       <p className="section-hint">
-//         Editing Branch {branchCount} of {branches.length}
-//       </p>
-
-//       {/* FORM */}
-//       <div className="profile-form">
-
-//         {/* ROW 1 */}
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Branch Name (EN)</label>
-
-//             <input
-//               value={currentBranch.branchNameEn}
-//               onChange={async (e) => {
-//                 const en = e.target.value;
-
-//                 handleBranchChange(branchCount - 1, "branchNameEn", en);
-
-//                 if (en.trim()) {
-//                   const ar = await translateToArabic(en);
-//                   handleBranchChange(branchCount - 1, "branchNameAr", ar);
-//                 } else {
-//                   handleBranchChange(branchCount - 1, "branchNameAr", "");
-//                 }
-//               }}
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Branch Name (AR)</label>
-
-//             <input
-//               value={currentBranch.branchNameAr}
-//               readOnly
-//               className="readonly-field"
-//               dir="rtl"
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Branch Manager</label>
-
-//             <input
-//               value={currentBranch.branchManager}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "branchManager",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-//         </div>
-
-//         {/* ROW 2 */}
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Contact</label>
-
-//             <input
-//               value={currentBranch.contactNumber}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "contactNumber",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Email</label>
-
-//             <input
-//               value={currentBranch.email}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "email",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Street</label>
-
-//             <input
-//               value={currentBranch.street}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "street",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-//         </div>
-
-//         {/* ROW 3 */}
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Zone</label>
-
-//             <input
-//               value={currentBranch.zone}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "zone",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Building</label>
-
-//             <input
-//               value={currentBranch.building}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "building",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Office No</label>
-
-//             <input
-//               value={currentBranch.officeNo}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "officeNo",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-//         </div>
-
-//         {/* ROW 4 */}
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>City</label>
-
-//             <input
-//               value={currentBranch.city}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "city",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Country</label>
-
-//             <input
-//               value={currentBranch.country}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "country",
-//                   e.target.value
-//                 )
-//               }
-//               {...ro}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Branch License</label>
-
-//             <input
-//               value={currentBranch.branchLicense}
-//               onChange={(e) =>
-//                 handleBranchChange(
-//                   branchCount - 1,
-//                   "branchLicense",
-//                   e.target.value.toUpperCase()
-//                 )
-//               }
-//               {...ro}
-//             />
-
-//             <small className="hint">
-//               Issued by authority for this branch
-//             </small>
-//           </div>
-//         </div>
-
-//         {editMode && (
-//           <div className="button-row">
-//             {branchCount > 1 && (
-//               <button
-//                 type="button"
-//                 className="btn btn-secondary"
-//                 onClick={handleBranchBackStep}
-//               >
-//                 Previous Branch
-//               </button>
-//             )}
-
-//             <button
-//               type="button"
-//               className="btn btn-primary"
-//               onClick={handleSaveNext}
-//             >
-//               {branchCount < totalBranches
-//                 ? "Save & Next Branch"
-//                 : "Finish Branches"}
-//             </button>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Branches;

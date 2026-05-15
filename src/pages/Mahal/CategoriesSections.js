@@ -142,9 +142,9 @@
 //   {/* PRICE + ADD */}
 //   <div className="mahal-price-row">
 //     <div>
-//       <span className="mahal-price">₹{item.price}</span>
+//       <span className="mahal-price">QAR {item.price}</span>
 //       {item.oldPrice && (
-//         <span className="mahal-old">₹{item.oldPrice}</span>
+//         <span className="mahal-old">QAR {item.oldPrice}</span>
 //       )}
 //     </div>
 
@@ -177,7 +177,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "http://192.168.2.9:5000/api";
 
 const MahalHomeSections = () => {
   const sectionRefs = useRef({});
@@ -339,9 +339,9 @@ const ProductSection = React.forwardRef(
                 {/* PRICE */}
                 <div className="mahal-price-row">
                   <div>
-                    <span className="mahal-price">₹{item.price}</span>
+                    <span className="mahal-price">QAR  {item.price}</span>
                     {item.oldPrice && (
-                      <span className="mahal-old">₹{item.oldPrice}</span>
+                      <span className="mahal-old">QAR  {item.oldPrice}</span>
                     )}
                   </div>
 

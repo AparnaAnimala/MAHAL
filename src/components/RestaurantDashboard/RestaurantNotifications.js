@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://192.168.1.193:5000/api/v1/orders/restaurant";
+const API = "http://192.168.2.9:5000/api/v1/orders/restaurant";
 
 export default function RestaurantNotifications() {
   const [notifications, setNotifications] = useState([]);
@@ -102,13 +102,16 @@ const markAllRead = async () => {
 
   return (
     <div className="notifications_page">
+
+      <div className="notifications_header">
       <h3>Notifications</h3>
 
         {notifications.some(n => !n.is_read) && (
-          <button onClick={markAllRead} className="mark_all_btn">
+          <button onClick={markAllRead} className="notification_btn">
             Mark All Read
           </button>
         )}
+      </div>
 
       {notifications.length === 0 && <p>No notifications</p>}
 

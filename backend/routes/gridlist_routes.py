@@ -11,10 +11,69 @@ import random
 from PIL import Image
 from io import BytesIO
 
+
+CURRENCY_SYMBOLS = {
+    "QAR": "ر.ق",
+    "SAR": "ر.س",
+    "AED": "د.إ",
+    "KWD": "د.ك",
+    "BHD": "د.ب",
+    "OMR": "ر.ع",
+    "JOD": "د.ا",
+    "INR": "₹",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+}
+
+def format_price(amount, currency="QAR"):
+
+    symbol = CURRENCY_SYMBOLS.get(
+        currency,
+        currency
+    )
+
+    return f"{symbol} {float(amount):.2f}"
+
+
 gridlist_bp = Blueprint("gridlist_bp", __name__)
 CORS(gridlist_bp)
 
+@gridlist_bp.route("/restaurant/stores", methods=["GET"])
+def get_restaurant_stores():
+    restaurant_id = request.args.get("restaurant_id")
 
+    if not restaurant_id:
+        return jsonify({"error": "restaurant_id required"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cur.execute(
+            """
+            SELECT
+                store_id,
+                store_name_english,
+                city,
+                country
+            FROM restaurant_store_registration
+            WHERE restaurant_id = %s
+            ORDER BY store_id ASC
+            """,
+            (restaurant_id,),
+        )
+
+        rows = cur.fetchall()
+        return jsonify(rows), 200
+
+    except Exception as e:
+        print("STORE FETCH ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
 # =========================================================
 # 1. Serve product multi images  (product_images is BYTEA[])
 #    /api/image/<product_id>/<index>
@@ -196,8 +255,25 @@ def get_gridlist_data():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
+        store_id = request.args.get("store_id", type=int)
         category_id = request.args.get("category_id", type=int)
         category_name = request.args.get("category_name", type=str)
+
+        store_city = None
+
+        if store_id:
+            cur.execute(
+                """
+                SELECT city
+                FROM restaurant_store_registration
+                WHERE store_id = %s
+                """,
+                (store_id,),
+            )
+            store_row = cur.fetchone()
+
+            if store_row:
+                store_city = store_row["city"]
 
         base_sql = """
         SELECT DISTINCT ON (pm.product_id)
@@ -205,6 +281,8 @@ def get_gridlist_data():
             pm.product_id,
             pm.product_name_english,
             pm.product_name_arabic,
+            pm.country_of_origin,
+            pm.delivery_time_minutes,
 
             pm.supplier_id,
             pm.company_name_english,
@@ -233,22 +311,61 @@ def get_gridlist_data():
 
         FROM product_management pm
 
+        LEFT JOIN supplier_registration sr
+            ON pm.supplier_id = sr.supplier_id
+
         LEFT JOIN category c
             ON pm.category_id = c.id
 
         LEFT JOIN sub_category sc
             ON pm.sub_category_id = sc.id
 
-        LEFT JOIN offers o
-            ON o.product_id = pm.product_id
+        LEFT JOIN LATERAL (
+            SELECT *
+            FROM offers o
+            WHERE o.product_id = pm.product_id
             AND o.is_active = true
-            AND CURRENT_DATE >= o.start_date
-            AND CURRENT_DATE <= o.end_date
+            AND CURRENT_DATE BETWEEN o.start_date AND o.end_date
 
+            ORDER BY
+
+            CASE
+                WHEN LOWER(o.offer_type) = 'percentage'
+                THEN o.discount_percentage
+
+                WHEN LOWER(o.offer_type) = 'flat'
+                THEN o.flat_amount
+
+                WHEN LOWER(o.offer_type) = 'bogo'
+                THEN (o.buy_quantity + o.get_quantity)
+
+                ELSE 0
+            END DESC,
+
+            o.updated_at DESC
+
+            LIMIT 1
+        ) o ON true
+
+        --- WHERE pm.flag = 'A'
         WHERE pm.flag = 'A'
+            AND o.offer_id IS NOT NULL
         """
 
+        # WHERE o.offer_id IS NOT NULL
+
+        # LEFT JOIN offers o
+        #     ON o.product_id = pm.product_id
+        #     AND o.is_active = true
+        #     AND CURRENT_DATE >= o.start_date
+        #     AND CURRENT_DATE <= o.end_date
+
         params = []
+
+        # ---------- Store filter ----------
+        if store_city:
+            base_sql += " AND LOWER(COALESCE(sr.city,'')) LIKE LOWER(%s)"
+            params.append(f"%{store_city.strip()}%")
 
         if category_id:
             base_sql += " AND pm.category_id = %s"
@@ -277,11 +394,44 @@ def get_gridlist_data():
 
             max_price = max(max_price, price_val)
 
+            discounted_price = price_val
+
+            offer_type = (row.get("offer_type") or "").strip().lower()
+
+            if offer_type == "percentage":
+                discounted_price = (
+                    price_val
+                    - (
+                        price_val
+                        * float(row.get("discount_percentage") or 0)
+                        / 100
+                    )
+                )
+
+            elif offer_type == "flat":
+                discounted_price = max(
+                    price_val - float(row.get("flat_amount") or 0),
+                    0
+                )
+
+            elif offer_type == "bogo":
+
+                buy_qty = float(row.get("buy_quantity") or 1)
+                get_qty = float(row.get("get_quantity") or 1)
+
+                total_qty = buy_qty + get_qty
+
+                # effective unit price
+                discounted_price = (
+                    (price_val * buy_qty)
+                    / total_qty
+                )
+
             # ---------------- OFFER LOGIC ----------------
             label = "New"
             offer_text = None
 
-            offer_type = (row.get("offer_type") or "").lower()
+            offer_type = (row.get("offer_type") or "").strip().lower()
 
             if offer_type == "percentage" and row.get("discount_percentage"):
                 label = f"{int(row['discount_percentage'])}% OFF"
@@ -312,7 +462,8 @@ def get_gridlist_data():
             img1 = images[0] if images else None
             img2 = images[1] if len(images) > 1 else img1
 
-            price_str = f"ر.ق{int(price_val)}.00 {currency}"
+            # price_str = f"ر.ق{int(price_val)}.00 {currency}"
+            price_str = format_price(price_val, currency)
 
             if row.get("category_name"):
                 categories.add(row["category_name"])
@@ -324,10 +475,12 @@ def get_gridlist_data():
                     "id": row["product_id"],
                     "name": row["product_name_english"],
                     "name_ar": row.get("product_name_arabic"),
+                    "country_of_origin": row.get("country_of_origin"), 
 
                     "supplier_id": row["supplier_id"],
                     "supplier_name": row["company_name_english"],
                     "unit_of_measure": row.get("unit_of_measure"),
+                    "delivery_time": row.get("delivery_time_minutes"),
 
                     "images": images,
                     "img1": img1,
@@ -345,6 +498,10 @@ def get_gridlist_data():
                     "price": price_str,
                     "price_numeric": price_val,
                     "currency": currency,
+
+                    "discounted_price": discounted_price,
+                    "original_price": price_val,
+                    "has_offer": bool(row.get("offer_type")),
 
                     "reviews": 0,
                     "rating": 4,
@@ -386,6 +543,327 @@ def get_gridlist_data():
         cur.close()
         conn.close()
 
+
+@gridlist_bp.route("/top-deals", methods=["GET"])
+def get_top_deals():
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        cur.execute("""
+            SELECT DISTINCT ON (pm.product_id)
+
+                pm.product_id,
+                pm.product_name_english,
+                pm.price_per_unit,
+                pm.currency,
+                pm.product_images,
+
+                o.offer_type,
+                o.discount_percentage,
+                o.flat_amount,
+                o.buy_quantity,
+                o.get_quantity
+
+            FROM product_management pm
+
+            LEFT JOIN LATERAL (
+
+                SELECT *
+
+                FROM offers o
+
+                WHERE o.product_id = pm.product_id
+                AND o.is_active = true
+                AND CURRENT_DATE
+                    BETWEEN o.start_date
+                    AND o.end_date
+
+                ORDER BY
+
+                CASE
+
+                    WHEN LOWER(o.offer_type) = 'percentage'
+                    THEN o.discount_percentage
+
+                    WHEN LOWER(o.offer_type) = 'flat'
+                    THEN o.flat_amount
+
+                    WHEN LOWER(o.offer_type) = 'bogo'
+                    THEN (o.buy_quantity + o.get_quantity)
+
+                    ELSE 0
+
+                END DESC,
+
+                -- o.updated_at DESC
+                COALESCE(o.updated_at, NOW()) DESC
+                    
+                -- pm.product_id DESC
+
+                LIMIT 1
+
+            ) o ON true
+
+            WHERE pm.flag = 'A'
+            AND o.offer_type IS NOT NULL
+
+            ORDER BY
+            pm.product_id DESC,
+
+            CASE
+
+                WHEN LOWER(o.offer_type) = 'percentage'
+                THEN o.discount_percentage
+
+                WHEN LOWER(o.offer_type) = 'flat'
+                THEN o.flat_amount
+
+                WHEN LOWER(o.offer_type) = 'bogo'
+                THEN (o.buy_quantity + o.get_quantity)
+
+                ELSE 0
+
+            END DESC,
+
+            pm.product_id DESC
+
+            --- LIMIT 40
+        """)
+
+        rows = cur.fetchall()
+
+        host_url = request.host_url.rstrip("/")
+
+        products = []
+
+        for row in rows:
+
+            cur.execute("""
+
+                SELECT id,
+                    offer_type,
+                    offer_value,
+                    buy_quantity,
+                    get_quantity
+
+                FROM promotions
+
+                WHERE status IN ('ACTIVE','APPROVED')
+
+                AND CURRENT_DATE
+                    BETWEEN start_date
+                    AND end_date
+
+                AND (
+
+                    (target_type = 'PRODUCT'
+                    AND (target_ids::jsonb)
+                        @> to_jsonb(ARRAY[%s]))
+
+                )
+
+                ORDER BY priority_level ASC
+
+                LIMIT 1
+
+            """, (row["product_id"],))
+
+            promo = cur.fetchone()
+
+            price_val = float(
+                row.get("price_per_unit") or 0
+            )
+
+            offers_list = []
+
+            # OFFER TABLE
+            if row.get("offer_type"):
+
+                offers_list.append({
+
+                    "offer_type":
+                        (row.get("offer_type") or "").lower(),
+
+                    "offer_value":
+
+                        float(
+                            row.get("discount_percentage")
+                            or row.get("flat_amount")
+                            or 0
+                        ),
+
+                    "buy_quantity":
+                        row.get("buy_quantity"),
+
+                    "get_quantity":
+                        row.get("get_quantity"),
+                })
+
+            # PROMOTION TABLE
+            if promo:
+
+                offers_list.append({
+
+                    "offer_type":
+                        (promo.get("offer_type") or "").lower(),
+
+                    "offer_value":
+                        float(promo.get("offer_value") or 0),
+
+                    "buy_quantity":
+                        promo.get("buy_quantity"),
+
+                    "get_quantity":
+                        promo.get("get_quantity"),
+                })
+
+            best_price = price_val
+            best_offer = None
+
+            for off in offers_list:
+
+                discounted = price_val
+
+                if off["offer_type"] == "percentage":
+
+                    discounted = (
+                        price_val
+                        - (
+                            price_val
+                            * off["offer_value"]
+                            / 100
+                        )
+                    )
+
+                elif off["offer_type"] == "flat":
+
+                    discounted = max(
+                        price_val - off["offer_value"],
+                        0
+                    )
+
+                elif off["offer_type"] == "bogo":
+
+                    buy_qty = float(
+                        off.get("buy_quantity") or 1
+                    )
+
+                    get_qty = float(
+                        off.get("get_quantity") or 1
+                    )
+
+                    total_qty = buy_qty + get_qty
+
+                    discounted = (
+                        (price_val * buy_qty)
+                        / total_qty
+                    )
+
+                if discounted < best_price:
+
+                    best_price = discounted
+                    best_offer = off
+
+            discounted_price = best_price
+
+            img_array = row.get("product_images") or []
+
+            if not isinstance(img_array, (list, tuple)):
+                img_array = []
+
+            img1 = None
+
+            if len(img_array) > 0:
+                img1 = f"{host_url}/api/image/{row['product_id']}/0"
+
+            offer_label = "SPECIAL OFFER"
+
+            if best_offer:
+
+                if best_offer["offer_type"] == "percentage":
+
+                    offer_label = (
+                        f"{int(best_offer['offer_value'])}% OFF"
+                    )
+
+                elif best_offer["offer_type"] == "flat":
+
+                    symbol = CURRENCY_SYMBOLS.get(
+                        row.get("currency") or "QAR",
+                        "QAR"
+                    )
+
+                    offer_label = (
+                        f"{symbol} "
+                        f"{int(best_offer['offer_value'])} OFF"
+                    )
+
+                elif best_offer["offer_type"] == "bogo":
+
+                    offer_label = (
+
+                        f"BUY "
+                        f"{int(best_offer.get('buy_quantity') or 1)} "
+
+                        f"GET "
+                        f"{int(best_offer.get('get_quantity') or 1)}"
+                    )
+
+            products.append({
+
+                "id": row["product_id"],
+
+                "name": row["product_name_english"],
+
+                "img1": img1,
+
+                "price_numeric": float(
+                    row.get("price_per_unit") or 0
+                ),
+
+                "currency": row.get("currency") or "QAR",
+
+                "discounted_price": discounted_price,
+
+                "original_price": price_val,
+
+                "offer_label": offer_label,
+
+                "offer_type":
+                    best_offer["offer_type"]
+                    if best_offer else None,
+
+                "has_offer": bool(best_offer),
+
+                "discount_percentage":
+                    row.get("discount_percentage"),
+
+                "flat_amount":
+                    row.get("flat_amount"),
+
+                "buy_quantity":
+                    row.get("buy_quantity"),
+
+                "get_quantity":
+                    row.get("get_quantity"),
+            })
+
+        return jsonify({
+            "products": products
+        }), 200
+
+    except Exception as e:
+        print("TOP DEALS ERROR:", e)
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        cur.close()
+        conn.close()
 
 #  =========================================================
 #  4. Trending products (random, stable every 5 days, multi images)
@@ -446,6 +924,7 @@ def get_trending_products():
             params.append(category_name)
 
         base_sql += " ORDER BY pm.product_id DESC"
+        # base_sql += " ORDER BY pm.product_id DESC LIMIT 12"
 
         cur.execute(base_sql, params)
         rows = cur.fetchall()
@@ -472,7 +951,8 @@ def get_trending_products():
             img2 = images[1] if len(images) > 1 else img1
 
             label = "New"
-            price_str = f"ر.ق{int(price_val)}.00 {currency}"
+            # price_str = f"ر.ق{int(price_val)}.00 {currency}"
+            price_str = format_price(price_val, currency)
 
             products.append(
                 {
@@ -491,6 +971,7 @@ def get_trending_products():
                     "price": price_str,
                     "price_numeric": price_val,
                     "currency": currency,
+                    "currency_symbol": CURRENCY_SYMBOLS.get(currency, currency),
                     "reviews": 0,
                     "rating": 4,
                     "category": row.get("category_name"),
@@ -506,16 +987,24 @@ def get_trending_products():
                 }
             )
 
-        # deterministic random per 5-day window
-        if products:
-            window_seconds = 5 * 24 * 3600
-            now_ts = datetime.now(timezone.utc).timestamp()
-            period_index = int(now_ts // window_seconds)
+        # # deterministic random per 5-day window
+        # if products:
+        #     window_seconds = 5 * 24 * 3600
+        #     now_ts = datetime.now(timezone.utc).timestamp()
+        #     period_index = int(now_ts // window_seconds)
 
-            rnd = random.Random(period_index)
-            rnd.shuffle(products)
+        #     rnd = random.Random(period_index)
+        #     rnd.shuffle(products)
 
-            products = products[:12]  # limit to 8 items
+        #     products = products[:12]  # limit to 8 items
+
+        products = products[:12]
+
+        # products = sorted(
+        #     products,
+        #     key=lambda x: x["id"],
+        #     reverse=True
+        # )[:12]
 
         return jsonify({"products": products}), 200
 
@@ -526,7 +1015,6 @@ def get_trending_products():
     finally:
         cur.close()
         conn.close()
-
 
 # =========================================================
 # 5. Similar products (same category as given product, multi images)
@@ -605,7 +1093,13 @@ def get_similar_products():
         products = []
 
         for r in rows:
-            price_val = float(r.get("price_per_unit") or 0)
+            raw_price = r.get("price_per_unit")
+
+# ❌ Skip products without price
+            if raw_price is None:
+                continue
+
+            price_val = float(raw_price)
             currency = r.get("currency") or "QAR"
 
             img_array = r.get("product_images") or []
@@ -836,16 +1330,32 @@ def get_product_detail(product_id):
             LEFT JOIN category c ON pm.category_id = c.id
             LEFT JOIN sub_category sc ON pm.sub_category_id = sc.id
 
-            LEFT JOIN offers o
-                ON pm.product_id = o.product_id
-                --- ON (
-                ---     pm.product_id = o.product_id
-                --- )
-                --- OR (
-                ---     o.category_id = pm.category_id
-                --- )
+            LEFT JOIN LATERAL (
+                SELECT *
+                FROM offers o
+                WHERE o.product_id = pm.product_id
                 AND o.is_active = true
                 AND CURRENT_DATE BETWEEN o.start_date AND o.end_date
+
+                ORDER BY
+
+                CASE
+                    WHEN LOWER(o.offer_type) = 'percentage'
+                    THEN o.discount_percentage
+
+                    WHEN LOWER(o.offer_type) = 'flat'
+                    THEN o.flat_amount
+
+                    WHEN LOWER(o.offer_type) = 'bogo'
+                    THEN (o.buy_quantity + o.get_quantity)
+
+                    ELSE 0
+                END DESC,
+
+                o.updated_at DESC
+
+                LIMIT 1
+            ) o ON true
 
             WHERE pm.flag = 'A'
             AND pm.product_id = %s
@@ -853,6 +1363,12 @@ def get_product_detail(product_id):
             """,
             (product_id,),
         )
+
+        # LEFT JOIN offers o
+        #         ON pm.product_id = o.product_id
+        #         AND o.is_active = true
+        #         AND CURRENT_DATE BETWEEN o.start_date AND o.end_date
+        
         row = cur.fetchone()
 
         if not row:
@@ -861,6 +1377,10 @@ def get_product_detail(product_id):
         host_url = request.host_url.rstrip("/")
 
         price_val = float(row.get("price_per_unit") or 0)
+
+        currency = (row.get("currency") or "").strip()
+        currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
+        
         offer_label = None
         discounted_price = price_val
         offer_data = None
@@ -872,20 +1392,44 @@ def get_product_detail(product_id):
             has_offer = True
             original_price = price_val
 
-            offer_type = row.get("offer_type")
+            offer_type = (row.get("offer_type") or "").strip().lower()
 
-            if offer_type == "Percentage" and row.get("discount_percentage"):
+            if offer_type == "percentage" and row.get("discount_percentage"):
                 pct = float(row["discount_percentage"])
                 discounted_price = price_val - (price_val * pct / 100)
                 offer_label = f"{int(pct)}% OFF"
 
-            elif offer_type == "Flat" and row.get("flat_amount"):
+            elif offer_type == "flat" and row.get("flat_amount"):
                 flat = float(row["flat_amount"])
                 discounted_price = max(price_val - flat, 0)
-                offer_label = f"{int(flat)} OFF"
+                # offer_label = f"{int(flat)} OFF"
 
-            elif offer_type == "BOGO":
-                offer_label = f"BUY {row.get('buy_quantity')} GET {row.get('get_quantity')}"
+                currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
+
+                offer_label = (
+                    f"{currency_symbol} "
+                    f"{float(flat):.2f} OFF"
+                )
+
+            # elif offer_type == "bogo":
+            #     offer_label = f"BUY {row.get('buy_quantity')} GET {row.get('get_quantity')}"
+
+            elif offer_type == "bogo":
+
+                buy_qty = float(row.get("buy_quantity") or 1)
+                get_qty = float(row.get("get_quantity") or 1)
+
+                total_qty = buy_qty + get_qty
+
+                discounted_price = (
+                    (price_val * buy_qty)
+                    / total_qty
+                )
+
+                offer_label = (
+                    f"BUY {int(buy_qty)} "
+                    f"GET {int(get_qty)}"
+                )
 
             offer_data = {
                 "offer_type": offer_type,
@@ -938,17 +1482,17 @@ def get_product_detail(product_id):
 
         if row.get("offer_id"):
 
-            offer_type = row.get("offer_type")
+            offer_type = (row.get("offer_type") or "").strip().lower()
 
-            if offer_type == "Percentage":
+            if offer_type == "percentage":
                 offers_list.append({
-                    "offer_type": "PERCENTAGE",
+                    "offer_type": "percentage",
                     "offer_value": float(row.get("discount_percentage") or 0)
                 })
 
-            elif offer_type == "Flat":
+            elif offer_type == "flat":
                 offers_list.append({
-                    "offer_type": "FLAT",
+                    "offer_type": "flat",
                     "offer_value": float(row.get("flat_amount") or 0)
                 })
 
@@ -957,7 +1501,9 @@ def get_product_detail(product_id):
             offers_list.append({
                 "source": "PROMOTION",
                 "offer_type": promo["offer_type"],
-                "offer_value": float(promo["offer_value"])
+                "offer_value": float(promo["offer_value"] or 0),
+                "buy_quantity": float(promo.get("buy_quantity") or 1),
+                "get_quantity": float(promo.get("get_quantity") or 1),
             })
 
         best_price = price_val
@@ -965,14 +1511,23 @@ def get_product_detail(product_id):
 
         for off in offers_list:
 
-            if off["offer_type"] == "PERCENTAGE":
+            offer_type = (row.get("offer_type") or "").strip().lower()
+            discounted = price_val
+
+            if off["offer_type"] == "percentage":
                 discounted = price_val - (price_val * off["offer_value"] / 100)
 
-            elif off["offer_type"] == "FLAT":
+            elif off["offer_type"] == "flat":
                 discounted = price_val - off["offer_value"]
 
-            else:
-                continue
+            elif off["offer_type"] == "bogo":
+
+                buy_qty = float(off.get("buy_quantity") or 1)
+                get_qty = float(off.get("get_quantity") or 1)
+
+                total_qty = buy_qty + get_qty
+
+                discounted = ((price_val * buy_qty) / total_qty)
 
             if discounted < best_price:
                 best_price = discounted
@@ -980,15 +1535,31 @@ def get_product_detail(product_id):
 
         if best_offer:
 
+            offer_type = (row.get("offer_type") or "").strip().lower()
+
             has_offer = True
             original_price = price_val
             discounted_price = best_price
 
-            if best_offer["offer_type"] == "PERCENTAGE":
+            if best_offer["offer_type"] == "percentage":
                 offer_label = f"{int(best_offer['offer_value'])}% OFF"
 
-            elif best_offer["offer_type"] == "FLAT":
-                offer_label = f"₹{int(best_offer['offer_value'])} OFF"
+            elif best_offer["offer_type"] == "flat":
+                # offer_label = f"QAR{int(best_offer['offer_value'])} OFF"
+
+                currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
+
+                offer_label = (
+                    f"{currency_symbol} "
+                    f"{float(best_offer['offer_value']):.2f} OFF"
+                )
+
+            elif best_offer["offer_type"] == "bogo":
+
+                offer_label = (
+                    f"BUY {int(best_offer.get('buy_quantity', 1))} "
+                    f"GET {int(best_offer.get('get_quantity', 1))}"
+                )
 
             offer_data = best_offer
 
@@ -1008,7 +1579,8 @@ def get_product_detail(product_id):
         img2 = images[1] if len(images) > 1 else img1
 
         label = "New"
-        price_str = f"ر.ق{int(price_val)}.00 {currency}"
+        # price_str = f"ر.ق{int(price_val)}.00 {currency}"
+        price_str = format_price(price_val, currency)
 
         full_desc = row.get("description") or ""
         full_desc = full_desc.strip() if isinstance(full_desc, str) else ""
@@ -1067,6 +1639,8 @@ def get_product_detail(product_id):
     finally:
         cur.close()
         conn.close()
+
+
 # =========================================================
 # 7. Our Products tabs (special / new / bestseller)
 #     - Uses gridlist-style query for "new" & "special"
@@ -1521,7 +2095,13 @@ def get_deals_of_the_day():
             img1 = images[0] if len(images) > 0 else None
             img2 = images[1] if len(images) > 1 else img1
 
-            price_val = float(r.get("price_per_unit") or 0)
+            raw_price = r.get("price_per_unit")
+
+            # ❌ Skip products without price
+            if raw_price is None:
+                continue
+
+            price_val = float(raw_price)
             currency = r.get("currency") or "QAR"
 
             new_price_str = f"ر.ق{int(price_val)}.00 {currency}"
@@ -1541,8 +2121,8 @@ def get_deals_of_the_day():
                     "name": r["product_name_english"],
                     "img1": img1,
                     "img2": img2,
-                    "newPrice": new_price_str,
-                    "oldPrice": old_price_str,
+                   "price": price_val,
+                    "old_price": old_val if price_val > 0 else 0,
                     "label": label,
                     "rating": 4,  # default rating (you can make dynamic later)
                 }
@@ -1644,7 +2224,17 @@ def get_deals():
             # =========================
             # 💰 PRICE CALCULATION
             # =========================
-            base_price = float(o.get("price_per_unit") or 0)
+            raw_price = o.get("price_per_unit")
+
+            # ❌ skip NULL or invalid
+            if raw_price is None:
+                continue
+
+            base_price = float(raw_price)
+
+            # ❌ skip zero prices also
+            if base_price <= 0:
+                continue
 
             if base_price <= 0:
                 continue  # skip invalid
@@ -1661,11 +2251,11 @@ def get_deals():
                 deal_title = f"{int(discount_percent)}% OFF"
 
             # 🔥 Flat discount
-            elif o["discount_type"] == "Flat" and o.get("flat_amount"):
+            elif o["offer_type"] == "Flat" and o.get("flat_amount"):
                 flat = float(o["flat_amount"])
                 new_price = base_price - flat
                 discount_percent = (flat / base_price) * 100
-                deal_title = f"₹{int(flat)} OFF"
+                deal_title = f"QAR{int(flat)} OFF"
 
             # 🔥 Buy X Get Y
             elif o.get("buy_quantity") and o.get("get_quantity"):
@@ -1764,7 +2354,7 @@ def get_suppliers():
 
                 "rating": round(4 + (supplier_id % 5) * 0.1, 1),
                 "delivery": "Fast Delivery",
-                "minOrder": "Min Order ₹5000",
+                "minOrder": "Min Order QAR5000",
                 "image": img_url
             })
 
@@ -1777,154 +2367,21 @@ def get_suppliers():
     finally:
         cur.close()
         conn.close()
+
+# # ✅ SUPPLIER IMAGE API
+# @gridlist_bp.route("/supplier-products/<int:supplier_id>", methods=["GET"])
+# def get_supplier_products(supplier_id):
+#     conn = get_db_connection()
+
+# ✅ SUPPLIER IMAGE API
+@gridlist_bp.route("/supplier-products/<int:supplier_id>", methods=["GET"])
+def get_supplier_products(supplier_id):
+
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        cur.execute("""
-            SELECT DISTINCT
-                supplier_id,
-                company_name_english
-            FROM product_management
-            WHERE flag = 'A'
-        """)
-
-        rows = cur.fetchall()
-        host_url = request.host_url.rstrip("/")
-
-        suppliers = []
-
-        for r in rows:
-            supplier_id = r["supplier_id"]
-
-            # 🔥 GET ONE PRODUCT IMAGE
-            cur.execute("""
-                SELECT product_id
-                FROM product_management
-                WHERE supplier_id = %s
-                AND flag = 'A'
-                LIMIT 1
-            """, (supplier_id,))
-
-            product = cur.fetchone()
-
-            img_url = (
-                f"{host_url}/api/image/{product['product_id']}/0"
-                if product else None
-            )
-
-            suppliers.append({
-                "id": supplier_id,
-                "name": r["company_name_english"],
-
-                # ✅ ALL VERIFIED
-                "verified": True,
-
-                "rating": round(4 + (supplier_id % 5) * 0.1, 1),
-                "delivery": "Fast Delivery",
-                "minOrder": "Min Order ₹5000",
-                "image": img_url
-            })
-
-        return jsonify({"suppliers": suppliers}), 200
-
-    except Exception as e:
-        print("SUPPLIER ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        cur.close()
-        conn.close()
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    try:
-        cur.execute("""
-            SELECT DISTINCT
-                supplier_id,
-                company_name_english
-            FROM product_management
-            WHERE flag = 'A'
-        """)
-
-        rows = cur.fetchall()
-        host_url = request.host_url.rstrip("/")
-
-        suppliers = []
-
-        for r in rows:
-            supplier_id = r["supplier_id"]
-
-            # 🔥 GET ONE PRODUCT IMAGE OF THIS SUPPLIER
-            cur.execute("""
-                SELECT product_id
-                FROM product_management
-                WHERE supplier_id = %s
-                AND flag = 'A'
-                LIMIT 1
-            """, (supplier_id,))
-
-            product = cur.fetchone()
-
-            if product:
-                img_url = f"{host_url}/api/image/{product['product_id']}/0"
-            else:
-                img_url = None
-
-            suppliers.append({
-                "id": supplier_id,
-                "name": r["company_name_english"],
-                "verified": supplier_id % 2 == 0,
-                "rating": round(4 + (supplier_id % 5) * 0.1, 1),
-                "delivery": "Fast Delivery",
-                "minOrder": "Min Order ₹5000",
-
-                # ✅ USE PRODUCT IMAGE
-                "image": img_url
-            })
-
-        return jsonify({"suppliers": suppliers}), 200
-
-    except Exception as e:
-        print("SUPPLIER ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        cur.close()
-        conn.close()
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    try:
-        cur.execute("""
-            SELECT 
-                product_id,
-                product_name_english,
-                price_per_unit,
-                old_price
-            FROM product_management
-            WHERE supplier_id = %s
-            AND flag = 'A'
-            ORDER BY product_id DESC
-        """, (supplier_id,))
-
-        rows = cur.fetchall()
-        host_url = request.host_url.rstrip("/")
-
-        products = []
-
-        for r in rows:
-            products.append({
-                "id": r["product_id"],
-                "name": r["product_name_english"],
-                "price": r["price_per_unit"],
-                "oldPrice": r.get("old_price", 0),
-
-                # 🔥 PRODUCT IMAGE (IMPORTANT)
-                "image": f"{host_url}/api/image/{r['product_id']}/0"
-            })
-
-        return jsonify({"products": products}), 200
+        return jsonify([]), 200
 
     except Exception as e:
         print("SUPPLIER PRODUCTS ERROR:", e)
@@ -1933,7 +2390,94 @@ def get_suppliers():
     finally:
         cur.close()
         conn.close()
-# ✅ SUPPLIER IMAGE API
-@gridlist_bp.route("/supplier-products/<int:supplier_id>", methods=["GET"])
-def get_supplier_products(supplier_id):
+    
+@gridlist_bp.route("/sponsored", methods=["GET"])
+def get_sponsored_products():
+    from datetime import datetime, date
+
     conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cur.execute("""
+            SELECT 
+                pm.product_id,
+                pm.product_name_english,
+                pm.price_per_unit,
+                pm.currency,
+                pm.product_images,
+
+                o.offer_id,
+                o.offer_type,
+                o.discount_percentage,
+                o.flat_amount,
+                o.start_date,
+                o.end_date,
+                o.start_time,
+                o.end_time
+
+            FROM product_management pm
+
+            LEFT JOIN offers o
+                ON pm.product_id = o.product_id
+                AND o.is_active = true
+                AND CURRENT_DATE BETWEEN o.start_date AND o.end_date
+
+            WHERE pm.flag = 'A'
+            ORDER BY o.is_featured DESC NULLS LAST, pm.product_id DESC
+            LIMIT 10
+        """)
+
+        rows = cur.fetchall()
+
+        host = request.host_url.rstrip("/")
+        products = []
+
+        for r in rows:
+
+            # 🔥 IMAGE
+            imgs = r.get("product_images") or []
+            image = None
+            if isinstance(imgs, list) and len(imgs) > 0:
+                image = f"{host}/api/image/{r['product_id']}/0"
+
+            # 🔥 OFFER LABEL
+            tag = "Special Offer"
+
+            if r.get("discount_percentage"):
+                tag = f"{int(r['discount_percentage'])}% OFF"
+            elif r.get("flat_amount"):
+                tag = f"QAR {int(r['flat_amount'])} OFF"
+
+            # 🔥 TIMER CALCULATION
+            end_seconds = 0
+            try:
+                if r.get("end_date"):
+                    end_dt = datetime.combine(
+                        r["end_date"],
+                        r.get("end_time") or datetime.max.time()
+                    )
+                    now = datetime.now()
+                    end_seconds = max(0, int((end_dt - now).total_seconds()))
+            except:
+                end_seconds = 0
+
+            products.append({
+                "id": r["product_id"],
+                "name": r["product_name_english"],
+                "price": r["price_per_unit"],
+                "currency": r["currency"] or "QAR",
+                "image": image,
+                "tag": tag,
+                "ends_in": end_seconds
+            })
+
+        return jsonify(products), 200
+
+    except Exception as e:
+        print("SPONSORED ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()

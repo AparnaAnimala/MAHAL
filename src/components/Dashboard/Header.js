@@ -88,8 +88,8 @@ import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
 import { resolveIdentity } from "../../utils/identity"; // adjust path
 import "../../pages/css/status.css";
 import "../../pages/css/halfscreen.css";
-
-const API = "http://127.0.0.1:5000/api/v1/orders";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/v1/orders";
 
 const Header = ({ onProfileClick }) => {
 
@@ -104,6 +104,7 @@ const Header = ({ onProfileClick }) => {
   const [notificationCount, setNotificationCount] = useState(0);
   
   const totalNotifications = notificationCount;
+  const { t, i18n } = useTranslation();
 
 
 const fetchCount = async () => {
@@ -115,7 +116,7 @@ const fetchCount = async () => {
 
   try {
     const res = await fetch(
-      "http://127.0.0.1:5000/api/v1/orders/supplier/notifications/count",
+      "http://192.168.2.9:5000/api/v1/orders/supplier/notifications/count",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -224,13 +225,12 @@ useEffect(() => {
       <div className="header_top">
         <div className="header_left">
           <h4 className="welcome_text">
-            Welcome, <span>{userName}</span>!
+            {t("welcome")}, <span>{userName}</span>!
           </h4>
-
           <div className="search_wrapper">
             <input
               className="search_bar"
-              placeholder="Search products, orders, invoices..."
+              placeholder={t("search_placeholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -242,15 +242,35 @@ useEffect(() => {
         </div>
 
         <div className="header_right">
-          <div
+
+                   
+          <select
+            className="lang_dropdown"
+            value={i18n.language}
+            onChange={(e) => {
+              const lang = e.target.value;
+              i18n.changeLanguage(lang);
+              document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+              localStorage.setItem("i18nextLng", lang);
+            }}
+          >
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+          </select>
+
+          {/* <div
             className="icon_box logout_icon"
             style={{ cursor: "pointer" }}
             // onClick={goToProfile}
             onClick={onProfileClick}
-            title="My Profile"
+            title={t("profile")}
           >
             <i className="fas fa-user-circle"></i>
-          </div>
+          </div> */}
+
+          <Link to={`/profile/${localStorage.getItem("role")}/${localStorage.getItem("linked_id")}`} className="icon_box">
+            <i className="fas fa-user"></i>    
+          </Link>
 
           <Link
             to="/dashboard/notifications"
@@ -275,6 +295,8 @@ useEffect(() => {
           >
             <i className="fas fa-sign-out-alt"></i>
           </div>
+
+ 
         </div>
       </div>
     </div>

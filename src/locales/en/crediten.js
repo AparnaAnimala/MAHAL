@@ -1,0 +1,33 @@
+export default {
+"supplier_wallet": "Supplier Credit Wallet",
+"credit_orders": "Credit Orders",
+"payment_history": "Payment History",
+"total_orders": "Total Orders",
+"total_value": "Total Value",
+"admin_paid": "Admin Paid",
+"outstanding": "Outstanding",
+
+"order": "Order",
+"restaurant": "Restaurant",
+"total": "Total",
+"paid": "Paid",
+"due": "Due",
+"status": "Status",
+
+"date": "Date",
+"payment_id": "Payment ID",
+"amount": "Amount",
+"mode": "Mode",
+"reference": "Reference",
+"orders": "Orders",
+"paid_by": "Paid By",
+"receipt": "Receipt",
+
+"search_orders": "Search Order ID / Restaurant...",
+"search_payments": "Search Payment ID / Reference...",
+pdf: "PDF",
+receip: "Receipt",
+pdf: "PDF",
+no_payments: "No payments yet",
+"paid_orders": "Orders Paid",
+}

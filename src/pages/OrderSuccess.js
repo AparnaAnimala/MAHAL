@@ -1,150 +1,370 @@
+import React, {
+  useEffect,
+  useState
+} from "react";
 
-
-
-
-
-
-// import React from "react";
-// import { Link } from "react-router-dom";
-
-// const OrderSuccess = () => {
-//   // ✅ FETCH ORDER ID FROM LOCALSTORAGE (NOT PATH)
-//   const orderId = localStorage.getItem("success_order_id");
-
-//   return (
-//     <section className="order_success_page">
-//       <div className="success_card">
-
-//         <div className="success_icon">
-//           <i className="fas fa-check"></i>
-//         </div>
-
-//         <h2>Order Placed Successfully!</h2>
-//         <p>Your order has been confirmed and will be delivered soon</p>
-
-//         <h6>
-//           Order ID: <span>#ORD-{orderId || "----"}</span>
-//         </h6>
-
-//         <div className="success_actions">
-//           <Link to="/restaurantoffers" className="success_btn">
-//             Continue Shopping
-//           </Link>
-//           <Link
-//             to="/restaurantdashboard/orders"
-//             className="success_btn outline"
-//           >
-//             View Orders
-//           </Link>
-//         </div>
-
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default OrderSuccess;
-
-
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
+import {
+  Link,
+  useNavigate
+} from "react-router-dom";
 
 const OrderSuccess = () => {
+
   const navigate = useNavigate();
 
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [orders, setOrders] =
+    useState([]);
 
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState(false);
+
+  // ============================================
+  // FETCH SUCCESS ORDERS
+  // ============================================
   useEffect(() => {
-    const orderId = localStorage.getItem("success_order_id");
-    const token = localStorage.getItem("token");
 
-    if (!orderId || !token) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
+    try {
 
-    const fetchOrder = async () => {
-      try {
-        const res = await fetch(
-          `http://127.0.0.1:5000/api/v1/orders/restaurant/${orderId}`, // ✅ FIXED
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+      const storedOrders =
+        localStorage.getItem(
+          "success_orders"
         );
 
-        if (!res.ok) throw new Error("Order not found");
+      console.log(
+        "RAW STORAGE:",
+        storedOrders
+      );
 
-        const data = await res.json();
-        setOrder(data);
+      if (!storedOrders) {
 
-        localStorage.removeItem("success_order_id");
-
-      } catch (err) {
-        console.error(err);
         setError(true);
-      } finally {
         setLoading(false);
-      }
-    };
 
-    fetchOrder();
+        return;
+      }
+
+      const parsedOrders =
+        JSON.parse(storedOrders);
+
+      console.log(
+        "PARSED ORDERS:",
+        parsedOrders
+      );
+
+      // MULTIPLE ORDERS
+      if (
+        Array.isArray(parsedOrders)
+      ) {
+
+        setOrders(parsedOrders);
+
+      }
+
+      // SINGLE ORDER
+      else if (
+        parsedOrders &&
+        typeof parsedOrders === "object"
+      ) {
+
+        setOrders([parsedOrders]);
+
+      }
+
+      else {
+
+        setOrders([]);
+
+      }
+
+      // CLEAR STORAGE
+      localStorage.removeItem(
+        "success_orders"
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(true);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   }, []);
 
+  // ============================================
+  // ERROR REDIRECT
+  // ============================================
   useEffect(() => {
-    if (error) navigate("/");
+
+    if (error) {
+
+      console.log(
+        "No order data"
+      );
+
+    }
+
   }, [error, navigate]);
 
+  // ============================================
+  // LOADING
+  // ============================================
   if (loading) {
-    return <h3 style={{ textAlign: "center" }}>Loading...</h3>;
+
+    return (
+
+      <h3
+        style={{
+          textAlign: "center",
+          marginTop: "50px"
+        }}
+      >
+        Loading...
+      </h3>
+
+    );
   }
 
-  if (!order) {
-    return null;
+  // ============================================
+  // EMPTY
+  // ============================================
+  if (!orders.length) {
+
+    return (
+
+      <section className="order_success_page">
+
+        <div className="success_card">
+
+          <div className="success_icon">
+            <i className="fas fa-check"></i>
+          </div>
+
+          <h2>
+            Order Placed Successfully 🎉
+          </h2>
+
+          <p>
+            Your order has been confirmed
+          </p>
+
+          <h5
+            style={{
+              color: "#ff6600"
+            }}
+          >
+            No Orders Found
+          </h5>
+
+          <div className="success_actions">
+
+            <Link
+              to="/restaurantoffers"
+              className="success_btn"
+            >
+              Continue Shopping
+            </Link>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    );
   }
+
+  // ============================================
+  // GRAND TOTAL
+  // ============================================
+  const grandTotal =
+    orders.reduce(
+      (sum, o) =>
+        sum +
+        Number(
+          o.amount || 0
+        ),
+      0
+    ).toFixed(2);
 
   return (
-  
+
     <section className="order_success_page">
+
       <div className="success_card">
 
-         <div className="success_icon">
+        {/* SUCCESS ICON */}
+        <div className="success_icon">
           <i className="fas fa-check"></i>
         </div>
 
-        <h2>Order Placed Successfully 🎉</h2>
-        <p>Your order has been confirmed</p>
+        {/* HEADER */}
+        <h2>
+          Order Placed Successfully 🎉
+        </h2>
 
-        <h6>
-          Order ID: <span>#{order.order_id}</span>
-        </h6>
+        <p>
+          Your order has been confirmed
+        </p>
 
-        <h6>
-          Payment Method: <span>{order.payment_method}</span>
-        </h6>
+        <p>
+          Your cart was automatically split into
+          multiple supplier orders.
+        </p>
 
-        <h6>
-          Total Amount: <span>₹{order.total_amount}</span>
-        </h6>
+        {/* ========================================= */}
+        {/* SUPPLIER ORDERS */}
+        {/* ========================================= */}
+
+        <div className="supplier_orders_wrapper">
+
+          {orders.map((ord, index) => (
+
+            <div
+              key={index}
+              className="supplier_order_card"
+            >
+
+              {/* TOP */}
+              <div className="supplier_top">
+
+                <h5>
+
+                  {
+                    ord?.supplier_name_english ||
+                    "Supplier"
+                  }
+
+                </h5>
+
+                <span className="supplier_badge">
+
+                  Supplier Order
+
+                </span>
+
+              </div>
+
+              {/* DETAILS */}
+              <div className="supplier_details">
+
+              <p>
+  Reference ID:
+  <span className="reference_id">
+    {orders[0]?.master_order_id}
+  </span>
+</p>
+
+                <p>
+
+                  <b>Order ID:</b>
+
+                  {" "}
+                  #{ord?.order_id}
+
+                </p>
+
+                <p>
+
+                  <b>Payment Method:</b>
+
+                  {" "}
+                  {ord?.payment_method || "COD"}
+
+                </p>
+
+                <p>
+
+                  <b>Supplier Amount:</b>
+
+                  {" "}
+                  QAR {
+
+                    Number(
+                      ord?.amount || 0
+                    ).toFixed(2)
+
+                  }
+
+                </p>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </div>
+
+        {/* ========================================= */}
+        {/* SUMMARY */}
+        {/* ========================================= */}
+
+        <div className="success_summary">
+
+          <h4>
+
+            Total Supplier Orders:
+
+            <span style={{
+              color: "#ff6600"
+            }}>
+
+              {" "}
+              {orders.length}
+
+            </span>
+
+          </h4>
+
+          <h3>
+
+            Grand Total:
+
+            <span style={{
+              color: "#28a745"
+            }}>
+
+              {" "}
+              QAR {grandTotal}
+
+            </span>
+
+          </h3>
+
+        </div>
+
+        {/* ========================================= */}
+        {/* ACTIONS */}
+        {/* ========================================= */}
 
         <div className="success_actions">
-          <Link to="/CategorieList" className="success_btn">
+
+          <Link
+            to="/restaurantoffers"
+            className="success_btn"
+          >
             Continue Shopping
           </Link>
+
           <Link
             to="/restaurantdashboard/orders"
             className="success_btn outline"
           >
             View Orders
           </Link>
+
         </div>
 
       </div>
+
     </section>
   );
 };

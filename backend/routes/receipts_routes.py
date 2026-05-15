@@ -350,18 +350,54 @@ def get_receipt(invoice_no):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
+    # Receipt
     cur.execute("""
         SELECT *
         FROM receipts
         WHERE invoice_no = %s
     """, (invoice_no,))
+    receipt = cur.fetchone()
 
-    data = cur.fetchall()
+    if not receipt:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Receipt not found"}), 404
+
+    # Get invoice_id
+    cur.execute("""
+        SELECT invoice_id
+        FROM invoice_header
+        WHERE invoice_number = %s
+    """, (invoice_no,))
+    inv = cur.fetchone()
+
+    # Get items
+    if inv:
+        cur.execute("""
+            SELECT
+                ii.quantity,
+                ii.price_per_unit AS unit_price,
+                ii.discount,
+                ii.total_amount AS line_total,
+
+                ii.product_name_english AS product_english,
+                ii.product_name_english AS product_arabic
+
+            FROM invoice_items ii
+            WHERE ii.invoice_id = %s
+        """, (inv["invoice_id"],))
+
+        items = cur.fetchall()
+    else:
+        items = []
 
     cur.close()
     conn.close()
 
-    return jsonify(data)
+    return jsonify({
+        "receipt": receipt,
+        "items": items
+    })
 
 
 # --------------------------------------------------

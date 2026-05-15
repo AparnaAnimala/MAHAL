@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import signImg from "../../images/sign_in_img_1.jpg";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api/suppliers";
+const API_BASE_URL = "http://192.168.2.9:5000/api/suppliers";
 
 export default function AdminCreateUser() {
   const navigate = useNavigate();
@@ -56,9 +56,9 @@ export default function AdminCreateUser() {
     fd.append("registration_source", "admin_created");
     const adminId = localStorage.getItem("admin_id");
 
-if (adminId && adminId !== "null") {
-  fd.append("created_by_admin_id", adminId);
-}
+    if (adminId && adminId !== "null") {
+      fd.append("created_by_admin_id", adminId);
+    }
 
 
     const endpoint =

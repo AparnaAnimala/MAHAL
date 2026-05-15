@@ -109,7 +109,7 @@ const RestaurantOffers = () => {
 
      <BestSellProducts />
  
-      <NewProducts /> {/* Discover what people are loving today */} 
+       <NewProducts /> {/*Discover what people are loving today  */}
 
       <RestaurantBanner />
 
@@ -122,11 +122,11 @@ const RestaurantOffers = () => {
 
 
       <SpecialProducts />
-{/*    <Categories /> */}
+   {/* <Categories /> */}
 
  
 
-      <BrandPartners />
+      {/* <BrandPartners /> */}
 
       <DeliveryStrip />
 

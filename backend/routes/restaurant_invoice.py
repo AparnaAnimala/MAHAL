@@ -861,6 +861,7 @@ def view_invoice(invoice_id):
             ih.order_id,
 
             ss.store_name_english AS supplier_name,
+            ss.store_name_arabic AS supplier_name_arabic,
             ss.contact_person_name AS supplier_contact_name,
             ss.contact_person_mobile AS supplier_contact_mobile,
             ss.email AS supplier_email,
@@ -881,14 +882,17 @@ def view_invoice(invoice_id):
     # ITEMS
     cur.execute("""
         SELECT
-            product_name_english,
-            quantity,
-            price_per_unit,
-            discount,
-            total_amount
-        FROM invoice_items
-        WHERE invoice_id = %s
-        ORDER BY invoice_item_id
+            ii.product_name_english,
+            pm.product_name_arabic,
+            ii.quantity,
+            ii.price_per_unit,
+            ii.discount,
+            ii.total_amount
+        FROM invoice_items ii
+        LEFT JOIN product_management pm
+            ON pm.product_name_english = ii.product_name_english
+        WHERE ii.invoice_id = %s
+        ORDER BY ii.invoice_item_id
     """, (invoice_id,))
 
     items = cur.fetchall()

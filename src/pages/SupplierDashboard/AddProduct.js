@@ -154,7 +154,7 @@
 //           <div className="form_group">
 //             <label>Currency</label>
 //             <select>
-//               <option>QAR</option>
+//               <option>QAR </option>
 //             </select>
 //           </div>
 
@@ -240,12 +240,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import BulkUpload from "./BulkUpload";
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = "http://192.168.2.9:5000/api";
 
 const AddProduct = () => {
   const supplierIdFromLS = localStorage.getItem("supplier_id") || "";
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const { t, i18n } = useTranslation();
 
   /* ================= FORM STATE ================= */
   const [formData, setFormData] = useState({
@@ -257,7 +259,7 @@ const AddProduct = () => {
     category_id: "",
     sub_category_id: "",
     unit_of_measure: "",
-    currency: "QAR",
+    currency: "QAR ",
     price_per_unit: "",
     minimum_order_quantity: "",
     stock_availability: "",
@@ -462,7 +464,7 @@ const AddProduct = () => {
   //       category_id: "",
   //       sub_category_id: "",
   //       unit_of_measure: "",
-  //       currency: "QAR",
+  //       currency: "QAR ",
   //       price_per_unit: "",
   //       minimum_order_quantity: "",
   //       stock_availability: "",
@@ -481,13 +483,13 @@ const AddProduct = () => {
 
   const handleSubmit = async () => {
   if (!formData.product_name_english.trim()) {
-    alert("Product name is required");
+    alert(t("product_name_required"));
     return;
   }
 
   const supplierId = localStorage.getItem("linked_id");
   if (!supplierId) {
-    alert("Supplier not logged in");
+    alert(t("supplier_not_logged"));
     return;
   }
 
@@ -509,7 +511,7 @@ const AddProduct = () => {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    alert("✅ Product added successfully");
+    alert(t("product_added_success"));
 
     setFormData({
       branch_id: "",
@@ -519,7 +521,7 @@ const AddProduct = () => {
       category_id: "",
       sub_category_id: "",
       unit_of_measure: "",
-      currency: "QAR",
+      currency: "QAR ",
       price_per_unit: "",
       minimum_order_quantity: "",
       stock_availability: "",
@@ -543,15 +545,15 @@ const AddProduct = () => {
       {/* HEADER */}
       <div className="page_header glass">
         <div>
-          <h2>Add New Product</h2>
-          <p className="sub_text">Manage your product information</p>
+          <h2>{t("add_product")}</h2>
+          <p className="sub_text">{t("manage_product_info")}</p>
         </div>
 
         <button
           className="bulk_btn"
           onClick={() => setShowBulkUpload((s) => !s)}
         >
-          <i className="fas fa-upload"></i> Bulk Upload
+          <i className="fas fa-upload"></i> {t("bulk_upload")}
         </button>
       </div>
 
@@ -572,23 +574,27 @@ const AddProduct = () => {
 
       {/* BUSINESS */}
       <div className="section_card soft">
-        <h4>Business Details</h4>
+        <h4>{t("business_details")}</h4>
 
         <div className="form_grid three">
           <div className="form_group">
-            <label>Company Name</label>
+            <label>{t("company_name")}</label>
             <input
               type="text"
-              value={companies[0]?.company_name || ""}
+              value={
+                i18n.language === "ar"
+                  ? companies[0]?.company_name_arabic || companies[0]?.company_name_english
+                  : companies[0]?.company_name_english
+              }
               readOnly
               className="readonly_input"
             />
           </div>
 
           <div className="form_group">
-            <label>Branch</label>
+            <label>{t("supbranch")}</label>
             <select name="branch_id" value={formData.branch_id} onChange={handleChange}>
-              <option value="">Select Branch</option>
+              <option value="">{t("select_branch")}</option>
               {branches.map((b) => (
                 <option key={b.branch_id} value={b.branch_id}>
                   {b.branch_name_english}
@@ -598,9 +604,9 @@ const AddProduct = () => {
           </div>
 
           <div className="form_group">
-            <label>Store</label>
+            <label>{t("supstore")}</label>
             <select name="store_id" value={formData.store_id} onChange={handleChange}>
-              <option value="">Select Store</option>
+              <option value="">{t("select_store")}</option>
               {stores.map((s) => (
                 <option key={s.store_id} value={s.store_id}>
                   {s.store_name_english}
@@ -613,11 +619,11 @@ const AddProduct = () => {
 
       {/* PRODUCT DETAILS */}
       <div className="section_card soft">
-        <h4>Product Details</h4>
+        <h4>{t("product_details")}</h4>
 
         <div className="form_grid three">
           <div className="form_group">
-            <label>Product Name (EN)</label>
+            <label>{t("product_name_en")}</label>
             <input
               name="product_name_english"
               value={formData.product_name_english}
@@ -626,14 +632,14 @@ const AddProduct = () => {
           </div>
 
           <div className="form_group">
-            <label>Product Name (AR)</label>
+            <label>{t("product_name_ar")}</label>
             <input value={formData.product_name_arabic} readOnly />
           </div>
 
           <div className="form_group">
-            <label>Category</label>
+            <label>{t("category")}</label>
             <select name="category_id" value={formData.category_id} onChange={handleChange}>
-              <option value="">Select Category</option>
+              <option value="">{t("select_category")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -643,9 +649,9 @@ const AddProduct = () => {
 
         <div className="form_grid three">
           <div className="form_group">
-            <label>Sub Category</label>
+            <label>{t("sub_category")}</label>
             <select name="sub_category_id" value={formData.sub_category_id} onChange={handleChange}>
-              <option value="">Select Subcategory</option>
+              <option value="">{t("select_subcategory")}</option>
               {subcategories.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -653,9 +659,9 @@ const AddProduct = () => {
           </div>
 
           <div className="form_group">
-            <label>Unit of Measure</label>
+            <label>{t("unit_of_measure")}</label>
             <select name="unit_of_measure" value={formData.unit_of_measure} onChange={handleChange}>
-              <option value="">Select Unit</option>
+              <option value="">{t("select_unit")}</option>
               <option value="Kg">Kg</option>
               <option value="Piece">Piece</option>
               <option value="Box">Box</option>
@@ -663,7 +669,7 @@ const AddProduct = () => {
           </div>
 
           <div className="form_group full">
-            <label>Description</label>
+            <label>{t("description")}</label>
             <textarea
               rows="2"
               name="description"
@@ -676,45 +682,45 @@ const AddProduct = () => {
 
       {/* PRICING */}
       <div className="section_card soft">
-        <h4>Pricing & Availability</h4>
+        <h4>{t("pricing_availability")}</h4>
 
         <div className="form_grid four">
           <div className="form_group">
-            <label>Currency</label>
+            <label>{t("Supcurrency")}</label>
             <select name="currency" value={formData.currency} onChange={handleChange}>
-              <option>QAR</option>
+              <option>QAR </option>
             </select>
           </div>
 
           <div className="form_group">
-            <label>Price per Unit</label>
+            <label>{t("price_per_unit")}</label>
             <input name="price_per_unit" type="number" value={formData.price_per_unit} onChange={handleChange} />
           </div>
 
           <div className="form_group">
-            <label>Minimum Order Qty</label>
+            <label>{t("minimum_order_quantity")}</label>
             <input name="minimum_order_quantity" type="number" value={formData.minimum_order_quantity} onChange={handleChange} />
           </div>
 
           <div className="form_group">
-            <label>Stock Available</label>
+            <label>{t("stock_available")}</label>
             <input name="stock_availability" type="number" value={formData.stock_availability} onChange={handleChange} />
           </div>
         </div>
 
         <div className="form_grid four">
           <div className="form_group">
-            <label>Expiry Date</label>
+            <label>{t("expiry_date")}</label>
             <input name="expiry_date" type="date" value={formData.expiry_date} onChange={handleChange} />
           </div>
 
           <div className="form_group">
-            <label>Expiry Time</label>
+            <label>{t("expiry_time")}</label>
             <input name="expiry_time" type="time" value={formData.expiry_time} onChange={handleChange} />
           </div>
 
           <div className="form_group">
-            <label>Shelf Life (days)</label>
+            <label>{t("shelf_life")}</label>
             <input name="shelf_life" type="number" value={formData.shelf_life} onChange={handleChange} />
           </div>
         </div>
@@ -722,13 +728,13 @@ const AddProduct = () => {
 
       {/* IMAGES */}
       <div className="section_card soft">
-        <h4>Product Images</h4>
+        <h4>{t("product_images")}</h4>
 
         <label className="image_drop_zone fancy">
           <input type="file" multiple hidden accept="image/*" onChange={handleImageUpload} />
           <i className="fas fa-cloud-upload-alt"></i>
-          <p>Drag & drop images here</p>
-          <small>or click to upload</small>
+          <p>{t("drag_drop_images")}</p>
+          <small>{t("click_upload")}</small>
         </label>
 
         {images.length > 0 && (
@@ -747,9 +753,9 @@ const AddProduct = () => {
 
       {/* ACTIONS */}
       <div className="form_footer">
-        <button className="btn_cancel">Cancel</button>
+        <button className="btn_cancel">{t("cancel")}</button>
         <button className="btn_save glow" onClick={handleSubmit}>
-          Save Product
+          {t("save_product")}
         </button>
       </div>
     </div>
@@ -777,7 +783,7 @@ export default AddProduct;
 // import BulkUpload from "./BulkUpload";
 // import { FiSearch } from "react-icons/fi";
 
-// const API_URL = "http://127.0.0.1:5000/api"; // existing value from your project
+// const API_URL = "http://192.168.2.9:5000/api"; // existing value from your project
 
 // const speak = (text) => {
 //   if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -798,7 +804,7 @@ export default AddProduct;
 //     subCategoryId: "",
 //     unitOfMeasure: "",
 //     pricePerUnit: "",
-//     currency: "QAR",
+//     currency: "QAR ",
 //     minimumOrderQuantity: "",
 //     stockAvailability: "",
 //     // productImages: null, // File object
@@ -1164,7 +1170,7 @@ export default AddProduct;
 //       formPayload.append("sub_category_id", formData.subCategoryId || "");
 //       formPayload.append("unit_of_measure", formData.unitOfMeasure || "");
 //       formPayload.append("price_per_unit", formData.pricePerUnit || "");
-//       formPayload.append("currency", formData.currency || "QAR");
+//       formPayload.append("currency", formData.currency || "QAR ");
 //       formPayload.append("minimum_order_quantity", formData.minimumOrderQuantity || "");
 //       formPayload.append("stock_availability", formData.stockAvailability || "");
 //       formPayload.append("expiry_date", formData.expiryDate || "");
@@ -1221,7 +1227,7 @@ export default AddProduct;
 //       subCategoryId: "",
 //       unitOfMeasure: "",
 //       pricePerUnit: "",
-//       currency: "QAR",
+//       currency: "QAR ",
 //       minimumOrderQuantity: "",
 //       stockAvailability: "",
 //       // productImages: null,
@@ -1313,7 +1319,7 @@ export default AddProduct;
 //         subCategoryId: product.sub_category_id,
 //         unitOfMeasure: product.unit_of_measure,
 //         pricePerUnit: product.price_per_unit,
-//         currency: product.currency || "QAR",
+//         currency: product.currency || "QAR ",
 //         minimumOrderQuantity: product.minimum_order_quantity,
 //         stockAvailability: product.stock_availability,
 //         description: product.description || product.product_description || "",
@@ -1679,11 +1685,11 @@ export default AddProduct;
 //                 <div className="price-group">
 //                   <select
 //                     name="currency"
-//                     value={formData.currency || "QAR"}
+//                     value={formData.currency || "QAR "}
 //                     onChange={handleChange}
 //                     {...guidanceProps("currency")}
 //                   >
-//                     <option value="QAR">QAR</option>
+//                     <option value="QAR ">QAR </option>
 //                     <option value="USD">$</option>
 //                   </select>
 //                   <input
@@ -1854,7 +1860,7 @@ export default AddProduct;
 //                             <td>{p.sub_category_id}</td>
 //                             <td>{p.unit_of_measure}</td>
 //                             <td>{p.price_per_unit}</td>
-//                             <td>{p.currency || "QAR"}</td>
+//                             <td>{p.currency || "QAR "}</td>
 //                             <td>{p.minimum_order_quantity}</td>
 //                             <td>{p.stock_availability}</td>
 //                             {/* <td>

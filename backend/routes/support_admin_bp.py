@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, g, Response
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta

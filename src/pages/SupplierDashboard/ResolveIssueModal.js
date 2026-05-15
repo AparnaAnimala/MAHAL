@@ -63,10 +63,13 @@
 
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api/v1";
+const API = "http://192.168.2.9:5000/api/v1";
 
 const ResolveIssueModal = ({ issue, onClose, onResolved }) => {
+  const { t, i18n } = useTranslation();
+
   const [action, setAction] = useState(issue.action || "");
   const [refund, setRefund] = useState(issue.refund || "");
   const [notes, setNotes] = useState(issue.notes || "");
@@ -74,36 +77,34 @@ const ResolveIssueModal = ({ issue, onClose, onResolved }) => {
 
   const token = localStorage.getItem("token");
 
-const submit = async () => {
-  const res = await fetch(
-    `${API}/supplier/issues/${issue.issue_report_id}/status`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        status: "ISSUE_RESOLVED",
-        action,
-        refund: refund ? Number(refund) : null,
-        notes
-      })
-    }
-  );
+  const submit = async () => {
+    const res = await fetch(
+      `${API}/supplier/issues/${issue.issue_report_id}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: "ISSUE_RESOLVED",
+          action,
+          refund: refund ? Number(refund) : null,
+          notes
+        })
+      }
+    );
 
-  const updated = await res.json();
+    const updated = await res.json();
 
-  // ✅ FIX: preserve order_id & restaurant_name
-  const mergedIssue = {
-    ...issue,
-    ...updated
+    const mergedIssue = {
+      ...issue,
+      ...updated
+    };
+
+    onResolved(mergedIssue);
+    onClose();
   };
-
-  onResolved(mergedIssue);
-  onClose();
-};
-
 
   return (
     <div className="modal_overlay">
@@ -111,34 +112,38 @@ const submit = async () => {
 
         {/* HEADER */}
         <div className="modal_header">
-          <h4>Resolve Issue</h4>
+          <h4>{t("resolve_issue")}</h4>
           <button onClick={onClose}>✖</button>
         </div>
 
-        {/* SCROLLABLE CONTENT */}
+        {/* BODY */}
         <div className="modal_body">
 
-          <p><b>Order:</b> {issue.order_id}</p>
-          <p><b>Issue:</b> {issue.issue_type}</p>
+          <p><b>{t("order")}:</b> {issue.order_id}</p>
 
-          {/* DAMAGED PRODUCTS */}
+          <p><b>{t("issue")}:</b> {issue.issue_type}</p>
+
+          {/* PRODUCTS */}
           {Array.isArray(issue.damaged_products) &&
             issue.damaged_products.length > 0 && (
               <>
                 <hr />
-                <p><b>Damaged Products</b></p>
+                <p><b>{t("damaged_products")}</b></p>
                 <ul className="damaged-products-list">
                   {issue.damaged_products.map((p, idx) => (
                     <li key={idx}>
-                      {p.product_name || p.product_id}
+                      {i18n.language === "ar"
+                      ? (p.product_name_arabic || p.product_name_english)
+                      : p.product_name_english}
                     </li>
                   ))}
                 </ul>
               </>
             )}
-            {/* DESCRIPTION (READ ONLY) */}
+
           <hr />
-          <label><b>Description</b></label>
+
+          <label><b>{t("description")}</b></label>
           <p className="issue-description-readonly">
             {issue.description || "—"}
           </p>
@@ -153,7 +158,7 @@ const submit = async () => {
                     <img
                       key={idx}
                       src={`data:image/jpeg;base64,${img}`}
-                      alt={`issue-${idx}`}
+                      alt=""
                       className="issue-thumb"
                       onClick={() => setPreview(img)}
                     />
@@ -164,34 +169,36 @@ const submit = async () => {
 
           <hr />
 
+          {/* ACTION */}
           <select value={action} onChange={(e) => setAction(e.target.value)}>
-            <option value="">Select Action</option>
-            <option value="Refund Issued">Refund Issued</option>
-            <option value="Replacement Sent">Replacement Sent</option>
-            <option value="Issue Fixed">Issue Fixed</option>
+            <option value="">{t("select_action")}</option>
+            <option value="Refund Issued">{t("refund_issued")}</option>
+            <option value="Replacement Sent">{t("replacement_sent")}</option>
+            <option value="Issue Fixed">{t("issue_fixed")}</option>
           </select>
 
           <input
             type="number"
-            placeholder="Refund Amount"
+            placeholder={t("refund_amount")}
             value={refund}
             onChange={(e) => setRefund(e.target.value)}
           />
 
           <textarea
-            placeholder="Notes"
+            placeholder={t("notes")}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
 
-        {/* ACTIONS */}
+        {/* FOOTER */}
         <div className="modal_actions">
           <button className="btn resolve" onClick={submit}>
-            Mark as Resolved
+            {t("mark_resolved")}
           </button>
+
           <button className="btn cancel" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>

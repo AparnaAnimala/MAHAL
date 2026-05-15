@@ -309,7 +309,7 @@ def pay_supplier():
             supplier_id,
             "PAYMENT_RECEIVED",
             "Payment Received",
-            f"QAR {used:.2f} credited to your account.\nOrders cleared: {len(order_ids)}",
+            f"QAR  {used:.2f} credited to your account.\nOrders cleared: {len(order_ids)}",
             json.dumps({
                 "payment_id": payment_id,
                 "order_ids": order_ids
@@ -587,9 +587,9 @@ def payment_pdf(payment_id):
     # =====================================================
 
     totals = [
-        ["Total Due", f"QAR {previous_due:.2f}"],
-        ["Amount Paid", f"QAR {float(row['amount']):.2f}"],
-        ["Remaining Due", f"QAR {remaining_due:.2f}"]
+        ["Total Due", f"QAR  {previous_due:.2f}"],
+        ["Amount Paid", f"QAR  {float(row['amount']):.2f}"],
+        ["Remaining Due", f"QAR  {remaining_due:.2f}"]
     ]
 
     totals_table = Table(totals, colWidths=[250,200])
@@ -665,6 +665,7 @@ def paid_orders(supplier_id):
             oh.supplier_due_amount,
             oh.supplier_payment_status,
             oh.status,
+            oh.restaurant_id,  -- ✅ ADD THIS LINE
             r.restaurant_name_english
         FROM order_header oh
         JOIN restaurant_registration r

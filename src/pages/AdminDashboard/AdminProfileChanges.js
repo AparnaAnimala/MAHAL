@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from "react";
-
+import React, { useEffect, useState, useCallback } from "react";
+import "../css/AdminProfileChanges.css";
 export default function AdminProfileChanges() {
 
   const camelToSnake = (key) =>
     key.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
   const ADMIN_TOKEN = localStorage.getItem("admin_token");
 
-  if (!ADMIN_TOKEN) {
-    console.error("❌ Admin token missing in localStorage");
-    alert("Session expired. Please login again.");
-    window.location.href = "/admin/login";
-  }
+  useEffect(() => {
+    if (!ADMIN_TOKEN) {
+      console.error("❌ Admin token missing in localStorage");
+      alert("Session expired. Please login again.");
+      window.location.href = "/admin/login";
+    }
+  }, [ADMIN_TOKEN]);
 
   const CANONICAL_KEY_MAP = React.useMemo(() => ({
-    // ===== ORG =====
     cr_expiry: "cr_expiry_date",
     cr_expiry_date: "cr_expiry_date",
 
@@ -29,10 +30,16 @@ export default function AdminProfileChanges() {
     signing_authority: "signing_authority_name",
     signing_authority_name: "signing_authority_name",
 
+    companyName: "company_name_english",
+    company_name: "company_name_english",
+
+    org_companyEmail: "company_email",
+    org_company_email: "company_email",
     company_email: "company_email",
     restaurant_email_address: "company_email",
+    contact_person_email: "company_email",
+    restaurant_name_english: "company_name_english",
 
-    // ===== ADDRESS =====
     street: "street",
     zone: "zone",
     area: "area",
@@ -40,20 +47,19 @@ export default function AdminProfileChanges() {
     country: "country",
     address: "address",
 
-    // camelCase safety
     streetName: "street",
     zoneName: "zone",
     areaName: "area",
     cityName: "city",
     countryName: "country",
 
-    // ===== BANK =====
     bank_name: "bank_name",
     bankName: "bank_name",
 
     bank_branch: "bank_branch",
     branch: "bank_branch",
 
+    account_holder: "account_holder_name",
     account_holder_name: "account_holder_name",
     accountHolder: "account_holder_name",
 
@@ -62,7 +68,6 @@ export default function AdminProfileChanges() {
 
     iban: "iban",
 
-    // ===== BRANCH =====
     branch_name_english: "branch_name_english",
     branchNameEn: "branch_name_english",
 
@@ -82,7 +87,6 @@ export default function AdminProfileChanges() {
     branch_license: "branch_license",
     branchLicense: "branch_license",
 
-    // ===== STORE =====
     store_name_english: "store_name_english",
     storeNameEnglish: "store_name_english",
 
@@ -109,56 +113,48 @@ export default function AdminProfileChanges() {
 
     delivery_pickup_availability: "delivery_pickup_availability",
     deliveryPickupAvailability: "delivery_pickup_availability",
+
+    branchName: "branch_name_english",
+    branch_name: "branch_name_english",
   }), []);
 
   const FILE_KEY_MAP = {
-    // CR
-    upload_cr_copy: "cr_copy",
-    crCopy: "cr_copy",
-    cr_copy: "cr_copy",
+    crCopy: "upload_cr_company",
+    upload_cr_company: "upload_cr_company",
+    upload_cr_copy: "upload_cr_company",
 
-    // Computer Card
-    upload_computer_card_copy: "computer_card",
-    compCardCopy: "computer_card",
-    computer_card: "computer_card",
-    comp_card_copy: "computer_card",
+    compCardCopy: "upload_computer_card_copy",
+    upload_computer_card_copy: "upload_computer_card_copy",
 
-    // Trade License
-    upload_trade_license_copy: "trade_license",
-    tradeLicenseCopy: "trade_license",
-    trade_license: "trade_license",
-    trade_license_copy: "trade_license",
+    tradeLicenseCopy: "upload_trade_license_copy",
+    upload_trade_license_copy: "upload_trade_license_copy",
 
-    // VAT
-    upload_vat_certificate_copy: "vat_certificate",
-    upload_vat_certificates_copy: "vat_certificate",
-    vatCertificate: "vat_certificate",
-    vat_certificate: "vat_certificate",
+    vatCertificate: "upload_vat_certificates_copy",
+    upload_vat_certificates_copy: "upload_vat_certificates_copy",
+    upload_vat_certificate_copy: "upload_vat_certificates_copy",
 
-    // Logo
-    upload_company_logo: "company_logo",
-    companyLogo: "company_logo",
-    company_logo: "company_logo",
+    companyLogo: "upload_company_logo",
+    upload_company_logo: "upload_company_logo",
 
-    // Bank Letter
-    upload_bank_letter: "bank_letter",
-    bankLetter: "bank_letter",
-    bank_letter: "bank_letter",
+    bankLetter: "upload_bank_letter",
+    upload_bank_letter: "upload_bank_letter",
 
-    // Certificates
     certificates: "certificates",
 
-    // Food Safety
-    upload_food_safety_certificate: "food_safety_certificate",
-    foodSafetyCertificate: "food_safety_certificate",
-    food_safety_certificate: "food_safety_certificate",
+    foodSafetyCertificate: "upload_food_safety_certificate",
+    upload_food_safety_certificate: "upload_food_safety_certificate"
   };
 
   const [items, setItems] = useState([]);
-  const [selectedId, setSelectedId] = useState(null); // 👈 view state
+  const [selectedId, setSelectedId] = useState(null);
   const selectedItem = items.find(i => i.id === selectedId) || null;
   const [loading, setLoading] = useState(false);
-
+  const [previewModal, setPreviewModal] = useState({
+    open: false,
+    title: "",
+    oldSrc: null,
+    newSrc: null,
+  });
   const normalizeByCanonicalMap = React.useCallback(
     (data = {}) =>
       Object.fromEntries(
@@ -171,52 +167,110 @@ export default function AdminProfileChanges() {
             CANONICAL_KEY_MAP[k] ||
             snakeKey;
 
-          return [finalKey, v];
+          return [
+            finalKey,
+            v ?? data[finalKey] ?? null
+          ];
         })
       ),
-    [CANONICAL_KEY_MAP]   // 👈 no dependencies (pure function)
+    [CANONICAL_KEY_MAP]
   );
 
-  const normalizedOld = normalizeByCanonicalMap(selectedItem?.old_data || {});
-  const normalizedNew = normalizeByCanonicalMap(selectedItem?.new_data || {});
+  let processedNewData = selectedItem?.new_data || {};
 
-  // Merge keys correctly
-  const allKeys = Array.from(
-    new Set([
-      ...Object.keys(normalizedOld),
-      ...Object.keys(normalizedNew),
-    ])
-  );
+  const normalizeFiles = (data = {}) => {
+    const normalized = {};
 
-  const normalizeFiles = (files = {}) =>
-    Object.fromEntries(
-      Object.entries(files).map(([k, v]) => {
-        if (typeof v === "string" && v.startsWith("data:")) {
-          const [meta, base64] = v.split(",");
-          return [
-            FILE_KEY_MAP[k] || k,
-            {
-              mimetype: meta.replace("data:", "").replace(";base64", ""),
-              content: base64,
-            }
-          ];
+    Object.keys(data).forEach((key) => {
+      let value = data[key];
+
+      // if (typeof value === "string") {
+      //   try {
+      //     value = JSON.parse(value);
+      //   } catch (e) {
+      //     console.error("❌ JSON parse failed:", key, value);
+      //   }
+      // }
+
+      if (
+        typeof value === "string" &&
+        (value.startsWith("{") || value.startsWith("["))
+      ) {
+        try {
+          value = JSON.parse(value);
+        } catch (e) {
+          console.error("❌ JSON parse failed:", key, value);
         }
-        return [FILE_KEY_MAP[k] || k, v];
-      })
-    );
+      }
+
+      const mappedKey = FILE_KEY_MAP[key] || key;
+      normalized[mappedKey] = value;
+    });
+    return normalized;
+  };
+
+  processedNewData = normalizeFiles(processedNewData);
+  console.log("🔥 AFTER NORMALIZE NEW:", processedNewData);
+
+  if (selectedItem?.section === "store") {
+    if (processedNewData?.stores?.length > 0) {
+      processedNewData = processedNewData.stores[0].data || {};
+    }
+  }
+
+  let processedOldData = selectedItem?.old_data || {};
+
+
+  if (selectedItem?.section === "store") {
+    if (Array.isArray(processedOldData) && processedOldData.length > 0) {
+      processedOldData = processedOldData[0];
+    }
+  }
+
+  processedOldData = normalizeFiles(processedOldData);
+  console.log("🔥 AFTER NORMALIZE OLD:", processedOldData);
+
+  if (selectedItem?.section === "store") {
+    if (Array.isArray(processedOldData) && processedOldData.length > 0) {
+      processedOldData = processedOldData[0];
+    }
+  }
+
+  const normalizedNew = normalizeByCanonicalMap(processedNewData);
+  const normalizedOld = normalizeByCanonicalMap(processedOldData);
+
+  const isBranchSection = selectedItem?.section === "branch";
+
+  const branchChanges = isBranchSection
+    ? (
+      Array.isArray(selectedItem?.new_data?.branches)
+        ? selectedItem.new_data.branches
+        : Array.isArray(selectedItem?.new_data)
+          ? selectedItem.new_data
+          : []   // 🔥 fallback
+    )
+    : [];
+
+  const oldBranches = isBranchSection
+    ? (
+      Array.isArray(selectedItem?.old_data)
+        ? selectedItem.old_data
+        : selectedItem?.old_data?.branches || []
+    )
+    : [];
 
   const oldFiles = React.useMemo(() => {
-    return selectedItem?.existing_files || {};
+    return selectedItem?.old_data || {};
   }, [selectedItem]);
 
   const newFiles = React.useMemo(() => {
-    return selectedItem?.section === "files"
-      ? selectedItem.new_data || {}
-      : {};
+    return selectedItem?.new_data || {};
   }, [selectedItem]);
 
   const normalizedOldFiles = normalizeFiles(oldFiles);
   const normalizedNewFiles = normalizeFiles(newFiles);
+  console.log("🔥 OLD FILES:", normalizedOldFiles);
+  console.log("🔥 NEW FILES:", normalizedNewFiles);
 
   const fileKeys = Array.from(
     new Set([
@@ -224,53 +278,6 @@ export default function AdminProfileChanges() {
       ...Object.keys(normalizedNewFiles),
     ])
   );
-
-  const FIELD_LABELS = {
-    // ===== ORG =====
-    cr_expiry_date: "CR Expiry Date",
-    computer_card_number: "Computer Card Number",
-    computer_card_expiry_date: "Computer Card Expiry Date",
-    signing_authority_name: "Signing Authority Name",
-    vat_tax_number: "VAT Number",
-    sponsor_name: "Sponsor Name",
-    trade_license_name: "Trade License Name",
-    company_email: "Company Email",
-
-    // ===== ADDRESS =====
-    address: "Address",
-    street: "Street",
-    zone: "Zone",
-    area: "Area",
-    city: "City",
-    country: "Country",
-    building: "Building",
-
-    // ===== BANK =====
-    bank_name: "Bank Name",
-    bank_branch: "Branch",
-    account_holder_name: "Account Holder Name",
-    swift_code: "Swift Code",
-    iban: "IBAN",
-
-    // ===== BRANCH =====
-    branch_name_english: "Branch Name (English)",
-    branch_name_arabic: "Branch Name (Arabic)",
-    branch_manager_name: "Branch Manager",
-    contact_number: "Contact Number",
-    office_no: "Office No",
-    branch_license: "Branch License",
-
-    // ===== STORE =====
-    store_name_english: "Store Name (English)",
-    store_name_arabic: "Store Name (Arabic)",
-    contact_person_name: "Contact Person Name",
-    contact_person_mobile: "Contact Person Mobile",
-    email: "Email",
-    shop_no: "Shop No",
-    store_type: "Store Type",
-    operating_hours: "Operating Hours",
-    delivery_pickup_availability: "Delivery / Pickup",
-  };
 
   const SECTION_LABELS = {
     basic: "Basic Profile",
@@ -283,15 +290,82 @@ export default function AdminProfileChanges() {
   };
 
   const FILE_LABELS = {
-    cr_copy: "CR Copy",
-    computer_card: "Computer Card",
-    trade_license: "Trade License",
-    vat_certificate: "VAT Certificate",
-    company_logo: "Company Logo",
-    bank_letter: "Bank Letter",
+    upload_cr_company: "CR Copy",
+    upload_computer_card_copy: "Computer Card",
+    upload_trade_license_copy: "Trade License",
+    upload_vat_certificates_copy: "VAT Certificate",
+    upload_company_logo: "Company Logo",
+    upload_bank_letter: "Bank Letter",
     certificates: "Certificates",
-    food_safety_certificate: "Food Safety Certificate",
+    upload_food_safety_certificate: "Food Safety Certificate",
   };
+
+  const isRestaurant = (selectedItem?.role || "").toLowerCase() === "restaurant";
+
+  const BRANCH_ALLOWED_FIELDS = [
+    "branch_name_english",
+    "branch_name_arabic",
+    "branch_manager_name",
+    "contact_number",
+    "email",
+    "street",
+    "zone",
+    "building",
+    "office_no",
+    "city",
+    "country",
+    ...(isRestaurant ? [] : ["branch_license"])
+  ];
+
+  const STORE_ALLOWED_FIELDS = [
+    "branch_name_english",
+    "store_name_english",
+    "store_name_arabic",
+    "contact_person_name",
+    "contact_person_mobile",
+    "email",
+    "street",
+    "zone",
+    "building",
+    "shop_no",
+    "operating_hours",
+    "city",
+    "country",
+    ...(isRestaurant ? [] : ["store_type", "delivery_pickup_availability"])
+  ];
+
+  const allKeys = Array.from(
+    new Set([
+      ...Object.keys(normalizedOld),
+      ...Object.keys(normalizedNew),
+    ])
+  );
+
+  const cleanedKeys = allKeys.filter(k => {
+
+    if (k === "restaurant_name_english" && normalizedNew.company_name_english) return false;
+    return true;
+  });
+
+  const baseKeys = cleanedKeys;
+
+  const filteredKeys =
+    selectedItem?.section === "branch"
+      ? baseKeys.filter(k =>
+        BRANCH_ALLOWED_FIELDS.includes(k) &&
+        !((selectedItem?.role || "").toLowerCase() === "restaurant" && k === "branch_license")
+      )
+      : selectedItem?.section === "store"
+        ? baseKeys.filter(k =>
+          STORE_ALLOWED_FIELDS.includes(k) &&
+          !((selectedItem?.role || "").toLowerCase() === "restaurant" &&
+            ["store_type", "delivery_pickup_availability"].includes(k))
+        )
+        : (selectedItem?.role || "").toLowerCase() === "restaurant" && selectedItem?.section === "org"
+          ? baseKeys.filter(k =>
+            !["contact_person_name", "contact_person_mobile", "brand_name", "category"].includes(k)
+          )
+          : baseKeys;
 
   const normalizeFile = (file) => {
     if (!file) return null;
@@ -300,7 +374,14 @@ export default function AdminProfileChanges() {
       return file;
     }
 
-    // 🔥 SUPPORT preview-only format
+    if (file?.data) {
+      const [meta, base64] = file.data.split(",");
+      return {
+        mimetype: meta.replace("data:", "").replace(";base64", ""),
+        content: base64,
+      };
+    }
+
     if (file?.preview) {
       const [meta, base64] = file.preview.split(",");
       return {
@@ -321,32 +402,59 @@ export default function AdminProfileChanges() {
 
     const src = `data:${f.mimetype};base64,${f.content}`;
 
+    /* ===== PDF ===== */
     if (f.mimetype === "application/pdf") {
       return (
-        <iframe
-          src={src}
-          width="300"
-          height="400"
-          title={FILE_LABELS[key] || key}
-          style={{ border: "1px solid #ccc" }}
-        />
+        <div className="preview-wrapper">
+
+          <iframe
+            src={src}
+            title={FILE_LABELS[key] || key}
+            className="preview-pdf"
+          />
+
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="view-btn2"
+          >
+            View PDF
+          </a>
+
+        </div>
       );
     }
 
+    /* ===== IMAGE ===== */
     return (
-      <img
-        src={src}
-        alt={FILE_LABELS[key] || key}
-        width="200"
-        style={{ border: "1px solid #ccc" }}
-      />
+      <div className="preview-wrapper">
+
+        <div className="image-preview-box">
+
+          <button
+            className="eye-btn"
+            onClick={() => window.open(src, "_blank")}
+          >
+            👁
+          </button>
+
+          <img
+            src={src}
+            alt={FILE_LABELS[key] || key}
+            className="preview-image"
+          />
+
+        </div>
+
+      </div>
     );
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const res = await fetch(
-        "http://127.0.0.1:5000/api/v1/admin/change-requests/pending",
+        "http://localhost:5000/api/v1/admin/change-requests/pending",
         {
           headers: {
             Authorization: `Bearer ${ADMIN_TOKEN}`,
@@ -362,33 +470,39 @@ export default function AdminProfileChanges() {
       }
 
       const data = await res.json();
-      if (data.status) setItems(data.items);
 
+      if (data.status) {
+        setItems(data.items);
+      }
     } catch (err) {
       console.error("❌ Network error loading pending requests:", err);
     }
-  };
-
+  }, [ADMIN_TOKEN]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (!selectedItem) return;
 
     console.log("OLD:", selectedItem.old_data);
     console.log("NEW:", selectedItem.new_data);
-    console.log("NORMALIZED NEW:", normalizeByCanonicalMap(selectedItem.new_data));
+
+    console.log(
+      "NORMALIZED NEW:",
+      normalizeByCanonicalMap(selectedItem.new_data)
+    );
   }, [selectedItem, normalizeByCanonicalMap]);
 
   const approve = async (id) => {
     if (loading) return;
+
     setLoading(true);
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/v1/admin/change-requests/${id}/approve`,
+        `http://localhost:5000/api/v1/admin/change-requests/${id}/approve`,
         {
           method: "POST",
           headers: {
@@ -406,14 +520,15 @@ export default function AdminProfileChanges() {
 
       if (!res.ok) {
         const text = await res.text();
+
         console.error("Approve failed:", text);
         alert("Approve failed");
+
         return;
       }
 
       await loadData();
       setSelectedId(null);
-
     } catch (err) {
       console.error("❌ Network error:", err);
       alert("Server not reachable");
@@ -422,164 +537,483 @@ export default function AdminProfileChanges() {
     }
   };
 
-
   const reject = async (id) => {
     const reason = prompt("Enter rejection reason:");
+
     if (!reason) return;
 
-    const res = await fetch(
-      `http://127.0.0.1:5000/api/v1/admin/change-requests/${id}/reject`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ADMIN_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ reason }),
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/v1/admin/change-requests/${id}/reject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ADMIN_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reason }),
+        }
+      );
+
+      if (res.status === 401) {
+        alert("Admin session expired. Please login again.");
+        localStorage.removeItem("admin_token");
+        window.location.href = "/admin/login";
+        return;
       }
-    );
 
-    if (res.status === 401) {
-      alert("Admin session expired. Please login again.");
-      localStorage.removeItem("admin_token");
-      window.location.href = "/admin/login";
-      return;
+      if (!res.ok) {
+        const text = await res.text();
+
+        console.error("Reject failed:", text);
+        alert("Reject failed");
+
+        return;
+      }
+
+      setSelectedId(null);
+      await loadData();
+    } catch (err) {
+      console.error("❌ Network error:", err);
+      alert("Server not reachable");
     }
-
-    setSelectedId(null);
-    await loadData();
-
   };
 
   return (
-    <div>
-      <h2>Pending Profile Change Requests</h2>
+    <div className="profile-container two-column">
+      <h2 className="title">Pending Profile Change Requests</h2>
 
-      <table border="1" cellPadding="8" width="100%">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Role</th>
-            <th>Entity ID</th>
-            <th>Section</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {items.length === 0 && (
+      {/* ===== TABLE ===== */}
+      <div className="table-card">
+        <table className="modern-table">
+          <thead>
             <tr>
-              <td colSpan="5">No pending requests</td>
+              <th>ID</th>
+              <th>Role</th>
+              <th>Entity ID</th>
+              <th>Section</th>
+              <th>Action</th>
             </tr>
-          )}
+          </thead>
 
-          {items.map(r => (
-            <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{r.role === "supplier" ? "Supplier" : "Restaurant"}</td>
-              <td>{r.entity_id}</td>
-              <td>
-                {SECTION_LABELS[r.section] || r.section}
-                {r.section === "branch" && r.target_row_id && (
-                  <span style={{ color: "#888" }}>
-                    {" "} (ID: {r.target_row_id})
-                  </span>
-                )}
-              </td>
+          <tbody>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan="5">No pending requests</td>
+              </tr>
+            ) : (
+              items.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.id}</td>
 
-              <td>
-                {/* STEP 1: VIEW */}
-                {selectedId !== r.id && (
-                  <button onClick={() => setSelectedId(r.id)}>
-                    View
-                  </button>
-                )}
+                  <td>
+                    <span className="role-badge">Restaurant</span>
+                  </td>
 
-                {/* STEP 2: APPROVE / REJECT */}
-                {selectedId === r.id && (
+                  <td>{r.entity_id}</td>
+
+                  <td>
+                    <span className="section-badge">
+                      {SECTION_LABELS[r.section] || r.section}
+                    </span>
+                    {r.section === "branch" && r.target_row_id && (
+                      <span> (ID: {r.target_row_id})</span>
+                    )}
+                  </td>
+
+                  <td>
+                    <button
+                      className="btn12 view"
+                      onClick={() => setSelectedId(r.id)}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===== MODAL ===== */}
+      {selectedItem && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+
+            <button
+              className="modal-close"
+              onClick={() => setSelectedId(null)}
+            >
+              ✖
+            </button>
+
+            {selectedItem.section !== "files" ? (
+              <>
+
+                {/* ===== ALL OLD BRANCHES ===== */}
+                {isBranchSection && oldBranches.length > 0 && (
                   <>
-                    <button onClick={() => approve(r.id)}>Approve</button>
-                    <button onClick={() => reject(r.id)}>Reject</button>
-                    <button onClick={() => setSelectedId(null)}>Cancel</button>
+                    <h3 className="old-branches-title">
+                      All Old Branches
+                    </h3>
+
+                    <div className="old-branches-grid">
+                      {oldBranches.map((b, i) => {
+
+                        const nb = normalizeByCanonicalMap(b);
+
+                        return (
+                          <div className="old-branch-card" key={i}>
+
+                            <div className="old-branch-header">
+                              Branch {i + 1}
+                            </div>
+
+                            <div className="old-branch-body">
+
+                              <div>
+                                <strong>Branch Name (EN):</strong>
+                                <span>{nb.branch_name_english || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Branch Name (AR):</strong>
+                                <span>{nb.branch_name_arabic || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Manager:</strong>
+                                <span>{nb.branch_manager_name || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Contact:</strong>
+                                <span>{nb.contact_number || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Email:</strong>
+                                <span>{nb.email || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Street:</strong>
+                                <span>{nb.street || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Zone:</strong>
+                                <span>{nb.zone || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Building:</strong>
+                                <span>{nb.building || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Office No:</strong>
+                                <span>{nb.office_no || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>City:</strong>
+                                <span>{nb.city || "-"}</span>
+                              </div>
+
+                              <div>
+                                <strong>Country:</strong>
+                                <span>{nb.country || "-"}</span>
+                              </div>
+
+                              {!isRestaurant && (
+                                <div>
+                                  <strong>Branch License:</strong>
+                                  <span>{nb.branch_license || "-"}</span>
+                                </div>
+                              )}
+
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </>
                 )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
-      {/* OPTIONAL: DETAIL VIEW */}
-      {selectedItem &&
-        // selectedItem.new_data &&
-        selectedItem.section !== "files" && (
-          <div style={{ marginTop: 20 }}>
-            <h3>Changed Fields</h3>
+                <h3 className="changed-fields-title">Changed Fields</h3>
 
-            {allKeys.map((key) => (
-              <div key={key} style={{ marginBottom: 6 }}>
-                <b>{FIELD_LABELS[key] || key}</b>:{" "}
-                <span style={{ color: "red" }}>
-                  {key in normalizedOld ? normalizedOld[key] : "(new)"}
-                  {/* {normalizedOld[key] ?? "-"} */}
-                </span>
-                {" → "}
-                <span style={{ color: "green" }}>
-                  {normalizedNew[key] ?? "-"}
-                </span>
-              </div>
-            ))}
+                {/* ===== BRANCH ===== */}
+                {isBranchSection ? (
+                  <div className="branch-grid">
+                    {["update", "add", "delete"].map((type) => {
+                      const filtered = branchChanges.filter(
+                        (b) => (b.action || "").toLowerCase() === type
+                      );
 
-          </div>
-        )}
+                      if (filtered.length === 0) return null;
 
-      {selectedItem &&
-        (selectedItem.section === "branch" || selectedItem.section === "store") &&
-        (!selectedItem.old_data || Object.keys(selectedItem.old_data).length === 0) && (
-          <div style={{ color: "green", marginBottom: 10 }}>
-            🆕 New {selectedItem.section} creation request
-          </div>
-        )}
+                      return (
+                        <div className="branch-column" key={type}>
+                          <div className={`branch-title ${type}`}>
+                            {type.toUpperCase()}
+                          </div>
 
-      {selectedItem &&
-        (selectedItem.section === "branch" || selectedItem.section === "store") &&
-        selectedItem.old_data &&
-        Object.keys(selectedItem.old_data).length > 0 && (
-          <div style={{ color: "blue", marginBottom: 10 }}>
-            ✏️ {selectedItem.section} update request
-          </div>
-        )}
+                          {filtered.map((b, index) => {
+                            const rawOldBranch = oldBranches.find(
+                              (ob) => ob.branch_id === b.branch_id
+                            );
 
-      {selectedItem &&
-        selectedItem.section === "files" && (
-          <div style={{ marginTop: 20 }}>
-            <h3>Documents (Old vs New)</h3>
+                            const oldBranch = normalizeByCanonicalMap(rawOldBranch || {});
+                            const newBranch = normalizeByCanonicalMap(b.data || {});
 
-            {fileKeys.map(key => (
+                            const allKeys = Array.from(
+                              new Set([
+                                ...Object.keys(oldBranch),
+                                ...Object.keys(newBranch),
+                              ])
+                            );
 
-              // {Object.keys({ ...oldFiles, ...newFiles }).map(key => (
-              <div key={key} style={{ marginBottom: 30 }}>
-                <h4>{FILE_LABELS[key] || key}</h4>
+                            return (
+                              <div className="branch-card" key={index}>
+                                {allKeys
+                                  .filter(
+                                    (k) =>
+                                      BRANCH_ALLOWED_FIELDS.includes(k) &&
+                                      !(isRestaurant && k === "branch_license")
+                                  )
+                                  .map((k) => {
+                                    const oldVal = (oldBranch?.[k] ?? "").toString().trim();
+                                    const newVal = (newBranch?.[k] ?? oldVal ?? "").toString().trim();
 
-                <div style={{ display: "flex", gap: 30 }}>
+                                    const isSame = oldVal === newVal;
 
-                  {/* OLD FILE */}
-                  <div>
-                    <p style={{ color: "red" }}>Old (Approved)</p>
-                    {renderFilePreview(normalizedOldFiles[key], key)}
+                                    return (
+                                      <div className="compare-row" key={k}>
+                                        <div className="field-label">{k}</div>
+
+                                        <div className="field-values">
+                                          <span className={isSame ? "same-badge" : "old-badge"}>
+                                            {oldVal || "-"}
+                                          </span>
+
+                                          <span className="arrow">→</span>
+
+                                          <span className={isSame ? "same-badge" : "new-badge"}>
+                                            {newVal}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
+                ) : (
+                  /* ===== NORMAL SECTION ===== */
+                  (filteredKeys || allKeys).map((key) => {
+                    let rawOld = normalizedOld[key];
 
-                  {/* NEW FILE */}
-                  <div>
-                    <p style={{ color: "green" }}>New (Pending)</p>
-                    {renderFilePreview(normalizedNewFiles[key], key)}
+                    if (key === "company_email") {
+                      rawOld =
+                        normalizedOld["company_email"] ||
+                        normalizedOld["contact_person_email"] ||
+                        normalizedOld["restaurant_email_address"] ||
+                        "";
+                    }
+
+                    const rawNew = normalizedNew[key];
+
+                    const oldVal = (rawOld ?? "").toString().trim();
+                    const newVal = (rawNew ?? oldVal ?? "").toString().trim();
+
+                    const isSame = oldVal === newVal;
+
+                    return (
+                      <div className="compare-row" key={key}>
+                        <div className="field-label">{key}</div>
+
+                        <div className="field-values">
+                          <span className="old-badge">
+                            {oldVal}
+                          </span>
+
+                          <span className="arrow">→</span>
+
+                          <span className="new-badge">
+                            {newVal || "-"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </>
+            ) : (
+              <>
+                <h3>Documents</h3>
+
+                <div className="doc-grid">
+                  {fileKeys.map((key) => {
+                    const oldFile = normalizeFile(normalizedOldFiles[key]);
+                    const newFile = normalizeFile(normalizedNewFiles[key]);
+
+                    const oldSrc = oldFile
+                      ? `data:${oldFile.mimetype};base64,${oldFile.content}`
+                      : null;
+
+                    const newSrc = newFile
+                      ? `data:${newFile.mimetype};base64,${newFile.content}`
+                      : null;
+
+                    return (
+                      <div className="doc-card" key={key}>
+
+                        {/* ===== TITLE + SINGLE EYE BUTTON ===== */}
+                        <div className="doc-title-wrapper">
+
+                          <h4 className="doc-title">
+                            {FILE_LABELS[key] || key}
+                          </h4>
+
+                          <button
+                            className="doc-view-icon"
+                            onClick={() =>
+                              setPreviewModal({
+                                open: true,
+                                title: FILE_LABELS[key] || key,
+                                oldSrc,
+                                newSrc,
+                              })
+                            }
+                          >
+                            👁
+                          </button>
+
+                        </div>
+
+                        {/* ===== OLD / NEW ===== */}
+                        <div className="doc-compare">
+
+                          <div className="doc-box old">
+                            <p>Old</p>
+
+                            {oldSrc && (
+                              <img
+                                src={oldSrc}
+                                alt="Old"
+                                className="preview-image"
+                              />
+                            )}
+                          </div>
+
+                          <div className="doc-box new">
+                            <p>New</p>
+
+                            {newSrc && (
+                              <img
+                                src={newSrc}
+                                alt="New"
+                                className="preview-image"
+                              />
+                            )}
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {previewModal.open && (
+              <div className="image-modal-overlay">
+
+                <div className="modal-contents">
+
+                  <button
+                    className="image-modal-close"
+                    onClick={() =>
+                      setPreviewModal({
+                        open: false,
+                        title: "",
+                        oldSrc: null,
+                        newSrc: null,
+                      })
+                    }
+                  >
+                    ✕
+                  </button>
+
+                  <h2>{previewModal.title}</h2>
+
+                  <div className="image-modal-grid">
+
+                    <div>
+                      <h3>Old</h3>
+
+                      {previewModal.oldSrc && (
+                        <img
+                          src={previewModal.oldSrc}
+                          alt="Old"
+                          className="popup-preview-image"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <h3>New</h3>
+
+                      {previewModal.newSrc && (
+                        <img
+                          src={previewModal.newSrc}
+                          alt="New"
+                          className="popup-preview-image"
+                        />
+                      )}
+                    </div>
+
                   </div>
-
                 </div>
               </div>
-            ))}
+            )}
+            {/* ===== BUTTONS ===== */}
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "12px",
+              marginTop: "20px"
+            }}>
+              <button
+                className="btn2 approve"
+                onClick={() => approve(selectedItem.id)}
+              >
+                Approve
+              </button>
+
+              <button
+                className="btn2 reject"
+                onClick={() => reject(selectedItem.id)}
+              >
+                Reject
+              </button>
+
+              <button
+                className="btn2 cancel"
+                onClick={() => setSelectedId(null)}
+              >
+                Cancel
+              </button>
+            </div>
+
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

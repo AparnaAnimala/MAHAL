@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "jspdf-autotable";
-
-const API = "http://127.0.0.1:5000/api/reports/inventory";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/reports/inventory";
 
 const InventoryReport = () => {
   const [data, setData] = useState([]);
@@ -12,6 +12,8 @@ const InventoryReport = () => {
   const [expiryFilter, setExpiryFilter] = useState("ALL");
   const ITEMS_PER_PAGE = 5;
   const [currentPage, setCurrentPage] = useState(1);
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language?.startsWith("ar");
 
   const token = localStorage.getItem("token");
 
@@ -60,7 +62,7 @@ const InventoryReport = () => {
   const downloadPDF = async () => {
     const res = await axios.get(`${API}/pdf`, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { stock: stockFilter, expiry: expiryFilter },
+      params: { stock: stockFilter, expiry: expiryFilter, lang: i18n.language },
       responseType: "blob"
     });
 
@@ -72,11 +74,33 @@ const InventoryReport = () => {
     URL.revokeObjectURL(url);
   };
 const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-
+const stockMap = {
+  IN_STOCK: isArabic ? "متوفر" : "In Stock",
+  LOW_STOCK: isArabic ? "مخزون منخفض" : "Low Stock",
+  OUT_OF_STOCK: isArabic ? "غير متوفر" : "Out of Stock"
+};
+const expiryMap = {
+  VALID: isArabic ? "صالح" : "Valid",
+  EXPIRING_SOON: isArabic ? "ينتهي قريباً" : "Expiring Soon",
+  EXPIRED: isArabic ? "منتهي" : "Expired",
+  NO_EXPIRY: isArabic ? "بدون تاريخ انتهاء" : "No Expiry"
+};
 const paginatedData = filteredData.slice(
   (currentPage - 1) * ITEMS_PER_PAGE,
   currentPage * ITEMS_PER_PAGE
 );
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat(
+    isArabic ? "ar-EG" : "en-GB"
+  ).format(new Date(date));
+};
 
 return (
   <div className="report_page">
@@ -86,48 +110,50 @@ return (
     </button> */}
 
     <div className="page_header glass">
-      <h2>Inventory Report</h2>
+      <h2>{t("supinventory.title")}</h2>
 
       <div className="header_actions">
-        <button className="btn dark bulk_btn" onClick={downloadExcel}>⬇ Excel</button>
-        <button className="btn dark pdf_btn" onClick={downloadPDF}>⬇ PDF</button>
+        <button className="btn dark bulk_btn" onClick={downloadExcel}>{t("excel")}</button>
+        <button className="btn dark pdf_btn" onClick={downloadPDF}> {t("download_pdf")}</button>
       </div>
     </div>
 
     <div className="filter_bar">
       <select value={stockFilter} onChange={e => {setStockFilter(e.target.value);setCurrentPage(1);}}>
-        <option value="ALL">All Stock</option>
-        <option value="IN_STOCK">In Stock</option>
-        <option value="LOW_STOCK">Low Stock</option>
-        <option value="OUT_OF_STOCK">Out of Stock</option>
+        <option value="ALL">{t("supinventory.allStock")}</option>
+        <option value="IN_STOCK">{t("inStock")}</option>
+        <option value="LOW_STOCK">{t("lowStock")}</option>
+        <option value="OUT_OF_STOCK">{t("outOfStock")}</option>
       </select>
 
       <select value={expiryFilter} onChange={e => {setExpiryFilter(e.target.value);setCurrentPage(1);}}>
-        <option value="ALL">All Expiry</option>
-        <option value="VALID">Valid</option>
-        <option value="EXPIRING_SOON">Expiring Soon</option>
-        <option value="EXPIRED">Expired</option>
+        <option value="ALL">{t("supinventory.allExpiry")}</option>
+        <option value="VALID">{t("supinventory.valid")}</option>
+        <option value="EXPIRING_SOON">{t("supinventory.expiringSoon")}</option>
+        <option value="EXPIRED">{t("supinventory.expired")}</option>
       </select>
     </div>
 
     <table className="mini_table">
       <thead>
         <tr>
-          <th>Product</th>
-          <th>Stock</th>
-          <th>Status</th>
-          <th>Expiry</th>
-          <th>Updated</th>
+          <th>{t("supinventory.product")}</th>
+          <th>{t("supinventory.stock")}</th>
+          <th>{t("supinventory.status")}</th>
+          <th>{t("supinventory.expiry")}</th>
+          <th>{t("supinventory.updated")}</th>
         </tr>
       </thead>
       <tbody>
         {paginatedData.map(r => (
           <tr key={r.product_id}>
-            <td>{r.product_name_english}</td>
-            <td>{r.stock_availability}</td>
+            <td>
+              {isArabic ? r.product_name_arabic : r.product_name_english}
+            </td>
+            <td>{formatNumber(r.stock_availability)}</td>
             <td>
               <span className={`status ${r.stock_status === "IN_STOCK" ? "ok" : "danger"}`}>
-                {r.stock_status.replace("_", " ")}
+                {stockMap[r.stock_status] || r.stock_status}
               </span>
             </td>
             <td>
@@ -135,10 +161,10 @@ return (
                 r.expiry_status === "VALID" ? "ok" :
                 r.expiry_status === "EXPIRING_SOON" ? "warn" : "danger"
               }`}>
-                {r.expiry_status.replace("_", " ")}
+                {expiryMap[r.expiry_status] || r.expiry_status}
               </span>
             </td>
-            <td>{r.updated_at ? new Date(r.updated_at).toLocaleDateString() : "-"}</td>
+            <td>{r.updated_at ? formatDate(r.updated_at) : "-"}</td>
           </tr>
         ))}
       </tbody>
@@ -148,18 +174,18 @@ return (
           disabled={currentPage === 1}
           onClick={() => setCurrentPage(currentPage - 1)}
         >
-          Prev
+          {t("prev")}
         </button>
 
         <span>
-          Page {currentPage} of {totalPages}
+          {t("page")} {formatNumber(currentPage)} {t("of")} {formatNumber(totalPages)}
         </span>
 
         <button
           disabled={currentPage === totalPages}
           onClick={() => setCurrentPage(currentPage + 1)}
         >
-          Next
+          {t("next")}
         </button>
       </div>
 

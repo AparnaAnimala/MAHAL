@@ -73,12 +73,12 @@ const Topbar = () => {
                   setLanguageOpen(false);
                 }}
               >
-                QAR <FaChevronDown size={10} />
+                QAR  <FaChevronDown size={10} />
               </div>
 
               {currencyOpen && (
                <div className={`dropdown-content ${currencyOpen ? "show" : ""}`}>
-                  <div onClick={() => setCurrencyOpen(false)}>QAR</div>
+                  <div onClick={() => setCurrencyOpen(false)}>QAR </div>
                   <div onClick={() => setCurrencyOpen(false)}>USD</div>
                   <div onClick={() => setCurrencyOpen(false)}>EUR</div>
                 </div>

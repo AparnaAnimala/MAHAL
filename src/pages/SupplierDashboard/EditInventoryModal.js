@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-
+import { useRef } from "react"; 
+import { useTranslation } from "react-i18next";
 const EditInventoryModal = ({ product, onClose, onSave }) => {
   // 🔥 CONTROLLED STATES (THIS WAS MISSING)
+  const { t, i18n } = useTranslation();
   const [units, setUnits] = useState(product.units);
   const [price, setPrice] = useState(product.price);
   const [expiryDate, setExpiryDate] = useState("");
@@ -10,10 +12,40 @@ const EditInventoryModal = ({ product, onClose, onSave }) => {
   const [moq, setMoq] = useState(product.moq);
   const [currency, setCurrency] = useState(product.currency);
   const [uom, setUom] = useState(product.uom);
+  const [countryOfOrigin, setCountryOfOrigin] = useState(product.country_of_origin || "");
+const [nameEn, setNameEn] = useState(product.product_name_english || "");
+const [nameAr, setNameAr] = useState(product.product_name_arabic || "");
+const images = product.images || [];
 
+const [newImages, setNewImages] = useState([]);
+
+const [selectedImage, setSelectedImage] = useState(
+  product.image || images[0] || ""
+);
+
+const [deliveryTime, setDeliveryTime] = useState(
+  product.delivery_time_minutes || 30
+);
+// const [newImages, setNewImages] = useState([]);
+const debounceRef = useRef(null);
+const translateToArabic = async (text) => {
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${text}&langpair=en|ar`
+    );
+
+    const data = await res.json();
+    setNameAr(data.responseData.translatedText || "");
+  } catch (err) {
+    console.error(err);
+  }
+};
   // 🖼️ IMAGE LOGIC (UNCHANGED)
-  const [images] = useState(product.images || []);
-  const [newImages, setNewImages] = useState([]);
+  // const [images] = useState(product.images || []);
+  // const [newImages, setNewImages] = useState([]);
+
+//   const [images, setImages] = useState(product.images || []);
+// const [newImages, setNewImages] = useState([]);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -23,22 +55,61 @@ const EditInventoryModal = ({ product, onClose, onSave }) => {
     }));
     setNewImages((prev) => [...prev, ...previews]);
   };
-useEffect(() => {
-  setExpiryDate(formatDateForInput(product.expiry_date));
-  setExpiryTime(formatTimeForInput(product.expiry_time));
-}, [product]);
+  useEffect(() => {
+    setExpiryDate(formatDateForInput(product.expiry_date));
+    setExpiryTime(formatTimeForInput(product.expiry_time));
+    setCountryOfOrigin(product.country_of_origin || "");
+    setNameEn(product.product_name_english || "");
+    setNameAr(product.product_name_arabic || "");
+    setDeliveryTime(product.delivery_time_minutes || 30);
+
+  }, [product]);
 
 
   return (
     <div className="modal_overlay">
       <div className="modal_box large edit_modal">
 
-        <h3 className="modal_title">Product Actions</h3>
-        <p className="product_name">{product.name}</p>
+        <h3 className="modal_title">{t("product_actions")}</h3>
+        {/* <p className="product_name">
+          {i18n.language === "ar"
+            ? product.product_name_arabic || product.product_name_english
+            : product.product_name_english}
+        </p> */}
+        <div className="form_group">
+          <label>{t("product_name_english")}</label>
+          <input
+            type="text"
+            value={nameEn}
+            onChange={(e) => {
+              const value = e.target.value;
+              setNameEn(value);
+
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+
+              debounceRef.current = setTimeout(() => {
+                if (value.trim()) {
+                  translateToArabic(value);
+                }
+              }, 500);
+            }}
+          />
+        </div>
+
+        <div className="form_group">
+          <label>{t("product_name_arabic")}</label>
+          <input
+            type="text"
+            dir="rtl"
+            style={{ textAlign: "right", background: "#f5f5f5" }}
+            value={nameAr}
+            readOnly
+          />
+        </div>
 
         {/* Stock */}
         <div className="form_group">
-          <label>Stock Quantity</label>
+          <label>{t("stock_quantity")}</label>
           <input
             type="number"
             value={units}
@@ -48,7 +119,7 @@ useEffect(() => {
 
         {/* Price */}
         <div className="form_group">
-          <label>Price per unit</label>
+          <label>{t("price_per_unit")}</label>
           <input
             type="number"
             value={price}
@@ -58,7 +129,7 @@ useEffect(() => {
 
         {/* Expiry Date */}
         <div className="form_group">
-          <label>Expiry Date</label>
+          <label>{t("expiry_date")}</label>
           <input
             type="date"
             value={expiryDate}
@@ -68,7 +139,7 @@ useEffect(() => {
 
         {/* Expiry Time (UI only – backend optional) */}
         <div className="form_group">
-          <label>Expiry Time</label>
+          <label>{t("expiry_time")}</label>
           <input
             type="time"
             value={expiryTime}
@@ -78,7 +149,7 @@ useEffect(() => {
 
         {/* MOQ */}
         <div className="form_group">
-          <label>Minimum Order Quantity</label>
+          <label>{t("minimum_order_quantity")}</label>
           <input
             type="number"
             value={moq}
@@ -86,18 +157,38 @@ useEffect(() => {
           />
         </div>
 
+        {/* Delivery Time */}
+        <div className="form_group">
+          <label>{t("delivery_time_minutes")}</label>
+
+          <input
+            type="number"
+            value={deliveryTime}
+            onChange={(e) => setDeliveryTime(e.target.value)}
+          />
+        </div>
+
         {/* Currency */}
         <div className="form_group">
-          <label>Currency</label>
+          <label>{t("Supcurrency")}</label>
           <input
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
           />
         </div>
 
+        <div className="form_group">
+          <label>{t("country")}</label>
+          <input
+            type="text"
+            value={countryOfOrigin}
+            onChange={(e) => setCountryOfOrigin(e.target.value)}
+          />
+        </div>
+
         {/* UOM */}
         <div className="form_group">
-          <label>Unit of Measure</label>
+          <label>{t("unit_of_measure")}</label>
           <input
             value={uom}
             onChange={(e) => setUom(e.target.value)}
@@ -106,21 +197,62 @@ useEffect(() => {
 
         {/* Existing Images */}
         <div className="form_group">
-          <label>Existing Images</label>
-          <div className="image_row">
-            {images.map((img, i) => (
-              <img key={i} src={img} alt="product" />
-            ))}
-            {newImages.map((img, i) => (
-              <img key={i} src={img.preview} alt="new" />
-            ))}
-          </div>
+          <label>{t("existing_images")}</label>
+<div className="image_row">
+
+  {/* Existing Images */}
+  {images.map((img, i) => (
+
+    <div
+      key={`old-${i}`}
+      className={`selectable_image_box ${
+        selectedImage === img ? "active_selected_image" : ""
+      }`}
+      onClick={() => setSelectedImage(img)}
+    >
+
+      <img src={img} alt="product" />
+
+      {selectedImage === img && (
+        <div className="selected_image_badge">
+          Primary
+        </div>
+      )}
+
+    </div>
+  ))}
+
+  {/* Newly Added Images */}
+  {newImages.map((img, i) => (
+
+    <div
+      key={`new-${i}`}
+      className={`selectable_image_box ${
+        selectedImage === img.preview
+          ? "active_selected_image"
+          : ""
+      }`}
+      onClick={() => setSelectedImage(img.preview)}
+    >
+
+      <img src={img.preview} alt="new" />
+
+      {selectedImage === img.preview && (
+        <div className="selected_image_badge">
+          Primary
+        </div>
+      )}
+
+    </div>
+  ))}
+
+</div>
         </div>
 
         {/* Upload */}
         <div className="form_group">
           <label className="upload_btn">
-            Choose Images
+            {t("choose_images")}
             <input type="file" multiple hidden onChange={handleImageUpload} />
           </label>
         </div>
@@ -128,7 +260,7 @@ useEffect(() => {
         {/* Actions */}
         <div className="modal_actions">
           <button className="btn cancel" onClick={onClose}>
-            Back
+            {t("back")}
           </button>
 
           <button
@@ -136,18 +268,42 @@ useEffect(() => {
             onClick={() =>
               onSave({
                 product_id: product.product_id,
+                product_name_english: nameEn,
+                product_name_arabic: nameAr,
                 units,
                 price,
                 expiry_date: expiryDate,
                 expiry_time: expiryTime,
                 moq,
                 currency,
+                country_of_origin: countryOfOrigin,
                 uom,
+                delivery_time_minutes: deliveryTime,
+                primary_image: selectedImage,
                 images: newImages.map(img => img.file),
               })
+              // onSave({
+              //   product_id: product.product_id,
+
+              //   // ✅ ADD THIS
+              //   product_name_english: nameEn,
+              //   product_name_arabic: nameAr,
+
+              //   // ✅ FIX FIELD NAMES (IMPORTANT)
+              //   stock: units,
+              //   price_per_unit: price,
+              //   minimum_order_quantity: moq,
+              //   currency,
+              //   country_of_origin: countryOfOrigin,
+              //   unit_of_measure: uom,
+              //   expiry_date: expiryDate,
+              //   expiry_time: expiryTime,
+
+              //   images: newImages.map(img => img.file),
+              // })
             }
           >
-            Save
+            {t("save")}
           </button>
         </div>
 

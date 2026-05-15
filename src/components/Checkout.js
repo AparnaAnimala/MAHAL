@@ -1,30 +1,24 @@
-
-
-
-
 // import React, { useState, useEffect } from "react";
 // import { Link, useNavigate } from "react-router-dom";
-// const API = "http://127.0.0.1:5000/api";
+
+// const API = "http://192.168.2.9:5000/api";
+
 // const CheckItems = () => {
-// const navigate = useNavigate();
+//   const navigate = useNavigate();
 
 //   const [addresses, setAddresses] = useState([]);
 //   const [selectedId, setSelectedId] = useState(null);
 //   const [showForm, setShowForm] = useState(false);
 //   const [editId, setEditId] = useState(null);
-//   const [cartItems, setCartItems] = useState([]);
-// const [paymentMethod, setPaymentMethod] = useState("");
-//   const [creditInfo, setCreditInfo] = useState(null);
+
+//   const selectedAddress = addresses.find(a => a.id === selectedId);
 
 //   const [coords, setCoords] = useState(null);
 
-//   // ✅ NEW FEATURES
-//   const [distance, setDistance] = useState(null);
-
-//   const suppliers = [
-//     { id: 1, lat: 17.385, lng: 78.486 },
-//     { id: 2, lat: 17.45, lng: 78.50 },
-//   ];
+//   // ✅ CREDIT STATES
+//   // const [paymentMethod, setPaymentMethod] = useState("COD");
+//   // const [paymentMethod, setPaymentMethod] = useState("");
+//   const [creditInfo, setCreditInfo] = useState(null);
 
 //   const [formData, setFormData] = useState({
 //     name: "",
@@ -33,35 +27,54 @@
 //     pincode: "",
 //     address1: "",
 //     address2: "",
-//     town: "",   
 //     city: "",
 //     state: "",
 //     landmark: "",
 //     type: "Home",
 //   });
 // useEffect(() => {
-//   if (!coords) return;
+//   const token = localStorage.getItem("token");
+//   if (!token) return;
 
-//   const store = { lat: 17.385, lng: 78.486 };
+//   fetch(`${API}/restaurant/profile`, {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   })
+//     .then((res) => res.json())
+//     .then((user) => {
+//       const newId = Date.now();
 
-//   const R = 6371;
-//   const dLat = (coords.lat - store.lat) * (Math.PI / 180);
-//   const dLng = (coords.lng - store.lng) * (Math.PI / 180);
+//       // ✅ form set
+//       setFormData({
+//         name: user?.name || "",
+//         phone: user?.phone || "",
+//         altPhone: "",
+//         pincode: "",
+//         address1: "",
+//         address2: "",
+//         city: "",
+//         state: "",
+//         landmark: "",
+//         type: "Home",
+//       });
 
-//   const a =
-//     Math.sin(dLat / 2) ** 2 +
-//     Math.cos(store.lat) *
-//       Math.cos(coords.lat) *
-//       Math.sin(dLng / 2) ** 2;
+//       // ✅ address create HERE (IMPORTANT)
+//       setAddresses([
+//         {
+//           id: newId,
+//           name: user?.name || "Current Location",
+//           phone: user?.phone || "",
+//           address: "Detecting location...",
+//           isDefault: true,
+//         },
+//       ]);
 
-//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//   const d = R * c;
-
-//   setDistance(d);
-
-// }, [coords]);
-
-// /* ================= CREDIT FETCH ================= */
+//       setSelectedId(newId);
+//     })
+//     .catch((err) => console.log(err));
+// }, []);
+//   /* ================= CREDIT FETCH ================= */
 //   useEffect(() => {
 //     const token = localStorage.getItem("token");
 //     if (!token) return;
@@ -73,368 +86,120 @@
 //       .then(setCreditInfo)
 //       .catch(() => {});
 //   }, []);
+
 //   /* ================= AUTO LOCATION ================= */
-// useEffect(() => {
-//   if (!navigator.geolocation) {
-//     alert("Geolocation not supported");
-//     return;
-//   }
+//  useEffect(() => {
+//   if (navigator.geolocation) {
+//     navigator.geolocation.getCurrentPosition(async (pos) => {
+//       const { latitude, longitude } = pos.coords;
 
-// navigator.geolocation.getCurrentPosition(
-//   async (pos) => {
-//     const { latitude, longitude } = pos.coords;
-
-//     setCoords({ lat: latitude, lng: longitude });
-
-//     try {
-//       // ✅ GET ADDRESS
-//       const res = await fetch(
-//         `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-//       );
-//       const data = await res.json();
-
-//       const addr = data.address || {};
-
-//       // ✅ TOKEN
-//       const TOKEN = localStorage.getItem("token");
-
-//       // ✅ FETCH PROFILE FIRST (IMPORTANT)
-//       let profile = { name: "", phone: "" };
-
-//       try {
-//         const profileRes = await fetch(
-//           "http://127.0.0.1:5000/api/restaurant/profile",
-//           {
-//             headers: {
-//               Authorization: `Bearer ${TOKEN}`,
-//             },
-//           }
-//         );
-
-//         if (profileRes.ok) {
-//           profile = await profileRes.json();
-//         }
-//       } catch (e) {
-//         console.log("Profile fetch failed");
-//       }
-
-//       // ✅ SAVE CURRENT LOCATION TO DB (AFTER PROFILE)
-//       try {
-//         await fetch("http://127.0.0.1:5000/api/address/save", {
-//           method: "POST",
-//           headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `Bearer ${TOKEN}`,
-//           },
-//           body: JSON.stringify({
-//             name: profile.name || "Current Location",
-//             phone: profile.phone || "",
-//             address: data.display_name,
-//             city: addr.city || "",
-//             state: addr.state || "",
-//             pincode: addr.postcode || "",
-//           }),
-//         });
-//       } catch (err) {
-//         console.log("DB save failed");
-//       }
-
-//       // ✅ AUTO FILL FORM
-//       setFormData((prev) => ({
-//         ...prev,
-//         name: profile.name || "",
-//         phone: profile.phone || "",
-//         address1: addr.road || "",
-//         town: addr.town || addr.suburb || "",
-//         city: addr.city || "",
-//         state: addr.state || "",
-//         pincode: addr.postcode || "",
-//       }));
-
-//       // ✅ CURRENT LOCATION OBJECT
-//       const newAddress = {
-//         id: Date.now(), // (optional – DB id use chesthe better)
-//         name: profile.name || "Current Location",
-//         phone: profile.phone || "",
-//         address: data.display_name,
-//         isDefault: false,
-//         isCurrent: true,
-//       };
-
-//       // ✅ MERGE WITH OLD ADDRESSES (IMPORTANT FIX)
-//       setAddresses((prev) => {
-//         const filtered = prev.filter((a) => !a.isCurrent);
-//         const updated = [newAddress, ...filtered];
-
-//         localStorage.setItem("addresses", JSON.stringify(updated));
-//         return updated;
+//       setCoords({
+//         lat: latitude,
+//         lng: longitude,
 //       });
 
-//       setSelectedId(newAddress.id);
+//       try {
+//         const res = await fetch(
+//           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+//         );
+//         const data = await res.json();
 
-//     } catch (err) {
-//       console.log("Reverse geocode failed");
-//     }
-//   },
-//   (err) => {
-//     console.log("LOCATION ERROR:", err);
-//     alert("Please allow location permission");
+//         const addressText = data.display_name || "Current Location";
+
+//         // ✅ ONLY UPDATE ADDRESS
+//         setAddresses((prev) =>
+//           prev.map((addr) => ({
+//             ...addr,
+//             address: addressText,
+//           }))
+//         );
+//       } catch (err) {
+//         console.log(err);
+//       }
+//     });
 //   }
-// );
 // }, []);
-
-
+//   /* ================= USER AUTO FILL ================= */
 // useEffect(() => {
-//   const saved = JSON.parse(localStorage.getItem("addresses")) || [];
-//   if (saved.length > 0) {
-//     setAddresses(saved);
+//   try {
+//     const userData = localStorage.getItem("user");
 
-//     const defaultAddr = saved.find(a => a.isDefault) || saved[0];
-//     setSelectedId(defaultAddr.id);
-//   }
-// }, []);
-//   /* ================= AUTO USER DATA ================= */
-//   useEffect(() => {
-//     const user = JSON.parse(localStorage.getItem("user"));
+//     if (userData) {
+//       const user = JSON.parse(userData);
 
-//     if (user) {
 //       setFormData((prev) => ({
 //         ...prev,
-//         name: user.name || "",
-//         phone: user.phone || "",
-//         city: user.city || "",
+//         name: user?.name || "",
+//         phone: user?.phone || "",
+//         city: user?.city || "",
 //       }));
 //     }
-//   }, []);
+//   } catch (err) {
+//     console.log("User parse error", err);
+//   }
+// }, []);
 
-//   /* ================= HANDLERS ================= */
 //   const handleChange = (e) => {
 //     setFormData({
 //       ...formData,
 //       [e.target.name]: e.target.value,
 //     });
 //   };
-// const deleteAddress = async (id) => {
-//   const TOKEN = localStorage.getItem("token");
 
-//   try {
-//     await fetch(`http://127.0.0.1:5000/api/address/delete/${id}`, {
-//       method: "DELETE",
-//       headers: {
-//         Authorization: `Bearer ${TOKEN}`,
-//       },
-//     });
-//   } catch (err) {
-//     console.log("DB delete failed");
-//   }
-
-//   const updated = addresses.filter((addr) => addr.id !== id);
-
-//   setAddresses(updated);
-//   localStorage.setItem("addresses", JSON.stringify(updated));
-
-//   // if deleted selected → reset
-//   if (selectedId === id && updated.length > 0) {
-//     setSelectedId(updated[0].id);
-//   }
-// };
+//   const deleteAddress = (id) => {
+//     setAddresses(addresses.filter((addr) => addr.id !== id));
+//   };
 
 //   const setDefault = (id) => {
-//     const updated = addresses.map((addr) => ({
-//       ...addr,
-//       isDefault: addr.id === id,
-//     }));
-//     setAddresses(updated);
-//     localStorage.setItem("addresses", JSON.stringify(updated)); // ✅ sync
+//     setAddresses(
+//       addresses.map((addr) => ({
+//         ...addr,
+//         isDefault: addr.id === id,
+//       }))
+//     );
 //     setSelectedId(id);
 //   };
 
-//   /* ================= MAP DRAG ================= */
-// const handleMapClick = () => {
-//   if (!coords) {
-//     alert("Location not ready");
-//     return;
-//   }
 
-//   const url = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
 
-//   window.open(url, "_blank");
-// };
-//   /* ================= DELIVERY ================= */
-//   const checkDelivery = () => {
-//     const store = { lat: 17.385, lng: 78.486 };
-
-//     const R = 6371;
-//     const dLat = (coords.lat - store.lat) * (Math.PI / 180);
-//     const dLng = (coords.lng - store.lng) * (Math.PI / 180);
-
-//     const a =
-//       Math.sin(dLat / 2) ** 2 +
-//       Math.cos(store.lat) *
-//         Math.cos(coords.lat) *
-//         Math.sin(dLng / 2) ** 2;
-
-//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//     const d = R * c;
-
-//     setDistance(d);
-
-//     if (d > 10) alert("❌ Delivery not available");
-//     else alert("✅ Delivery available");
-//   };
-
-//   /* ================= NEAREST SUPPLIER ================= */
-//   const getNearestSupplier = () => {
-//     let min = Infinity;
-//     let nearest = null;
-
-//     suppliers.forEach((s) => {
-//       const d = Math.sqrt(
-//         (coords.lat - s.lat) ** 2 + (coords.lng - s.lng) ** 2
-//       );
-//       if (d < min) {
-//         min = d;
-//         nearest = s;
-//       }
-//     });
-
-//     console.log("Nearest Supplier:", nearest);
-//   };
-// const handleEdit = (addr) => {
-//   setShowForm(true);
-//   setEditId(addr.id);
-
-// const parts = addr.address.split(",").map(p => p.trim());
-
-//   setFormData({
-//     name: addr.name || "",
-//     phone: addr.phone || "",
-//     altPhone: "",
-//     pincode: "",
-//     town: parts[1] || "",   
-//     address1: parts[0] || "",
-//     address2:  "",
-//     city: parts[2] || "",
-//     state: "",
-//     landmark: "",
-//     type: "Home",
-//   });
-// };
-//   /* ================= SUBMIT ================= */
 // const handleSubmit = async (e) => {
 //   e.preventDefault();
 
-//   if (!coords) {
-//     alert("Location not detected yet");
-//     return;
-//   }
-
-//   if (!formData.address1) {
-//     alert("Enter Building / Flat");
-//     return;
-//   }
-
-//   const TOKEN = localStorage.getItem("token");
-
-//   const fullAddress = `${formData.address1}, ${formData.town}, ${formData.city}`;
-
-//   let updatedList;
-//   let newAddressId = editId;
-
-//   // ================= SAVE LOCAL =================
-//   if (editId) {
-//     updatedList = addresses.map((addr) =>
-//       addr.id === editId
-//         ? {
-//             ...addr,
-//             name: formData.name,
-//             phone: formData.phone,
-//             address: fullAddress,
-//           }
-//         : addr
-//     );
-//   } else {
-//     const newAddress = {
-//       id: Date.now(),
-//       name: formData.name,
-//       phone: formData.phone,
-//       address: fullAddress,
-//       isDefault: addresses.length === 0,
-//     };
-
-//     updatedList = [...addresses, newAddress];
-//     setSelectedId(newAddress.id);
-//     newAddressId = newAddress.id;
-//   }
-
-//   setAddresses(updatedList);
-//   localStorage.setItem("addresses", JSON.stringify(updatedList));
-
-//   setShowForm(false);
-//   setEditId(null);
-
-//   // ================= SAVE TO DB =================
-// try {
-//   const res = await fetch("http://127.0.0.1:5000/api/address/save", {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${TOKEN}`,
-//     },
-//     body: JSON.stringify({
-//       name: formData.name,
-//       phone: formData.phone,
-//       address: fullAddress,
-//       city: formData.city,
-//       state: formData.state,
-//       pincode: formData.pincode,
-//       payment_method: paymentMethod,
-//     }),
-//   });
-
-//   const data = await res.json();
-
-//   if (!res.ok) {
-//     alert(data.error || "Address save failed ❌");
-//     return;
-//   }
-//   // ✅ ALWAYS GO TO SUCCESS PAGE
-//       if (paymentMethod === "CREDIT") {
-//         window.dispatchEvent(new Event("creditUpdated"));
-//       }
-
-//       // store success order id (missing in your first code)
-//       if (data.orders_created?.length > 0) {
-//         localStorage.setItem("success_order_id", data.orders_created[0].order_id);
-//       }
-
-//       if (paymentMethod !== "CREDIT") {
-//         alert("Please select payment method");
-//         return;
-//       }
-
-//       if (creditInfo && creditInfo.credit_available <= 0) {
-//         alert("Insufficient credit balance");
-//         return;
-//       }
-//       if (creditInfo?.overdue_amount > 0) {
-//         alert("You have overdue payments. Credit is disabled.");
-//         return;
-//       }
-
-//       navigate("/restaurantdashboard/ordersuccess");
-
-//   console.log("Address saved to DB ✅");
-
-// } catch (err) {
-//   console.error(err);
-//   alert("Server error while saving address ❌");
-// }
-
- 
-//   // ✅ CHECKOUT
 //   try {
-//     const res = await fetch("http://127.0.0.1:5000/api/checkout", {
+//     const TOKEN = localStorage.getItem("token");
+
+//     // ✅ LOGIN CHECK
+//     if (!TOKEN) {
+//       alert("Login expired");
+//       return;
+//     }
+
+//     // ✅ USER INPUT VALIDATION
+//     if (!formData.name || !formData.phone) {
+//       alert("Name and phone are required");
+//       return;
+//     }
+
+//     // ✅ ADDRESS FIX
+//     const finalAddress =
+//       selectedAddress?.address ||
+//       (formData.address1 && formData.city
+//         ? `${formData.address1}, ${formData.city}`
+//         : null);
+
+//     if (!finalAddress) {
+//       alert("Please enter address");
+//       return;
+//     }
+
+//     // ✅ LOCATION CHECK
+//     if (!coords) {
+//       alert("Location not detected yet");
+//       return;
+//     }
+
+//     // 🚀 CREATE ORDER
+//     const res = await fetch(`${API}/checkout`, {
 //       method: "POST",
 //       headers: {
 //         "Content-Type": "application/json",
@@ -443,136 +208,67 @@
 //       body: JSON.stringify({
 //         name: formData.name,
 //         phone: formData.phone,
-//         address: `${formData.address1}, ${formData.town}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
-//         latitude: coords.lat,
-//         longitude: coords.lng,
+//         address: finalAddress, // ✅ fixed
+//         note: formData.landmark || "",
+//         latitude: coords?.lat || 0,
+//         longitude: coords?.lng || 0,
 //       }),
 //     });
 
 //     const data = await res.json();
 
+//     // ❌ API ERROR
 //     if (!res.ok) {
-//       alert(data.error || "Checkout failed");
+//       console.error("Checkout error:", data);
+//       alert(data?.error || "Checkout failed");
 //       return;
 //     }
 
-//     // ✅ STORE ORDER ID
-//     if (data.orders_created?.length > 0) {
-//       const order = data.orders_created[0];
+//     const firstOrder = data?.orders_created?.[0];
 
-//       localStorage.setItem("order_id", order.order_id);
-//       localStorage.setItem("success_order_id", order.order_id);
-//       localStorage.setItem("total_amount", order.total);
+//     if (!firstOrder) {
+//       alert("Order not created");
+//       return;
 //     }
 
-//     alert("Order placed ✅");
+//     console.log("✅ ORDER CREATED:", firstOrder);
 
-//     navigate("/restaurantdashboard/ordersuccess");
+//     // ✅ STORE ORDER
+//     localStorage.setItem("order_id", firstOrder.order_id);
+//     localStorage.setItem("total_amount", firstOrder.amount);
+
+//     // 🚀 NAVIGATE
+//     navigate("/payment");
 
 //   } catch (err) {
-//     console.error(err);
-//     alert("Checkout failed");
+//     console.error("❌ Checkout crash:", err);
+//     alert("Checkout failed. Try again.");
 //   }
 // };
-// /* ================= CART ================= */
-// useEffect(() => {
-//   const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-//   setCartItems(storedCart);
-// }, []);
+//   /* ================= CART ================= */
+//   const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
 
-// useEffect(() => {
-//   const handleStorageChange = () => {
-//     const updatedCart = JSON.parse(localStorage.getItem("cart")) || [];
-//     setCartItems(updatedCart);
+//   const subtotalFromCart = cartItems.reduce(
+//     (sum, item) => sum + item.price * item.quantity,
+//     0
+//   );
+
+//   const savedSummary = JSON.parse(localStorage.getItem("cart_summary")) || {
+//     subtotal: subtotalFromCart,
+//     delivery: 0,
+//     discount: 0,
+//     total: subtotalFromCart,
 //   };
 
-//   window.addEventListener("storage", handleStorageChange);
-//   return () => window.removeEventListener("storage", handleStorageChange);
-// }, []);
+//   const { subtotal, delivery, discount, total } = savedSummary;
 
-
-// /* ================= SUBTOTAL ================= */
-// const subtotal = cartItems.reduce(
-//   (sum, item) => sum + Number(item.price) * Number(item.quantity),
-//   0
-// );
-
-
-// /* ================= SUMMARY ================= */
-// const [summary, setSummary] = useState({
-//   subtotal: 0,
-//   delivery: 0,
-//   discount: 0,
-//   total: 0,
-// });
-
-// useEffect(() => {
-//   const storedSummary = JSON.parse(localStorage.getItem("cart_summary"));
-//   if (storedSummary) {
-//     setSummary(storedSummary);
-//   }
-// }, []);
-
-
-// /* ================= DYNAMIC DELIVERY ================= */
-// const getDeliveryCharge = (subtotal) => {
-//   if (subtotal >= 500) return 0;   // FREE delivery
-//   if (subtotal >= 200) return 30;  // Medium charge
-//   return 50;                       // Low cart charge
-// };
-
-// const DELIVERY_CHARGE = getDeliveryCharge(subtotal);
-
-
-// /* ================= COUPONS ================= */
-// const [cartCoupon, setCartCoupon] = useState(null);
-
-
-
-
-// /* ================= TOTAL ================= */
-// const total =
-//   subtotal +
-//   DELIVERY_CHARGE -
-// (summary.discount || 0)
-// /* ================= HANDLE CHECKOUT ================= */
-// const handleCheckout = () => {
-
-//   const discountValue = summary.discount || 0;
-
-//   const summaryData = {
-//     subtotal,
-//     delivery: DELIVERY_CHARGE,
-//     discount: discountValue,
-//     total: subtotal + DELIVERY_CHARGE - discountValue
-//   };
-
-//   localStorage.setItem("cart_summary", JSON.stringify(summaryData));
-
-//   console.log("✅ CART SUMMARY SAVED:", summaryData);
-// };
-// useEffect(() => {
-//   const savedSummary = JSON.parse(localStorage.getItem("cart_summary"));
-
-//   if (savedSummary) {
-//     setSummary(savedSummary);
-
-//     // ✅ restore coupon properly
-//     if (savedSummary.discount && savedSummary.discount > 0) {
-//       setCartCoupon({
-//         discount: savedSummary.discount
-//       });
-//     }
-//   }
-// }, []);
 //   return (
-//    <section className="checkout pt_100 pb-80">
+//     <section className="checkout pt_100 pb-80">
 //       <div className="container">
 //         <div className="row">
 
 //           <div className="col-lg-8">
-
-//             {/* ✅ CREDIT BOX */}
+//                         {/* ✅ CREDIT BOX */}
 //               {creditInfo && (
 //                 <div className="credit_summary_box">
 
@@ -585,18 +281,18 @@
 
 //                     <div>
 //                       <small>Limit</small>
-//                       <strong>QAR {creditInfo.credit_limit}</strong>
+//                       <strong>QAR  {creditInfo.credit_limit}</strong>
 //                     </div>
 
 //                     <div>
 //                       <small>Used</small>
-//                       <strong>QAR {creditInfo.credit_used}</strong>
+//                       <strong>QAR  {creditInfo.credit_used}</strong>
 //                     </div>
 
 //                     <div>
 //                       <small>Available</small>
 //                       <strong className="credit_available">
-//                         QAR {creditInfo.credit_available}
+//                         QAR  {creditInfo.credit_available}
 //                       </strong>
 //                     </div>
 
@@ -616,7 +312,7 @@
 
 //                     {creditInfo.overdue_amount > 0 && (
 //                       <div className="credit_overdue">
-//                         Overdue:QAR {creditInfo.overdue_amount}
+//                         Overdue:QAR  {creditInfo.overdue_amount}
 //                       </div>
 //                     )}
 
@@ -624,7 +320,6 @@
 //                 </div>
 //               )}
 
-//             {/* SHIPPING ADDRESS */}
 //             <div className="shipping_address_box">
 //               <div className="d-flex justify-content-between align-items-center mb-3">
 //                 <h3>Shipping Address</h3>
@@ -641,320 +336,188 @@
 
 //               {/* ADDRESS LIST */}
 //               {addresses.map((addr) => (
-//   <div
-//     key={addr.id}
-//     className={`address_card ${selectedId === addr.id ? "active" : ""}`}
-//   >
-//     <div className="address_row">
+//                 <div
+//                   key={addr.id}
+//                   className={`address_card ${selectedId === addr.id ? "active" : ""}`}
+//                 >
+//                   <div className="address_row">
 
-//       {/* LEFT SECTION */}
-//       <div className="address_left">
-//         <input
-//           type="radio"
-//           checked={selectedId === addr.id}
-//           onChange={() => setSelectedId(addr.id)}
-//         />
+//                     <div className="address_left">
+//                       <input
+//                         type="radio"
+//                         checked={selectedId === addr.id}
+//                         onChange={() => setSelectedId(addr.id)}
+//                       />
 
-//         <div className="address_content">
-//           <div className="address_header">
-//             <h5>{addr.name}</h5>
-//             {addr.isDefault && (
-//               <span className="default_badge">Default</span>
-//             )}
-//           </div>
+//                       <div className="address_content">
+//                         <div className="address_header">
+//                           <h5>{addr.name}</h5>
+//                           {addr.isDefault && (
+//                             <span className="default_badge">Default</span>
+//                           )}
+//                         </div>
 
-//           <p className="address_text">{addr.address}</p>
-//           <small className="phone_text">
-//             Phone: {addr.phone}
-//           </small>
-//         </div>
-//       </div>
+//                         <p className="address_text">{addr.address}</p>
+//                         <small className="phone_text">
+//                           Phone: {addr.phone}
+//                         </small>
+//                       </div>
+//                     </div>
 
-//       {/* RIGHT ACTIONS */}
-//      <div className="address_right">
-//   <button onClick={() => handleEdit(addr)}>Edit</button>
-//  {!addr.isCurrent && (
-//   <button onClick={() => deleteAddress(addr.id)}>Delete</button>
-// )}
-//  {!addr.isDefault && (
-//   <button onClick={() => setDefault(addr.id)}>
-//     Make Default
-//   </button>
-// )}
-// </div>
+//                     <div className="address_right">
+//                       <button onClick={() => setEditId(addr.id)}>Edit</button>
+//                       <button onClick={() => deleteAddress(addr.id)}>Delete</button>
+//                       {!addr.isDefault && (
+//                         <button onClick={() => setDefault(addr.id)}>
+//                           Make Default
+//                         </button>
+//                       )}
+//                     </div>
 
-//     </div>
-//   </div>
-// ))}
+//                   </div>
+//                 </div>
+//               ))}
 
-//               {/* ADD / EDIT FORM */}
-//               <div
-//                 className={`address_form_wrapper ${
-//                   showForm ? "open" : ""
-//                 }`}
-//               >
+
+
+//               {/* FORM */}
+//               <div className={`address_form_wrapper ${showForm ? "open" : ""}`}>
 //                 {showForm && (
 
-//                  <form className="checkout_form mt-4" onSubmit={handleSubmit}>
-//   <div className="row">
+//                   <form className="checkout_form mt-4" onSubmit={handleSubmit}>
+//                     <div className="row">
 
-//     {/* NAME */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Full Name *</label>
-//        <input
-//         name="name"
-//         value={formData.name}
-//         onChange={handleChange}
-//         placeholder="Enter full name"
-//       />
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
+//                       </div>
 
-//     {/* PHONE */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Phone Number *</label>
-//         <input
-//         name="phone"
-//         value={formData.phone}
-//         onChange={handleChange}
-//         type="text" placeholder="Enter phone number"
-//       />
-        
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" />
+//                       </div>
 
-//     {/* ALT PHONE */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Alternate Phone</label>
-//         <input
-//           name="altPhone"
-//           value={formData.altPhone}
-//           onChange={handleChange}
-//         />
-        
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="altPhone" value={formData.altPhone} onChange={handleChange} placeholder="Alt Phone" />
+//                       </div>
 
-//     {/* PINCODE */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Pincode *</label>
-//        <input
-//         name="pincode"
-//         value={formData.pincode}
-//         onChange={handleChange}
-//       />
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Pincode" />
+//                       </div>
 
-//     {/* STREET 1 */}
-//     <div className="col-12">
-//       <div className="checkout_input_box">
-//         <label>Street Address Line 1 *</label>
-//         <input
-//           name="address1"
-//           value={formData.address1}
-//           onChange={handleChange}
-//         />
-//       </div>
-//     </div>
+//                       <div className="col-12">
+//                         <input name="address1" value={formData.address1} onChange={handleChange} placeholder="Address 1" />
+//                       </div>
 
-//     {/* STREET 2 */}
-//     <div className="col-12">
-//       <div className="checkout_input_box">
-//         <label>Street Address Line 2</label>
-//         <input
-//       name="address2"
-//       value={formData.address2}
-//       onChange={handleChange}
-//       placeholder="Enter town or area"
-//     />
-//       </div>
-//     </div>
+//                       <div className="col-12">
+//                         <input name="address2" value={formData.address2} onChange={handleChange} placeholder="Address 2" />
+//                       </div>
 
-//     {/* TOWN */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Town / Area *</label>
-//      <input
-//   name="town"
-//   value={formData.town}
-//   onChange={handleChange}
-//   placeholder="Enter town or area"
-// />
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="city" value={formData.city} onChange={handleChange} placeholder="City" />
+//                       </div>
 
-//     {/* CITY */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>City *</label>
-//         <input
-//           name="city"
-//           value={formData.city}
-//           onChange={handleChange}
-//         />
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="state" value={formData.state} onChange={handleChange} placeholder="State" />
+//                       </div>
 
-//     {/* STATE */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>State *</label>
-//         <input
-//         name="state"
-//         value={formData.state}
-//         onChange={handleChange}
-//       />
-//       </div>
-//     </div>
+//                       <div className="col-md-6">
+//                         <input name="landmark" value={formData.landmark} onChange={handleChange} placeholder="Landmark" />
+//                       </div>
 
-//     {/* LANDMARK */}
-//     <div className="col-md-6">
-//       <div className="checkout_input_box">
-//         <label>Landmark</label>
-//         <input
-//           name="landmark"
-//           value={formData.landmark}
-//           onChange={handleChange}
-//         />
-//       </div>
-//     </div>
+//                       <div className="col-12 mt-3">
+//                         <label>
+//                           <input type="radio" name="type" value="Home" onChange={handleChange} /> Home
+//                         </label>
+//                         <label>
+//                           <input type="radio" name="type" value="Office" onChange={handleChange} /> Office
+//                         </label>
+//                       </div>
 
-//     {/* ADDRESS TYPE */}
-//     <div className="col-12 mt-3">
-//       <label className="mb-2">Address Type</label>
-//       <div className="address_type_group">
-//         <label>
-//          <input
-//           type="radio"
-//           name="type"
-//           value="Home"
-//           checked={formData.type === "Home"}
-//           onChange={handleChange}
-//         /> Home
-//         </label>
-//         <label>
-//           <input
-//         type="radio"
-//         name="type"
-//         value="Office"
-//         checked={formData.type === "Office"}
-//         onChange={handleChange}
-//       /> Office
-//         </label>
-//       </div>
-//     </div>
+//                       <div className="col-12 mt-4">
+//                         <button type="submit" className="common_btn">
+//                           Save Address
+//                         </button>
+//                       </div>
 
-//     {/* BUTTONS */}
-//     <div className="col-12 mt-4 d-flex gap-3 m-auto">
-//       <div className="d-flex gap-3 m-auto">
-
-     
-//    <button type="submit" className="common_btn">
-//   {editId ? "Update Address" : "Save Address"}
-// </button>
-
-//       <button
-//   type="button"
-//   className="cancel_btn"
-//   onClick={() => {
-//     setShowForm(false);
-//     setEditId(null);
-//   }}
-// >
-//   Cancel
-// </button>
-//        </div>
-//     </div>
-
-//   </div>
-// </form>
+//                     </div>
+//                   </form>
 
 //                 )}
 //               </div>
-
-//             </div>
- 
-
-//           </div>
-//            <div className="payment-methods mt-4">
-
-//               <label
-//                 className={`payment-option ${
-//                   paymentMethod === "CREDIT" ? "active" : ""
-//                 } ${creditInfo?.overdue_amount > 0 ? "disabled" : ""}`}
-//                 onClick={() => {
-//                   if (creditInfo?.overdue_amount > 0) return;
-//                   setPaymentMethod("CREDIT");
-//                 }}
-//                 style={{
-//                   cursor: creditInfo?.overdue_amount > 0 ? "not-allowed" : "pointer",
-//                   opacity: creditInfo?.overdue_amount > 0 ? 0.5 : 1
-//                 }}
+//             {/* ✅ PAYMENT METHOD */}
+//             {/* <div className="checkout_input_box mt-4">
+//               <label>Payment Method</label>
+//               <select
+//                 value={paymentMethod}
+//                 onChange={(e) => setPaymentMethod(e.target.value)}
 //               >
-//                 <input
-//                   type="radio"
-//                   checked={paymentMethod === "CREDIT"}
-//                   readOnly
-//                 />
-//                 <i className="fas fa-wallet"></i>
+//                 <option value="COD">Cash on Delivery</option>
+//                 <option value="CREDIT">Credit</option>
+//               </select>
+//             </div> */}
+
+//             {/* <div className="payment-methods mt-4">
+
+//               {/* CREDIT */}
+//               {/* <label
+//                 className={`payment-option ${paymentMethod === "CREDIT" ? "active" : ""}`}
+//                 onClick={() => setPaymentMethod("CREDIT")}
+//               >
+//                 <input type="radio" checked={paymentMethod === "CREDIT"} readOnly />
 //                 <span>Pay using Credit</span>
-//               </label>
+//               </label> */}
 
-//             </div>
-//               <div className="payment-button">
+//               {/* COD */}
+//               {/* <label
+//                 className={`payment-option ${paymentMethod === "COD" ? "active" : ""}`}
+//                 onClick={() => setPaymentMethod("COD")}
+//               >
+//                 <input type="radio" checked={paymentMethod === "COD"} readOnly />
+//                 <span>Cash on Delivery</span>
+//               </label> */}
+
+//               {/* 🔥 NEW ONLINE OPTION */}
+//               {/* <label
+//                 className={`payment-option ${paymentMethod === "ONLINE" ? "active" : ""}`}
+//                 onClick={() => setPaymentMethod("ONLINE")}
+//               >
+//                 <input type="radio" checked={paymentMethod === "ONLINE"} readOnly />
+//                 <span>Online Payment</span>
+//               </label> */}
+
+//             {/* </div> */} 
+
 //             <button
-//               onClick={handleSubmit}
-//               className="common_btn mt_30"
-//               disabled={!paymentMethod}
-//             >
-//               Proceed
-//             </button>
-//             </div>
+//   onClick={handleSubmit}
+//   className="common_btn mt-3"
+// >
+//   Proceed
+// </button>
 
-//             {creditInfo?.overdue_amount > 0 && (
+//             {/* {creditInfo?.overdue_amount > 0 && (
 //               <p style={{ color: "red", marginTop: "10px" }}>
-//                 ⚠️ Your account has overdue amount of ₹{creditInfo.overdue_amount}.  
+//                 ⚠️ Your account has overdue amount of QAR {creditInfo.overdue_amount}.  
 //                 Please clear dues to use credit.
 //               </p>
-//             )}       
+//             )} */}
+//             </div>
 
-//           {/* CART SUMMARY */}
-//   <div className="col-lg-4 col-md-8">
-//               <div className="cart_sidebar">
-//                 <h3>Total Cart ({cartItems.length})</h3>
-  
-//                 <div className="cart_sidebar_info">
-//                   <h4>Subtotal : <span>${subtotal.toFixed(2)}</span></h4>
-//                   <p>Delivery : <span>${DELIVERY_CHARGE.toFixed(2)}</span></p>
-//                   <p>
-//                   Coupon Discount :
-// <span>
-//     -${(summary.discount || 0).toFixed(2)}
-//   </span>
-//                   </p>
-//                   <h5>Total : <span>${total.toFixed(2)}</span></h5>
-  
-//                   {/* <Link to="/restaurantdashboard/Checkout" className="common_btn">
-//                     Checkout <i className="fa fa-long-arrow-right"></i>
-//                     <span></span>
-//                   </Link> */}
-//                         <Link
-//                       to="/payment"
-//                       className="common_btn"
-//                       onClick={handleCheckout}
-//                     >
-//                       Order Confirm<i className="fa fa-long-arrow-right"></i>
-//                       <span></span>
-//                     </Link>
-  
-//                 </div>
+//           </div>
+
+//           {/* CART */}
+//            <div className="col-lg-4 col-md-8">
+//             <div className="cart_sidebar">
+//               <h3>Total Cart ({cartItems.length})</h3>
+//               <div className="cart_sidebar_info">
+//                 <h4>Subtotal : <span>QAR {subtotal.toFixed(2)}</span></h4>
+//                 <p>Delivery : <span>QAR {delivery}</span></p>
+//                 <p>Discount : <span>-QAR {discount}</span></p>
+//                 <h5>Total : <span>QAR {total.toFixed(2)}</span></h5>
+
+                
 //               </div>
 //             </div>
+//           </div>
+
 //         </div>
 //       </div>
 //     </section>
@@ -964,10 +527,1191 @@
 // export default CheckItems;
 
 
+
+
+
+
+
+
+
+// import React, { useState, useEffect } from "react";
+// import { Link, useNavigate } from "react-router-dom";
+
+// const API = "http://192.168.2.9:5000/api";
+
+// const CheckItems = () => {
+//   const navigate = useNavigate();
+
+//   const [addresses, setAddresses] = useState([]);
+//   const [selectedId, setSelectedId] = useState(null);
+//   const [showForm, setShowForm] = useState(false);
+//   const [editId, setEditId] = useState(null);
+//   const [showAddressPopup, setShowAddressPopup] = useState(false);
+
+//   const selectedAddress = addresses.find(a => a.id === selectedId);
+
+//   const [coords, setCoords] = useState(null);
+
+//   // ✅ CREDIT STATES
+//   // const [paymentMethod, setPaymentMethod] = useState("COD");
+//   // const [paymentMethod, setPaymentMethod] = useState("");
+//   const [creditInfo, setCreditInfo] = useState(null);
+
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     phone: "",
+//     altPhone: "",
+//     pincode: "",
+//     address1: "",
+//     address2: "",
+//     city: "",
+//     state: "",
+//     landmark: "",
+//     type: "Home",
+//   });
+// useEffect(() => {
+//   const token = localStorage.getItem("token");
+//   if (!token) return;
+
+//   fetch(`${API}/restaurant/profile`, {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   })
+//     .then((res) => res.json())
+//     .then((user) => {
+//       const newId = Date.now();
+
+//       // ✅ form set
+//       setFormData({
+//         name: user?.name || "",
+//         phone: user?.phone || "",
+//         altPhone: "",
+//         pincode: "",
+//         address1: "",
+//         address2: "",
+//         city: "",
+//         state: "",
+//         landmark: "",
+//         type: "Home",
+//       });
+
+//       // ✅ address create HERE (IMPORTANT)
+    
+
+//       setSelectedId(newId);
+//     })
+//     .catch((err) => console.log(err));
+// }, []);
+//   /* ================= CREDIT FETCH ================= */
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     if (!token) return;
+
+//     fetch(`${API}/restaurant/credit-info`, {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then((res) => res.json())
+//       .then(setCreditInfo)
+//       .catch(() => {});
+//   }, []);
+
+//   /* ================= AUTO LOCATION ================= */
+// /* ================= AUTO LOCATION ================= */
+// /* ================= AUTO LOCATION ================= */
+// useEffect(() => {
+
+//   if (navigator.geolocation) {
+
+//     navigator.geolocation.getCurrentPosition(
+
+//       async (pos) => {
+
+//         const { latitude, longitude } = pos.coords;
+
+//         setCoords({
+//           lat: latitude,
+//           lng: longitude,
+//         });
+
+//         try {
+
+//           const res = await fetch(
+//             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+//           );
+
+//           const data = await res.json();
+
+//           const addressText =
+//             data.display_name || "Current Location";
+
+//           // ✅ CURRENT LOCATION OBJECT
+//             const tokenUser =
+//             JSON.parse(
+//               localStorage.getItem("user") || "{}"
+//             );
+
+//           const currentLocationAddress = {
+
+//             id: "current-location",
+
+//             // ✅ USER NAME
+//             name:
+//               formData.name ||
+//               tokenUser?.name ||
+//               "Current Location",
+
+//             // ✅ USER PHONE
+//             phone:
+//               formData.phone ||
+//               tokenUser?.phone ||
+//               "",
+
+//             address: addressText,
+
+//             isDefault: false,
+
+//           };
+
+//           setAddresses((prev) => {
+
+//             // ✅ REMOVE OLD CURRENT LOCATION
+//             const savedAddresses = prev.filter(
+//               (a) => a.id !== "current-location"
+//             );
+
+//             // ✅ KEEP MANUAL SAVED ADDRESSES
+//             // ✅ ADD ONLY LATEST CURRENT LOCATION
+//             return [
+//               currentLocationAddress,
+//               ...savedAddresses,
+//             ];
+//           });
+
+//           // ✅ SELECT CURRENT LOCATION
+//           setSelectedId("current-location");
+
+//         } catch (err) {
+
+//           console.log(err);
+//         }
+//       },
+
+//       (err) => {
+
+//         console.log("Location error:", err);
+//       }
+
+//     );
+//   }
+
+// }, []);
+//   /* ================= USER AUTO FILL ================= */
+
+// useEffect(() => {
+
+//   const fetchSavedAddresses = async () => {
+
+//     try {
+
+//       const res = await fetch(
+//         `${API}/user-addresses`
+//       );
+
+//       const data = await res.json();
+
+//       if (
+//         Array.isArray(data) &&
+//         data.length > 0
+//       ) {
+
+//      const formatted = data.map((addr) => ({
+
+//   id: addr.id,
+
+//   name: addr.contact_name,
+
+//   phone: addr.phone,
+
+//   address: addr.address_line,
+
+//   isDefault: addr.is_default,
+
+//   // ✅ EXTRA FIELDS
+//   street: addr.street,
+
+//   zone: addr.zone,
+
+//   building: addr.building,
+
+//   unit_no: addr.unit_no,
+
+//   city: addr.city,
+
+//   country: addr.country,
+
+//   zip_code: addr.zip_code,
+
+//   address_type: addr.address_type,
+
+// }));
+
+//         setAddresses((prev) => {
+
+//           const currentLocation = prev.find(
+//             (a) => a.id === "current-location"
+//           );
+
+//           // ✅ CURRENT LOCATION EXISTS
+//           if (currentLocation) {
+
+//             const allAddresses = [
+//               currentLocation,
+//               ...formatted
+//             ];
+
+//             // ✅ FIND DEFAULT
+//             const defaultAddress =
+//               formatted.find(
+//                 (a) => a.isDefault
+//               );
+
+//             // ✅ AUTO SELECT DEFAULT
+//             if (defaultAddress) {
+
+//               setSelectedId(
+//                 defaultAddress.id
+//               );
+
+//             } else if (!selectedId) {
+
+//               setSelectedId(
+//                 allAddresses[0].id
+//               );
+//             }
+
+//             return allAddresses;
+//           }
+
+//           // ✅ NO CURRENT LOCATION
+//           const defaultAddress =
+//             formatted.find(
+//               (a) => a.isDefault
+//             );
+
+//           if (defaultAddress) {
+
+//             setSelectedId(
+//               defaultAddress.id
+//             );
+//           }
+
+//           return formatted;
+
+//         });
+
+//       }
+
+//     } catch (err) {
+
+//       console.log(
+//         "Address fetch error",
+//         err
+//       );
+//     }
+//   };
+
+//   fetchSavedAddresses();
+
+// }, []);
+// useEffect(() => {
+
+//   try {
+
+//     const userData =
+//       localStorage.getItem("user");
+
+//     if (userData) {
+
+//       const user =
+//         JSON.parse(userData);
+
+//       setFormData((prev) => ({
+
+//         ...prev,
+
+//         name: user?.name || "",
+
+//         phone: user?.phone || "",
+
+//         city: user?.city || "",
+
+//       }));
+//     }
+
+//   } catch (err) {
+
+//     console.log(
+//       "User parse error",
+//       err
+//     );
+//   }
+
+// }, []);
+
+// // ✅ ONLY SAVED ADDRESSES
+// const savedAddresses = addresses.filter(
+//   (a) => a.id !== "current-location"
+// );
+
+// // ✅ ADDRESS LIMIT
+// const addressLimitReached =
+//   savedAddresses.length >= 5;
+
+//   const handleChange = (e) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value,
+//     });
+//   };
+
+//  const deleteAddress = async (id) => {
+
+//   try {
+
+//     // ✅ REMOVE CURRENT LOCATION PROTECTION
+//     if (id === "current-location") {
+
+//       alert("Current location cannot be deleted");
+
+//       return;
+//     }
+
+//     // ✅ API DELETE
+//     await fetch(`${API}/user-addresses/${id}`, {
+//       method: "DELETE",
+//     });
+
+//     // ✅ FRONTEND REMOVE
+//   setAddresses((prev) =>
+//   prev.filter((addr) => addr.id !== id)
+// );
+
+//     // ✅ RESET SELECTED
+//    if (selectedId === id) {
+
+// const remaining = addresses.filter(
+//   (addr) => addr.id !== id
+// );
+
+// // ✅ AUTO SELECT NEXT ADDRESS
+// const nextAddress = remaining.find(
+//   (a) => a.id !== "current-location"
+// );
+
+// if (nextAddress) {
+
+//   setSelectedId(nextAddress.id);
+
+// } else {
+
+//   setSelectedId("current-location");
+// }
+
+//   // if (remaining.length > 0) {
+//   //   setSelectedId(remaining[0].id);
+//   // } else {
+//   //   setSelectedId(null);
+//   // }
+// }
+//   } catch (err) {
+
+//     console.log(err);
+
+//     alert("Delete failed");
+//   }
+// };
+
+// const setDefault = async (id) => {
+
+//   try {
+
+//     await fetch(
+//       `${API}/user-addresses/${id}/default`,
+//       {
+//         method: "PUT",
+//       }
+//     );
+
+//       setAddresses((prev) =>
+//       prev.map((addr) => ({
+//         ...addr,
+//         isDefault: addr.id === id,
+//       }))
+//     );
+
+//     setSelectedId(id);
+
+//     alert("Default address updated");
+
+//   } catch (err) {
+
+//     console.log(err);
+
+//     alert("Failed to update default");
+//   }
+// };
+
+
+
+// const saveAddress = async () => {
+
+//   try {
+
+//     // ✅ REMOVE CURRENT LOCATION
+//     const savedAddresses = addresses.filter(
+//       (a) => a.id !== "current-location"
+//     );
+
+
+//     // ✅ MAX 5 LIMIT
+//   if (!editId && savedAddresses.length >= 5){
+
+//       alert("Maximum 5 addresses allowed");
+
+//       return;
+//     }
+
+//     const finalAddress =
+//       `${formData.address1}, ${formData.address2}, ${formData.city}, ${formData.state}`;
+
+//     // ✅ DUPLICATE CHECK
+//   const alreadyExists = savedAddresses.some(
+//   (addr) =>
+
+//     // ✅ IGNORE CURRENT EDIT ADDRESS
+//     addr.id !== editId &&
+
+//     addr.address?.trim().toLowerCase() ===
+//     finalAddress.trim().toLowerCase()
+// );
+
+//     if (alreadyExists) {
+
+//       alert("Address already exists");
+
+//       return;
+//     }
+
+//    const res = await fetch(
+
+//   editId
+//     ? `${API}/user-addresses/${editId}`
+//     : `${API}/user-addresses`,
+
+//   {
+
+//     method: editId ? "PUT" : "POST",
+
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+
+//     body: JSON.stringify({
+
+//   contact_name: formData.name,
+
+//   phone: formData.phone,
+
+//   address_line: finalAddress,
+
+//   street: formData.address1,
+
+//   zone: formData.address2,
+
+//   building: formData.landmark,
+
+//   unit_no: formData.altPhone,
+
+//   city: formData.city,
+
+//   country: formData.state,
+
+//   zip_code: formData.pincode,
+
+//   lat: coords?.lat,
+
+//   lng: coords?.lng,
+
+//   address_type: formData.type,
+
+//   is_default: savedAddresses.length === 0
+
+// }),
+//   }
+// );
+
+//     const newAddress = await res.json();
+
+//     if (!res.ok) {
+
+//       alert("Failed to save address");
+
+//       return;
+//     }
+
+//     // ✅ ADD NEW ADDRESS
+//   if (editId) {
+
+//   // ✅ UPDATE EXISTING
+// setAddresses((prev) =>
+//   prev.map((addr) =>
+//     addr.id === editId
+//       ? {
+
+//           ...addr,
+
+//           name: newAddress.contact_name,
+
+//           phone: newAddress.phone,
+
+//           address: newAddress.address_line,
+
+//           // ✅ IMPORTANT
+//           street: newAddress.street,
+
+//           zone: newAddress.zone,
+
+//           building: newAddress.building,
+
+//           unit_no: newAddress.unit_no,
+
+//           city: newAddress.city,
+
+//           country: newAddress.country,
+
+//           zip_code: newAddress.zip_code,
+
+//           address_type:
+//             newAddress.address_type,
+
+//         }
+//       : addr
+//   )
+// );
+
+// } else {
+
+//   // ✅ ADD NEW
+//   setAddresses((prev) => [
+
+//     ...prev,
+
+//     {
+//     id: newAddress.id,
+
+//     name: newAddress.contact_name,
+
+//     phone: newAddress.phone,
+
+//     address: newAddress.address_line,
+
+//     isDefault: newAddress.is_default,
+
+//     // ✅ IMPORTANT
+//     street: newAddress.street,
+
+//     zone: newAddress.zone,
+
+//     building: newAddress.building,
+
+//     unit_no: newAddress.unit_no,
+
+//     city: newAddress.city,
+
+//     country: newAddress.country,
+
+//     zip_code: newAddress.zip_code,
+
+//     address_type:
+//       newAddress.address_type,
+
+//     },
+
+//   ]);
+// }
+
+//     setSelectedId(newAddress.id);
+
+//     setShowForm(false);
+//     setEditId(null);
+//     setFormData({
+
+//   name: "",
+
+//   phone: "",
+
+//   altPhone: "",
+
+//   pincode: "",
+
+//   address1: "",
+
+//   address2: "",
+
+//   city: "",
+
+//   state: "",
+
+//   landmark: "",
+
+//   type: "Home",
+
+// });
+
+//     alert("Address saved successfully");
+
+//   } catch (err) {
+
+//     console.log(err);
+
+//     alert("Save failed");
+//   }
+// };
+// const handleSubmit = async (e) => {
+
+//   e.preventDefault();
+
+//   try {
+
+//     const TOKEN =
+//       localStorage.getItem("token");
+
+//     // ✅ LOGIN CHECK
+//     if (!TOKEN) {
+
+//       alert("Login expired");
+
+//       return;
+//     }
+
+//     // ✅ USE SELECTED ADDRESS DATA
+//     const customerName =
+//       selectedAddress?.name ||
+//       formData.name;
+
+//     const customerPhone =
+//       selectedAddress?.phone ||
+//       formData.phone;
+
+//     // ✅ VALIDATION
+//     if (!customerName || !customerPhone) {
+
+//       alert(
+//         "Name and phone are required"
+//       );
+
+//       return;
+//     }
+
+//     // ✅ ADDRESS FIX
+//     const finalAddress =
+
+//       selectedAddress?.address ||
+
+//       (
+//         formData.address1 &&
+//         formData.city
+//       )
+
+//         ? `${formData.address1}, ${formData.city}`
+
+//         : null;
+
+//     if (!finalAddress) {
+
+//       alert("Please enter address");
+
+//       return;
+//     }
+
+//     // ✅ LOCATION CHECK
+//     if (!coords) {
+
+//       alert(
+//         "Location not detected yet"
+//       );
+
+//       return;
+//     }
+
+//     // 🚀 CREATE ORDER
+//     const res = await fetch(
+
+//       `${API}/checkout`,
+
+//       {
+
+//         method: "POST",
+
+//         headers: {
+
+//           "Content-Type":
+//             "application/json",
+
+//           Authorization:
+//             `Bearer ${TOKEN}`,
+
+//         },
+
+//         body: JSON.stringify({
+
+//           // ✅ FIXED
+//           name: customerName,
+
+//           phone: customerPhone,
+
+//           address: finalAddress,
+
+//           note:
+//             formData.landmark || "",
+//              delivery_instructions:
+//             formData.landmark || "",
+
+//           latitude:
+//             coords?.lat || 0,
+
+//           longitude:
+//             coords?.lng || 0,
+
+//         }),
+
+//       }
+//     );
+
+//     const data = await res.json();
+
+//     // ❌ API ERROR
+//     if (!res.ok) {
+
+//       console.error(
+//         "Checkout error:",
+//         data
+//       );
+
+//       alert(
+//         data?.error ||
+//         "Checkout failed"
+//       );
+
+//       return;
+//     }
+
+//     const createdOrders =
+//       data?.orders_created || [];
+
+//     if (createdOrders.length === 0) {
+
+//       alert("Order not created");
+
+//       return;
+//     }
+
+//     console.log(
+//       "✅ ALL ORDERS:",
+//       createdOrders
+//     );
+
+//     // ✅ SAVE ALL SPLIT ORDERS
+//     localStorage.setItem(
+//       "success_orders",
+//       JSON.stringify(createdOrders)
+//     );
+
+//     // ✅ GRAND TOTAL
+//     const grandTotal =
+//       createdOrders.reduce(
+
+//         (sum, order) =>
+
+//           sum + Number(order.amount || 0),
+
+//         0
+//       );
+
+//     localStorage.setItem(
+//       "success_total",
+//       grandTotal
+//     );
+
+//     // 🚀 NAVIGATE
+//     navigate("/payment");
+
+//   } catch (err) {
+
+//     console.error(
+//       "❌ Checkout crash:",
+//       err
+//     );
+
+//     alert(
+//       "Checkout failed. Try again."
+//     );
+//   }
+// };
+//   /* ================= CART ================= */
+//   const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+
+//   const subtotalFromCart = cartItems.reduce(
+//     (sum, item) => sum + item.price * item.quantity,
+//     0
+//   );
+
+//   const savedSummary = JSON.parse(localStorage.getItem("cart_summary")) || {
+//     subtotal: subtotalFromCart,
+//     delivery: 0,
+//     discount: 0,
+//     total: subtotalFromCart,
+//   };
+
+//   const { subtotal, delivery, discount, total } = savedSummary;
+
+//   return (
+//     <section className="checkout pt_100 pb-80">
+//       <div className="container">
+//         <div className="row">
+
+//           <div className="col-lg-8">
+//                         {/* ✅ CREDIT BOX */}
+//               {creditInfo && (
+//                 <div className="credit_summary_box">
+
+//                   <div className="credit_summary_header">
+//                     <i className="fas fa-wallet"></i>
+//                     <span>Business Credit</span>
+//                   </div>
+
+//                   <div className="credit_summary_grid">
+
+//                     <div>
+//                       <small>Limit</small>
+//                       <strong>QAR  {creditInfo.credit_limit}</strong>
+//                     </div>
+
+//                     <div>
+//                       <small>Used</small>
+//                       <strong>QAR  {creditInfo.credit_used}</strong>
+//                     </div>
+
+//                     <div>
+//                       <small>Available</small>
+//                       <strong className="credit_available">
+//                         QAR  {creditInfo.credit_available}
+//                       </strong>
+//                     </div>
+
+//                     <div>
+//                       <small>Credit Period</small>
+//                       <strong>{creditInfo.credit_days} days</strong>
+//                     </div>
+
+//                     {creditInfo.next_due_date && (
+//                       <div>
+//                         <small>Next Due</small>
+//                         <strong>
+//                           {new Date(creditInfo.next_due_date).toLocaleDateString()}
+//                         </strong>
+//                       </div>
+//                     )}
+
+//                     {creditInfo.overdue_amount > 0 && (
+//                       <div className="credit_overdue">
+//                         Overdue:QAR  {creditInfo.overdue_amount}
+//                       </div>
+//                     )}
+
+//                   </div>
+//                 </div>
+//               )}
+
+//             <div className="shipping_address_box">
+//               <div className="d-flex justify-content-between align-items-center mb-3">
+//                 <h3>Shipping Address</h3>
+//                 <button
+
+//   className="add_address_btn"
+
+//   disabled={addressLimitReached}
+
+//   onClick={() => {
+
+//     if (addressLimitReached) {
+
+//       alert(
+//         "Maximum 5 addresses allowed"
+//       );
+
+//       return;
+//     }
+
+//     setShowForm(!showForm);
+
+//     setEditId(null);
+//   }}
+
+// >
+
+//   {addressLimitReached
+//     ? "Address Limit Reached"
+//     : "+ Add New Address"}
+
+// </button>
+//               </div>
+
+//               {/* ADDRESS LIST */}
+//               {addresses  .filter(
+//                   (addr) =>
+//               addr.id ===
+//                     "current-location"
+//                 ).map((addr) => (
+//                 <div
+//                   key={addr.id}
+//                   className={`address_card ${selectedId === addr.id ? "active" : ""}`}
+//                 >
+//                   <div className="address_row">
+
+//                     <div className="address_left">
+//                       <input
+//                         type="radio"
+//                         checked={selectedId === addr.id}
+//                         onChange={() => setSelectedId(addr.id)}
+//                       />
+
+//                       <div className="address_content">
+//                         <div className="address_header">
+//                           <h5>{addr.name}</h5>
+//                           {addr.isDefault && (
+//                             <span className="default_badge">Default</span>
+//                           )}
+//                         </div>
+
+//                         <p className="address_text">{addr.address}</p>
+//                         <small className="phone_text">
+//                           Phone: {addr.phone}
+//                         </small>
+//                       </div>
+//                     </div>
+
+//                     <div className="address_right">
+
+//   {addr.id !== "current-location" && (
+//     <>
+//      <button
+// onClick={() => {
+
+//   setEditId(addr.id);
+
+//   setShowForm(true);
+
+//   setFormData({
+
+//     name: addr.name || "",
+
+//     phone: addr.phone || "",
+
+//     altPhone: addr.unit_no || "",
+
+//     pincode: addr.zip_code || "",
+
+//     address1: addr.street || "",
+
+//     address2: addr.zone || "",
+
+//     city: addr.city || "",
+
+//     state: addr.country || "",
+
+//     landmark: addr.building || "",
+
+//     type: addr.address_type || "Home",
+
+//   });
+
+// }}
+// >
+//   Edit
+// </button>
+
+//       <button
+//         onClick={() => deleteAddress(addr.id)}
+//       >
+//         Delete
+//       </button>
+
+//       {!addr.isDefault && (
+//         <button
+//           onClick={() => setDefault(addr.id)}
+//         >
+//           Make Default
+//         </button>
+//       )}
+//     </>
+//   )}
+
+// </div>
+
+//                   </div>
+//                 </div>
+//               ))}
+
+
+
+//               {/* FORM */}
+//               <div className={`address_form_wrapper ${showForm ? "open" : ""}`}>
+//                 {showForm && (
+
+//                   <form
+//                       className="checkout_form mt-4"
+//                       onSubmit={(e) => {
+//                         e.preventDefault();
+//                         saveAddress();
+//                       }}
+//                     >
+//                     <div className="row">
+
+//                       <div className="col-md-6">
+//                         <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="altPhone" value={formData.altPhone} onChange={handleChange} placeholder="Alt Phone" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Pincode" />
+//                       </div>
+
+//                       <div className="col-12">
+//                         <input name="address1" value={formData.address1} onChange={handleChange} placeholder="Address 1" />
+//                       </div>
+
+//                       <div className="col-12">
+//                         <input name="address2" value={formData.address2} onChange={handleChange} placeholder="Address 2" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="city" value={formData.city} onChange={handleChange} placeholder="City" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="state" value={formData.state} onChange={handleChange} placeholder="State" />
+//                       </div>
+
+//                       <div className="col-md-6">
+//                         <input name="landmark" value={formData.landmark} onChange={handleChange} placeholder="Landmark" />
+//                       </div>
+
+//                       <div className="col-12 mt-3">
+//                         <label>
+//                           <input type="radio" name="type" value="Home" onChange={handleChange} /> Home
+//                         </label>
+//                         <label>
+//                           <input type="radio" name="type" value="Office" onChange={handleChange} /> Office
+//                         </label>
+//                       </div>
+
+//                       <div className="col-12 mt-4">
+//                         <button type="submit" className="common_btn">
+//                           Save Address
+//                         </button>
+//                       </div>
+
+//                     </div>
+//                   </form>
+
+//                 )}
+//               </div>
+           
+//               {/* DELIVERY INSTRUCTIONS */}
+//               <div className="mt-4">
+
+//                 <label>
+//                   Delivery Instructions
+//                 </label>
+
+//                 <textarea
+//                   className="address_card"
+//                   rows="3"
+//                   placeholder="Call before delivery, leave at gate..."
+//                   value={formData.landmark}
+//                   onChange={(e) =>
+//                     setFormData({
+//                       ...formData,
+//                       landmark: e.target.value,
+//                     })
+//                   }
+//                 />
+
+//               </div>
+
+//               {/* PROCEED BUTTON */}
+//               <button
+//                 onClick={handleSubmit}
+//                 className="common_btn mt-3"
+//               >
+//                 Proceed
+//               </button>
+
+//             {/* {creditInfo?.overdue_amount > 0 && (
+//               <p style={{ color: "red", marginTop: "10px" }}>
+//                 ⚠️ Your account has overdue amount of QAR {creditInfo.overdue_amount}.  
+//                 Please clear dues to use credit.
+//               </p>
+//             )} */}
+//             </div>
+
+//           </div>
+
+//           {/* CART */}
+//            <div className="col-lg-4 col-md-8">
+//             <div className="cart_sidebar">
+//               <h3>Total Cart ({cartItems.length})</h3>
+//               <div className="cart_sidebar_info">
+//                 <h4>Subtotal : <span>QAR {subtotal.toFixed(2)}</span></h4>
+//                 <p>Delivery : <span>QAR {delivery}</span></p>
+//                 <p>Discount : <span>-QAR {discount}</span></p>
+//                 <h5>Total : <span>QAR {total.toFixed(2)}</span></h5>
+
+                
+//               </div>
+//             </div>
+//           </div>
+
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default CheckItems;
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API = "http://127.0.0.1:5000/api";
+const API = "http://192.168.2.9:5000/api";
 
 const CheckItems = () => {
   const navigate = useNavigate();
@@ -976,6 +1720,7 @@ const CheckItems = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [showAddressPopup, setShowAddressPopup] = useState(false);
 
   const selectedAddress = addresses.find(a => a.id === selectedId);
 
@@ -983,7 +1728,7 @@ const CheckItems = () => {
 
   // ✅ CREDIT STATES
   // const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  // const [paymentMethod, setPaymentMethod] = useState("");
   const [creditInfo, setCreditInfo] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -998,7 +1743,40 @@ const CheckItems = () => {
     landmark: "",
     type: "Home",
   });
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
 
+  fetch(`${API}/restaurant/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((user) => {
+      const newId = Date.now();
+
+      // ✅ form set
+      setFormData({
+        name: user?.name || "",
+        phone: user?.phone || "",
+        altPhone: "",
+        pincode: "",
+        address1: "",
+        address2: "",
+        city: "",
+        state: "",
+        landmark: "",
+        type: "Home",
+      });
+
+      // ✅ address create HERE (IMPORTANT)
+    
+
+      setSelectedId(newId);
+    })
+    .catch((err) => console.log(err));
+}, []);
   /* ================= CREDIT FETCH ================= */
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -1013,9 +1791,16 @@ const CheckItems = () => {
   }, []);
 
   /* ================= AUTO LOCATION ================= */
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
+/* ================= AUTO LOCATION ================= */
+/* ================= AUTO LOCATION ================= */
+useEffect(() => {
+
+  if (navigator.geolocation) {
+
+    navigator.geolocation.getCurrentPosition(
+
+      async (pos) => {
+
         const { latitude, longitude } = pos.coords;
 
         setCoords({
@@ -1024,43 +1809,242 @@ const CheckItems = () => {
         });
 
         try {
+
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
+
           const data = await res.json();
 
-          const addressText = data.display_name || "Current Location";
+          const addressText =
+            data.display_name || "Current Location";
 
-          const newId = Date.now();
+          // ✅ CURRENT LOCATION OBJECT
+            // const tokenUser =
+            // JSON.parse(
+            //   localStorage.getItem("user") || "{}"
+            // );
+            
 
-          setAddresses([
-            {
-              id: newId,
-              name: "Current Location",
-              phone: "",
-              address: addressText,
-              isDefault: true,
-            },
-          ]);
+          const currentLocationAddress = {
 
-          setSelectedId(newId);
-        } catch {}
-      });
-    }
-  }, []);
+            id: "current-location",
 
+            // ✅ USER NAME
+           name:
+          tokenUser?.name ||
+          JSON.parse(
+            localStorage.getItem("user") || "{}"
+          )?.name ||
+          "Current Location",
+
+        phone:
+          tokenUser?.phone ||
+          JSON.parse(
+            localStorage.getItem("user") || "{}"
+          )?.phone ||
+          "",
+
+            address: addressText,
+
+            isDefault: false,
+
+          };
+
+          setAddresses((prev) => {
+
+            // ✅ REMOVE OLD CURRENT LOCATION
+            const savedAddresses = prev.filter(
+              (a) => a.id !== "current-location"
+            );
+
+            // ✅ KEEP MANUAL SAVED ADDRESSES
+            // ✅ ADD ONLY LATEST CURRENT LOCATION
+            return [
+              currentLocationAddress,
+              ...savedAddresses,
+            ];
+          });
+
+          // ✅ SELECT CURRENT LOCATION
+          setSelectedId("current-location");
+
+        } catch (err) {
+
+          console.log(err);
+        }
+      },
+
+      (err) => {
+
+        console.log("Location error:", err);
+      }
+
+    );
+  }
+
+}, [selectedId]);
   /* ================= USER AUTO FILL ================= */
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
+
+useEffect(() => {
+
+  const fetchSavedAddresses = async () => {
+
+    try {
+
+      const res = await fetch(
+        `${API}/user-addresses`
+      );
+
+      const data = await res.json();
+
+      if (
+        Array.isArray(data) &&
+        data.length > 0
+      ) {
+
+     const formatted = data.map((addr) => ({
+
+  id: addr.id,
+
+  name: addr.contact_name,
+
+  phone: addr.phone,
+
+  address: addr.address_line,
+
+  isDefault: addr.is_default,
+
+  // ✅ EXTRA FIELDS
+  street: addr.street,
+
+  zone: addr.zone,
+
+  building: addr.building,
+
+  unit_no: addr.unit_no,
+
+  city: addr.city,
+
+  country: addr.country,
+
+  zip_code: addr.zip_code,
+
+  address_type: addr.address_type,
+
+}));
+
+        setAddresses((prev) => {
+
+          const currentLocation = prev.find(
+            (a) => a.id === "current-location"
+          );
+
+          // ✅ CURRENT LOCATION EXISTS
+          if (currentLocation) {
+
+            const allAddresses = [
+              currentLocation,
+              ...formatted
+            ];
+
+            // ✅ FIND DEFAULT
+            const defaultAddress =
+              formatted.find(
+                (a) => a.isDefault
+              );
+
+            // ✅ AUTO SELECT DEFAULT
+            if (defaultAddress) {
+
+              setSelectedId(
+                defaultAddress.id
+              );
+
+            } else if (!selectedId) {
+
+              setSelectedId(
+                allAddresses[0].id
+              );
+            }
+
+            return allAddresses;
+          }
+
+          // ✅ NO CURRENT LOCATION
+          const defaultAddress =
+            formatted.find(
+              (a) => a.isDefault
+            );
+
+          if (defaultAddress) {
+
+            setSelectedId(
+              defaultAddress.id
+            );
+          }
+
+          return formatted;
+
+        });
+
+      }
+
+    } catch (err) {
+
+      console.log(
+        "Address fetch error",
+        err
+      );
+    }
+  };
+
+  fetchSavedAddresses();
+
+}, []);
+useEffect(() => {
+
+  try {
+
+    const userData =
+      localStorage.getItem("user");
+
+    if (userData) {
+
+      const user =
+        JSON.parse(userData);
+
       setFormData((prev) => ({
+
         ...prev,
-        name: user.name || "",
-        phone: user.phone || "",
-        city: user.city || "",
+
+        name: user?.name || "",
+
+        phone: user?.phone || "",
+
+        city: user?.city || "",
+
       }));
     }
-  }, []);
+
+  } catch (err) {
+
+    console.log(
+      "User parse error",
+      err
+    );
+  }
+
+}, []);
+
+// ✅ ONLY SAVED ADDRESSES
+const savedAddresses = addresses.filter(
+  (a) => a.id !== "current-location"
+);
+
+// ✅ ADDRESS LIMIT
+const addressLimitReached =
+  savedAddresses.length >= 5;
 
   const handleChange = (e) => {
     setFormData({
@@ -1069,151 +2053,488 @@ const CheckItems = () => {
     });
   };
 
-  const deleteAddress = (id) => {
-    setAddresses(addresses.filter((addr) => addr.id !== id));
-  };
+ const deleteAddress = async (id) => {
 
-  const setDefault = (id) => {
-    setAddresses(
-      addresses.map((addr) => ({
+  try {
+
+    // ✅ REMOVE CURRENT LOCATION PROTECTION
+    if (id === "current-location") {
+
+      alert("Current location cannot be deleted");
+
+      return;
+    }
+
+    // ✅ API DELETE
+    await fetch(`${API}/user-addresses/${id}`, {
+      method: "DELETE",
+    });
+
+    // ✅ FRONTEND REMOVE
+  setAddresses((prev) =>
+  prev.filter((addr) => addr.id !== id)
+);
+
+    // ✅ RESET SELECTED
+   if (selectedId === id) {
+
+const remaining = addresses.filter(
+  (addr) => addr.id !== id
+);
+
+// ✅ AUTO SELECT NEXT ADDRESS
+const nextAddress = remaining.find(
+  (a) => a.id !== "current-location"
+);
+
+if (nextAddress) {
+
+  setSelectedId(nextAddress.id);
+
+} else {
+
+  setSelectedId("current-location");
+}
+
+  // if (remaining.length > 0) {
+  //   setSelectedId(remaining[0].id);
+  // } else {
+  //   setSelectedId(null);
+  // }
+}
+  } catch (err) {
+
+    console.log(err);
+
+    alert("Delete failed");
+  }
+};
+
+const setDefault = async (id) => {
+
+  try {
+
+    await fetch(
+      `${API}/user-addresses/${id}/default`,
+      {
+        method: "PUT",
+      }
+    );
+
+      setAddresses((prev) =>
+      prev.map((addr) => ({
         ...addr,
         isDefault: addr.id === id,
       }))
     );
-    setSelectedId(id);
-  };
 
-  /* ================= SUBMIT ================= */
+    setSelectedId(id);
+
+    alert("Default address updated");
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert("Failed to update default");
+  }
+};
+
+
+
+const saveAddress = async () => {
+
+  try {
+
+    // ✅ REMOVE CURRENT LOCATION
+    const savedAddresses = addresses.filter(
+      (a) => a.id !== "current-location"
+    );
+
+
+    // ✅ MAX 5 LIMIT
+  if (!editId && savedAddresses.length >= 5){
+
+      alert("Maximum 5 addresses allowed");
+
+      return;
+    }
+
+    const finalAddress =
+      `${formData.address1}, ${formData.address2}, ${formData.city}, ${formData.state}`;
+
+    // ✅ DUPLICATE CHECK
+  const alreadyExists = savedAddresses.some(
+  (addr) =>
+
+    // ✅ IGNORE CURRENT EDIT ADDRESS
+    addr.id !== editId &&
+
+    addr.address?.trim().toLowerCase() ===
+    finalAddress.trim().toLowerCase()
+);
+
+    if (alreadyExists) {
+
+      alert("Address already exists");
+
+      return;
+    }
+
+   const res = await fetch(
+
+  editId
+    ? `${API}/user-addresses/${editId}`
+    : `${API}/user-addresses`,
+
+  {
+
+    method: editId ? "PUT" : "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+
+  contact_name: formData.name,
+
+  phone: formData.phone,
+
+  address_line: finalAddress,
+
+  street: formData.address1,
+
+  zone: formData.address2,
+
+  building: formData.landmark,
+
+  unit_no: formData.altPhone,
+
+  city: formData.city,
+
+  country: formData.state,
+
+  zip_code: formData.pincode,
+
+  lat: coords?.lat,
+
+  lng: coords?.lng,
+
+  address_type: formData.type,
+
+  is_default: savedAddresses.length === 0
+
+}),
+  }
+);
+
+    const newAddress = await res.json();
+
+    if (!res.ok) {
+
+      alert("Failed to save address");
+
+      return;
+    }
+
+    // ✅ ADD NEW ADDRESS
+  if (editId) {
+
+  // ✅ UPDATE EXISTING
+setAddresses((prev) =>
+  prev.map((addr) =>
+    addr.id === editId
+      ? {
+
+          ...addr,
+
+          name: newAddress.contact_name,
+
+          phone: newAddress.phone,
+
+          address: newAddress.address_line,
+
+          // ✅ IMPORTANT
+          street: newAddress.street,
+
+          zone: newAddress.zone,
+
+          building: newAddress.building,
+
+          unit_no: newAddress.unit_no,
+
+          city: newAddress.city,
+
+          country: newAddress.country,
+
+          zip_code: newAddress.zip_code,
+
+          address_type:
+            newAddress.address_type,
+
+        }
+      : addr
+  )
+);
+
+} else {
+
+  // ✅ ADD NEW
+  setAddresses((prev) => [
+
+    ...prev,
+
+    {
+    id: newAddress.id,
+
+    name: newAddress.contact_name,
+
+    phone: newAddress.phone,
+
+    address: newAddress.address_line,
+
+    isDefault: newAddress.is_default,
+
+    // ✅ IMPORTANT
+    street: newAddress.street,
+
+    zone: newAddress.zone,
+
+    building: newAddress.building,
+
+    unit_no: newAddress.unit_no,
+
+    city: newAddress.city,
+
+    country: newAddress.country,
+
+    zip_code: newAddress.zip_code,
+
+    address_type:
+      newAddress.address_type,
+
+    },
+
+  ]);
+}
+
+    setSelectedId(newAddress.id);
+
+    setShowForm(false);
+    setEditId(null);
+    setFormData({
+
+  name: "",
+
+  phone: "",
+
+  altPhone: "",
+
+  pincode: "",
+
+  address1: "",
+
+  address2: "",
+
+  city: "",
+
+  state: "",
+
+  landmark: "",
+
+  type: "Home",
+
+});
+
+    alert("Address saved successfully");
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert("Save failed");
+  }
+};
 const handleSubmit = async (e) => {
+
   e.preventDefault();
 
   try {
-    const TOKEN = localStorage.getItem("token");
 
+    const TOKEN =
+      localStorage.getItem("token");
+
+    // ✅ LOGIN CHECK
     if (!TOKEN) {
+
       alert("Login expired");
+
       return;
     }
 
+    // ✅ USE SELECTED ADDRESS DATA
+    const customerName =
+      selectedAddress?.name ||
+      formData.name;
+
+    const customerPhone =
+      selectedAddress?.phone ||
+      formData.phone;
+
+    // ✅ VALIDATION
+    if (!customerName || !customerPhone) {
+
+      alert(
+        "Name and phone are required"
+      );
+
+      return;
+    }
+
+    // ✅ ADDRESS FIX
+    const finalAddress =
+
+      selectedAddress?.address ||
+
+      (
+        formData.address1 &&
+        formData.city
+      )
+
+        ? `${formData.address1}, ${formData.city}`
+
+        : null;
+
+    if (!finalAddress) {
+
+      alert("Please enter address");
+
+      return;
+    }
+
+    // ✅ LOCATION CHECK
     if (!coords) {
-      alert("Location not detected yet");
+
+      alert(
+        "Location not detected yet"
+      );
+
       return;
     }
 
-    if (!paymentMethod) {
-      alert("Select payment method");
-      return;
-    }
+    // 🚀 CREATE ORDER
+    const res = await fetch(
 
-    // =============================
-    // 🚀 STEP 1: CREATE ORDER
-    // =============================
-    const res = await fetch(`${API}/checkout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        phone: formData.phone,
-        address:
-          selectedAddress?.address ||
-          `${formData.address1}, ${formData.city}`,
-        note: formData.landmark,
-        latitude: coords.lat,
-        longitude: coords.lng,
-        payment_method:
-        paymentMethod === "CREDIT"
-          ? "CREDIT"
-          : paymentMethod === "COD"
-          ? "COD"
-          : "ONLINE",
-      }),
-    });
+      `${API}/checkout`,
+
+      {
+
+        method: "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${TOKEN}`,
+
+        },
+
+        body: JSON.stringify({
+
+          // ✅ FIXED
+          name: customerName,
+
+          phone: customerPhone,
+
+          address: finalAddress,
+
+          note:
+            formData.landmark || "",
+             delivery_instructions:
+            formData.landmark || "",
+
+          latitude:
+            coords?.lat || 0,
+
+          longitude:
+            coords?.lng || 0,
+
+        }),
+
+      }
+    );
 
     const data = await res.json();
 
+    // ❌ API ERROR
     if (!res.ok) {
-      alert(data.error || "Checkout failed");
+
+      console.error(
+        "Checkout error:",
+        data
+      );
+
+      alert(
+        data?.error ||
+        "Checkout failed"
+      );
+
       return;
     }
 
-    if (!data.orders_created || data.orders_created.length === 0) {
+    const createdOrders =
+      data?.orders_created || [];
+
+    if (createdOrders.length === 0) {
+
       alert("Order not created");
+
       return;
     }
 
-    const firstOrder = data.orders_created[0];
+    console.log(
+      "✅ ALL ORDERS:",
+      createdOrders
+    );
 
-    console.log("✅ ORDER CREATED:", firstOrder.order_id);
+    // ✅ SAVE ALL SPLIT ORDERS
+    localStorage.setItem(
+      "success_orders",
+      JSON.stringify(createdOrders)
+    );
 
-    // =============================
-    // ✅ STORE ORDER
-    // =============================
-    localStorage.setItem("order_id", firstOrder.order_id);
-    localStorage.setItem("total_amount", firstOrder.amount);
+    // ✅ GRAND TOTAL
+    const grandTotal =
+      createdOrders.reduce(
 
-    // =============================
-    // 🚀 CREDIT FLOW
-    // =============================
-    if (paymentMethod === "CREDIT") {
-      if (creditInfo?.credit_available <= 0) {
-        alert("Insufficient credit balance");
-        return;
-      }
+        (sum, order) =>
 
-      if (creditInfo?.overdue_amount > 0) {
-        alert("You have overdue payments.");
-        return;
-      }
+          sum + Number(order.amount || 0),
 
-      localStorage.setItem("success_order_id", firstOrder.order_id);
-      navigate("/success");
-      return;
-    }
+        0
+      );
 
-    // =============================
-    // 🚀 COD FLOW (NEW 🔥)
-    // =============================
-    if (paymentMethod === "COD") {
-      const payRes = await fetch(`${API}/payment/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          order_id: firstOrder.order_id,
-          payment_method: "cod",
-          amount: firstOrder.amount,
-        }),
-      });
+    localStorage.setItem(
+      "success_total",
+      grandTotal
+    );
 
-      const payData = await payRes.json();
-
-      if (!payRes.ok) {
-        alert(payData.error || "Payment failed");
-        return;
-      }
-
-      // ✅ SUCCESS
-      localStorage.setItem("success_order_id", firstOrder.order_id);
-      localStorage.removeItem("order_id");
-      localStorage.removeItem("total_amount");
-
-      navigate("/success");
-      return;
-    }
-
-    // =============================
-    // 🚀 FUTURE ONLINE PAYMENTS
-    // =============================
+    // 🚀 NAVIGATE
     navigate("/payment");
 
   } catch (err) {
-    console.error(err);
-    alert("Checkout failed");
+
+    console.error(
+      "❌ Checkout crash:",
+      err
+    );
+
+    alert(
+      "Checkout failed. Try again."
+    );
   }
 };
   /* ================= CART ================= */
@@ -1252,18 +2573,18 @@ const handleSubmit = async (e) => {
 
                     <div>
                       <small>Limit</small>
-                      <strong>QAR {creditInfo.credit_limit}</strong>
+                      <strong>QAR  {creditInfo.credit_limit}</strong>
                     </div>
 
                     <div>
                       <small>Used</small>
-                      <strong>QAR {creditInfo.credit_used}</strong>
+                      <strong>QAR  {creditInfo.credit_used}</strong>
                     </div>
 
                     <div>
                       <small>Available</small>
                       <strong className="credit_available">
-                        QAR {creditInfo.credit_available}
+                        QAR  {creditInfo.credit_available}
                       </strong>
                     </div>
 
@@ -1283,7 +2604,7 @@ const handleSubmit = async (e) => {
 
                     {creditInfo.overdue_amount > 0 && (
                       <div className="credit_overdue">
-                        Overdue:QAR {creditInfo.overdue_amount}
+                        Overdue:QAR  {creditInfo.overdue_amount}
                       </div>
                     )}
 
@@ -1294,39 +2615,348 @@ const handleSubmit = async (e) => {
             <div className="shipping_address_box">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h3>Shipping Address</h3>
-                <button
-                  className="add_address_btn"
-                  onClick={() => {
-                    setShowForm(!showForm);
-                    setEditId(null);
-                  }}
-                >
-                  + Add New Address
-                </button>
+              <div className="d-flex gap-2">
+
+    {/* SELECT ADDRESS */}
+
+    <button
+      className="add_address_btn"
+      onClick={() =>
+        setShowAddressPopup(
+          !showAddressPopup
+        )
+      }
+    >
+     +  Select From Existing Address
+    </button>
+
+    {/* ADD ADDRESS */}
+
+    <button
+
+      className="add_address_btn"
+
+      disabled={addressLimitReached}
+
+      onClick={() => {
+
+        if (addressLimitReached) {
+
+          alert(
+            "Maximum 5 addresses allowed"
+          );
+
+          return;
+        }
+
+        setShowForm(!showForm);
+
+        setEditId(null);
+      }}
+
+    >
+
+      {addressLimitReached
+        ? "Address Limit Reached"
+        : "+ Add New Address"}
+
+    </button>
+
+  </div>
               </div>
 
+{/* ================= ADDRESS POPUP ================= */}
+
+{showAddressPopup && (
+
+  <div className="address_popup_overlay">
+
+    <div className="address_popup_modal">
+
+      <div className="popup_header">
+
+        <h4>Select Address</h4>
+
+        <button
+          className="popup_close"
+          onClick={() =>
+            setShowAddressPopup(false)
+          }
+        >
+          ✕
+        </button>
+
+      </div>
+
+      {savedAddresses.length === 0 ? (
+
+        <p>No saved addresses found</p>
+
+      ) : (
+
+        savedAddresses.map((addr) => (
+
+          <div
+            key={addr.id}
+            className={`address_card ${
+              selectedId === addr.id
+                ? "active"
+                : ""
+            }`}
+          >
+
+            <div className="address_row">
+
+              <div className="address_left">
+
+                <input
+                  type="radio"
+                  checked={
+                    selectedId === addr.id
+                  }
+                 onChange={() => {
+
+                  // ✅ SELECT MANUAL ADDRESS
+                  setSelectedId(addr.id);
+
+                  // ✅ CLOSE POPUP
+                  setShowAddressPopup(false);
+                   window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  });
+
+                }}
+                />
+
+                <div className="address_content">
+
+                  <div className="address_header">
+
+                    <h5>{addr.name}</h5>
+
+                    {addr.isDefault && (
+
+                      <span className="default_badge">
+
+                        Default
+
+                      </span>
+
+                    )}
+
+                  </div>
+
+                  <p className="address_text">
+
+                    {addr.address}
+
+                  </p>
+
+                  <small className="phone_text">
+
+                    Phone: {addr.phone}
+
+                  </small>
+
+                </div>
+
+              </div>
+
+             <div className="address_right">
+
+  {addr.id !==
+    "current-location" && (
+    <>
+
+      {/* EDIT */}
+
+      <button
+        onClick={() => {
+
+          setEditId(addr.id);
+
+          setShowForm(true);
+
+          setShowAddressPopup(false);
+
+          setFormData({
+
+            name:
+              addr.name || "",
+
+            phone:
+              addr.phone || "",
+
+            altPhone:
+              addr.unit_no || "",
+
+            pincode:
+              addr.zip_code || "",
+
+            address1:
+              addr.street || "",
+
+            address2:
+              addr.zone || "",
+
+            city:
+              addr.city || "",
+
+            state:
+              addr.country || "",
+
+            landmark:
+              addr.building || "",
+
+            type:
+              addr.address_type ||
+              "Home",
+
+          });
+
+        }}
+      >
+        Edit
+      </button>
+
+      {/* DELETE */}
+
+      <button
+        onClick={() =>
+          deleteAddress(
+            addr.id
+          )
+        }
+      >
+        Delete
+      </button>
+
+      {/* MAKE DEFAULT */}
+
+      {/* {!addr.isDefault && (
+
+        <button
+          onClick={() =>
+            setDefault(
+              addr.id
+            )
+          }
+        >
+          Make Default
+        </button>
+
+      )} */}
+
+      {/* ✅ USE / DISABLE ADDRESS */}
+
+      <button
+  className={`use_address_btn ${
+    selectedId === addr.id
+      ? "active"
+      : ""
+  }`}
+  onClick={() => {
+
+    // ✅ DISABLE MANUAL ADDRESS
+    if (
+      selectedId === addr.id
+    ) {
+
+      // ✅ ACTIVATE CURRENT LOCATION
+      setSelectedId(
+        "current-location"
+      );
+
+    } else {
+
+      // ✅ ACTIVATE MANUAL ADDRESS
+      setSelectedId(
+        addr.id
+      );
+
+    }
+
+    // ✅ AUTO CLOSE POPUP
+    setShowAddressPopup(false);
+
+    // ✅ AUTO BACK TO TOP
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+  }}
+>
+
+  {selectedId === addr.id
+    ? "Disable Address"
+    : "Use This Address"}
+
+</button>
+
+    </>
+  )}
+
+</div>
+
+            </div>
+
+          </div>
+
+        ))
+
+      )}
+
+    </div>
+
+  </div>
+
+)}
               {/* ADDRESS LIST */}
-              {addresses.map((addr) => (
+              {addresses  .filter(
+                  (addr) =>
+              addr.id ===
+                    "current-location"
+                ).map((addr) => (
                 <div
                   key={addr.id}
-                  className={`address_card ${selectedId === addr.id ? "active" : ""}`}
+                  className={`address_card ${selectedId === addr.id ?  "active"
+      : "inactive_location"}`}
                 >
                   <div className="address_row">
 
                     <div className="address_left">
+                      
                       <input
                         type="radio"
-                        checked={selectedId === addr.id}
-                        onChange={() => setSelectedId(addr.id)}
+
+                        checked={
+                          selectedId ===
+                          "current-location"
+                        }
+
+                        disabled={
+                          selectedId !==
+                          "current-location"
+                        }
+
+                        onChange={() => {
+
+                          // ✅ ONLY CURRENT LOCATION ACTIVE
+                          setSelectedId(
+                            "current-location"
+                          );
+
+                        }}
                       />
 
                       <div className="address_content">
                         <div className="address_header">
-                          <h5>{addr.name}</h5>
-                          {addr.isDefault && (
-                            <span className="default_badge">Default</span>
-                          )}
-                        </div>
+
+                        <h5>{addr.name}</h5>
+
+                      </div>
 
                         <p className="address_text">{addr.address}</p>
                         <small className="phone_text">
@@ -1336,14 +2966,62 @@ const handleSubmit = async (e) => {
                     </div>
 
                     <div className="address_right">
-                      <button onClick={() => setEditId(addr.id)}>Edit</button>
-                      <button onClick={() => deleteAddress(addr.id)}>Delete</button>
-                      {!addr.isDefault && (
-                        <button onClick={() => setDefault(addr.id)}>
-                          Make Default
-                        </button>
-                      )}
-                    </div>
+
+  {addr.id !== "current-location" && (
+    <>
+     <button
+onClick={() => {
+
+  setEditId(addr.id);
+
+  setShowForm(true);
+
+  setFormData({
+
+    name: addr.name || "",
+
+    phone: addr.phone || "",
+
+    altPhone: addr.unit_no || "",
+
+    pincode: addr.zip_code || "",
+
+    address1: addr.street || "",
+
+    address2: addr.zone || "",
+
+    city: addr.city || "",
+
+    state: addr.country || "",
+
+    landmark: addr.building || "",
+
+    type: addr.address_type || "Home",
+
+  });
+
+}}
+>
+  Edit
+</button>
+
+      <button
+        onClick={() => deleteAddress(addr.id)}
+      >
+        Delete
+      </button>
+
+      {!addr.isDefault && (
+        <button
+          onClick={() => setDefault(addr.id)}
+        >
+          Make Default
+        </button>
+      )}
+    </>
+  )}
+
+</div>
 
                   </div>
                 </div>
@@ -1355,7 +3033,13 @@ const handleSubmit = async (e) => {
               <div className={`address_form_wrapper ${showForm ? "open" : ""}`}>
                 {showForm && (
 
-                  <form className="checkout_form mt-4" onSubmit={handleSubmit}>
+                  <form
+                      className="checkout_form mt-4"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        saveAddress();
+                      }}
+                    >
                     <div className="row">
 
                       <div className="col-md-6">
@@ -1414,63 +3098,43 @@ const handleSubmit = async (e) => {
 
                 )}
               </div>
-            {/* ✅ PAYMENT METHOD */}
-            {/* <div className="checkout_input_box mt-4">
-              <label>Payment Method</label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
+           
+              {/* DELIVERY INSTRUCTIONS */}
+              <div className="mt-4">
+
+                <label>
+                  Delivery Instructions
+                </label>
+
+                <textarea
+                  className="address_card"
+                  rows="3"
+                  placeholder="Call before delivery, leave at gate..."
+                  value={formData.landmark}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      landmark: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+              {/* PROCEED BUTTON */}
+              <button
+                onClick={handleSubmit}
+                className="common_btn mt-3"
               >
-                <option value="COD">Cash on Delivery</option>
-                <option value="CREDIT">Credit</option>
-              </select>
-            </div> */}
+                Proceed
+              </button>
 
-            <div className="payment-methods mt-4">
-
-              {/* CREDIT */}
-              <label
-                className={`payment-option ${paymentMethod === "CREDIT" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("CREDIT")}
-              >
-                <input type="radio" checked={paymentMethod === "CREDIT"} readOnly />
-                <span>Pay using Credit</span>
-              </label>
-
-              {/* COD */}
-              <label
-                className={`payment-option ${paymentMethod === "COD" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("COD")}
-              >
-                <input type="radio" checked={paymentMethod === "COD"} readOnly />
-                <span>Cash on Delivery</span>
-              </label>
-
-              {/* 🔥 NEW ONLINE OPTION */}
-              <label
-                className={`payment-option ${paymentMethod === "ONLINE" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("ONLINE")}
-              >
-                <input type="radio" checked={paymentMethod === "ONLINE"} readOnly />
-                <span>Online Payment</span>
-              </label>
-
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              className="common_btn mt-3"
-              disabled={!paymentMethod}
-            >
-              Proceed
-            </button>
-
-            {creditInfo?.overdue_amount > 0 && (
+            {/* {creditInfo?.overdue_amount > 0 && (
               <p style={{ color: "red", marginTop: "10px" }}>
-                ⚠️ Your account has overdue amount of ₹{creditInfo.overdue_amount}.  
+                ⚠️ Your account has overdue amount of QAR {creditInfo.overdue_amount}.  
                 Please clear dues to use credit.
               </p>
-            )}
+            )} */}
             </div>
 
           </div>
@@ -1480,10 +3144,10 @@ const handleSubmit = async (e) => {
             <div className="cart_sidebar">
               <h3>Total Cart ({cartItems.length})</h3>
               <div className="cart_sidebar_info">
-                <h4>Subtotal : <span>${subtotal.toFixed(2)}</span></h4>
-                <p>Delivery : <span>${delivery}</span></p>
-                <p>Discount : <span>-${discount}</span></p>
-                <h5>Total : <span>${total.toFixed(2)}</span></h5>
+                <h4>Subtotal : <span>QAR {subtotal.toFixed(2)}</span></h4>
+                <p>Delivery : <span>QAR {delivery}</span></p>
+                <p>Discount : <span>-QAR {discount}</span></p>
+                <h5>Total : <span>QAR {total.toFixed(2)}</span></h5>
 
                 
               </div>
@@ -1497,3 +3161,4 @@ const handleSubmit = async (e) => {
 };
 
 export default CheckItems;
+

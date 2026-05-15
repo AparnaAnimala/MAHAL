@@ -13,7 +13,7 @@
 
 // // SwiperCore.use([Navigation, Autoplay]);
 
-// const API_BASE_URL = "http://127.0.0.1:5000/api";
+// const API_BASE_URL = "http://192.168.2.9:5000/api";
 // const RESTAURANT_ID = 1;
 
 // const RelatedProducts = ({ productId, onProductClick }) => {
@@ -163,7 +163,7 @@ import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = "http://192.168.2.9:5000/api";
 const RESTAURANT_ID = 1;
 
 const RelatedProducts = ({ productId, onProductClick }) => {

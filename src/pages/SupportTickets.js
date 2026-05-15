@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./css/SupportTicket.css";
 import customerSupport from "../images/customer_support.png";
-
+import { useTranslation } from "react-i18next";
 /* -------- GET USER FROM TOKEN -------- */
 function getUserFromToken() {
   const token = localStorage.getItem("token");
@@ -19,6 +19,7 @@ function getUserFromToken() {
 
 export default function SupportTicket() {
   const user = getUserFromToken();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState([]);
   const [issue, setIssue] = useState("");
@@ -41,7 +42,7 @@ export default function SupportTicket() {
   useEffect(() => {
     if (!user) return;
 
-    fetch("http://127.0.0.1:5000/api/support/categories", {
+    fetch("http://192.168.2.9:5000/api/support/categories", {
       headers: {
         Authorization: `Bearer ${user.token}`,
       },
@@ -65,7 +66,7 @@ export default function SupportTicket() {
     e.preventDefault();
 
     if (!issue || !message || !agree) {
-      alert("Please fill all required fields");
+      alert(t("fill_required"));
       return;
     }
 
@@ -76,7 +77,7 @@ export default function SupportTicket() {
     formData.append("message", message);
     if (file) formData.append("attachment", file);
 
-    const res = await fetch("http://127.0.0.1:5000/api/support/ticket", {
+    const res = await fetch("http://192.168.2.9:5000/api/support/ticket", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${user.token}`,
@@ -88,10 +89,10 @@ export default function SupportTicket() {
     setLoading(false);
 
     if (res.ok) {
-      alert("Ticket submitted successfully");
+      alert(t("ticket_success"));
       handleCancel();
     } else {
-      alert(data.error || "Error");
+      alert(data.error || t("error"));
     }
   };
 
@@ -104,7 +105,7 @@ export default function SupportTicket() {
       return;
     }
 
-    const res = await fetch("http://127.0.0.1:5000/api/support/my-tickets", {
+    const res = await fetch("http://192.168.2.9:5000/api/support/my-tickets", {
       headers: {
         Authorization: `Bearer ${user.token}`,
       },
@@ -120,7 +121,7 @@ export default function SupportTicket() {
   /* ---------- LOAD TICKET DETAILS ---------- */
   const loadTicketDetails = async (ticketId) => {
     const res = await fetch(
-      `http://127.0.0.1:5000/api/support/ticket/${ticketId}`,
+      `http://192.168.2.9:5000/api/support/ticket/${ticketId}`,
       {
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -146,7 +147,7 @@ export default function SupportTicket() {
     if (replyFile) formData.append("attachment", replyFile);
 
     const res = await fetch(
-      `http://127.0.0.1:5000/api/support/ticket/${selectedTicket.ticket_id}/reply`,
+      `http://192.168.2.9:5000/api/support/ticket/${selectedTicket.ticket_id}/reply`,
       {
         method: "POST",
         headers: {
@@ -164,11 +165,43 @@ export default function SupportTicket() {
   };
 
   /* ---------- DOWNLOAD ATTACHMENT ---------- */
-  const downloadFile = (id) => {
-    window.open(
-      `http://127.0.0.1:5000/api/support/attachment/${id}`,
-      "_blank"
-    );
+  const downloadFile = async (id, fileName) => {
+    try {
+      const res = await fetch(
+        `http://192.168.2.9:5000/api/support/attachment/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user.token}`, // ✅ REQUIRED
+          },
+        }
+      );
+
+      if (res.status === 401) {
+        alert(t("unauthorized"));
+        return;
+      }
+
+      if (!res.ok) {
+        alert(t("download_failed"));
+        return;
+      }
+
+      const blob = await res.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || "download";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download error:", err);
+    }
   };
 
   /* ---------- AUTH GUARD ---------- */
@@ -181,7 +214,7 @@ export default function SupportTicket() {
     <section className="cards-section">
       <div className="support-page">
         <div className="support-card">
-          <h1>Customer Support</h1>
+          <h1>{t("support_title")}</h1>
 
           <div className="support-layout">
             {/* LEFT */}
@@ -198,22 +231,22 @@ export default function SupportTicket() {
               {!selectedTicket && (
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">
-                    <label>Email</label>
+                    <label>{t("email")}</label>
                     <input value={user.username} disabled />
                   </div>
 
                   <div className="form-group">
-                    <label>Role</label>
+                    <label>{t("role")}</label>
                     <input value={user.role} disabled />
                   </div>
 
                   <div className="form-group">
-                    <label>Issue</label>
+                    <label>{t("issue")}</label>
                     <select
                       value={issue}
                       onChange={(e) => setIssue(e.target.value)}
                     >
-                      <option value="">Select Issue</option>
+                      <option value="">{t("select_issue")}</option>
                       {categories.map((c) => (
                         <option key={c.category_id} value={c.name}>
                           {c.name}
@@ -223,7 +256,7 @@ export default function SupportTicket() {
                   </div>
 
                   <div className="form-group">
-                    <label>Message</label>
+                    <label>{t("message")}</label>
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
@@ -232,7 +265,7 @@ export default function SupportTicket() {
 
                   <div className="attachments-row">
                     <label className="file-btn">
-                      📎 Attach File
+                      {t("attach_file")} 📎
                       <input
                         type="file"
                         hidden
@@ -246,21 +279,21 @@ export default function SupportTicket() {
                         checked={agree}
                         onChange={(e) => setAgree(e.target.checked)}
                       />
-                      I confirm the information is accurate
+                      {t("confirm_info")}
                     </label>
                   </div>
 
                   <div className="button-row">
                     <button type="button" onClick={handleCancel}>
-                      Cancel
+                      {t("cancel")}
                     </button>
 
                     <button type="submit" disabled={loading}>
-                      Submit
+                      {t("submit")}
                     </button>
 
                     <button type="button" onClick={handleTrackStatus}>
-                      {showStatus ? "Hide Status" : "Track Status"}
+                      {showStatus ? t("hide_status") : t("track_status")}
                     </button>
                   </div>
                 </form>
@@ -271,9 +304,9 @@ export default function SupportTicket() {
                 <table className="clean-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Issue</th>
-                      <th>Status</th>
+                      <th>{t("ticket_id")}</th>
+                      <th>{t("issue")}</th>
+                      <th>{t("status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -296,7 +329,7 @@ export default function SupportTicket() {
               {selectedTicket && (
                 <div>
                   <button onClick={() => setSelectedTicket(null)}>
-                    ← Back
+                    ← {t("back")}
                   </button>
 
                   <h3>Ticket #{selectedTicket.ticket_id}</h3>
@@ -313,8 +346,8 @@ export default function SupportTicket() {
                   {attachments.map((a) => (
                     <div key={a.attachment_id}>
                       📎 {a.file_name}
-                      <button onClick={() => downloadFile(a.attachment_id)}>
-                        Download
+                      <button onClick={() => downloadFile(a.attachment_id, a.file_name)}>
+                        {t("download")}
                       </button>
                     </div>
                   ))}
@@ -329,7 +362,7 @@ export default function SupportTicket() {
                     onChange={(e) => setReplyFile(e.target.files[0])}
                   />
 
-                  <button onClick={handleReply}>Reply</button>
+                  <button onClick={handleReply}>{t("reply")}</button>
                 </div>
               )}
             </div>

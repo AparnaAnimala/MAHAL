@@ -761,7 +761,6 @@
 #         cur.close()
 #         conn.close()
 
-
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from psycopg2.extras import RealDictCursor
@@ -790,6 +789,329 @@ def get_restaurant_id_from_token():
         return decoded.get("linked_id")
     except Exception:
         return None
+
+
+# # =====================================================
+# # CHECKOUT
+# # =====================================================
+# @checkout_bp.route("/checkout", methods=["POST"])
+# def checkout():
+
+#     data = request.get_json() or {}
+#     payment_method = data.get("payment_method", "COD")
+
+#     restaurant_id = get_restaurant_id_from_token()
+#     if not restaurant_id:
+#         return jsonify({"error": "Unauthorized"}), 401
+
+#     # for field in ("name", "phone", "address"):
+#     #     if not data.get(field):
+#     #         return jsonify({"error": f"{field} is required"}), 400
+
+#     conn = get_db_connection()
+#     cur = conn.cursor(cursor_factory=RealDictCursor)
+
+#     try:
+#         # ================= CREDIT LOCK =================
+#         cur.execute("""
+#             SELECT credit_limit, credit_used, credit_days, is_credit_blocked
+#             FROM restaurant_registration
+#             WHERE restaurant_id = %s
+#             FOR UPDATE
+#         """, (restaurant_id,))
+#         credit_info = cur.fetchone()
+
+#         if payment_method == "CREDIT" and credit_info["is_credit_blocked"]:
+#             return jsonify({"error": "Credit account is blocked"}), 400
+
+#         # ================= CART LOCK =================
+#         cur.execute("""
+#             SELECT cart_id
+#             FROM cart_header
+#             WHERE restaurant_id = %s
+#               AND status = 'ACTIVE'
+#             FOR UPDATE
+#         """, (restaurant_id,))
+#         cart = cur.fetchone()
+
+#         if not cart:
+#             return jsonify({"error": "No active cart found"}), 400
+
+#         cart_id = cart["cart_id"]
+
+#         # ================= SUPPLIERS =================
+#         cur.execute("""
+#             SELECT DISTINCT supplier_id
+#             FROM cart_items
+#             WHERE cart_id = %s
+#         """, (cart_id,))
+#         suppliers = cur.fetchall()
+
+#         if not suppliers:
+#             return jsonify({"error": "Cart is empty"}), 400
+
+#         created_orders = []
+
+#         # =================================================
+#         # 🔁 LOOP SUPPLIERS
+#         # =================================================
+#         for s in suppliers:
+
+#             supplier_id = s["supplier_id"]
+#             order_id = f"ORD{int(time.time() * 1000)}{supplier_id}"
+
+#             # subtotal
+#             cur.execute("""
+#                 SELECT COALESCE(SUM(quantity * price_per_unit), 0) AS subtotal
+#                 FROM cart_items
+#                 WHERE cart_id = %s AND supplier_id = %s
+#             """, (cart_id, supplier_id))
+
+#             subtotal = float(cur.fetchone()["subtotal"] or 0)
+
+#             if subtotal <= 0:
+#                 continue
+
+#             order_time = datetime.now()
+
+#             # ================= CREDIT =================
+#             credit_due_date = None
+#             credit_status = None
+#             payment_status = "UNPAID"
+
+#             remaining_credit = 0
+#             limit_val = float(credit_info["credit_limit"] or 0)
+#             used_val = float(credit_info["credit_used"] or 0)
+#             credit_days = int(credit_info["credit_days"] or 0)
+
+#             if payment_method == "CREDIT":
+
+#                 available_credit = limit_val - used_val
+
+#                 if subtotal > available_credit:
+#                     return jsonify({
+#                         "error": f"Credit limit exceeded. Available: {available_credit}"
+#                     }), 400
+
+#                 cur.execute("""
+#                     UPDATE restaurant_registration
+#                     SET credit_used = credit_used + %s
+#                     WHERE restaurant_id = %s
+#                 """, (subtotal, restaurant_id))
+
+#                 remaining_credit = available_credit - subtotal
+#                 credit_due_date = order_time.date() + timedelta(days=credit_days)
+#                 credit_status = "PENDING"
+
+#             # ================= PAYMENT =================
+#             if payment_method == "CREDIT":
+#                 restaurant_paid_amount = 0
+#                 restaurant_due_amount = subtotal
+#                 restaurant_payment_status = "UNPAID"
+
+#                 supplier_paid_amount = 0
+#                 supplier_due_amount = subtotal
+#                 supplier_payment_status = "UNPAID"
+#             else:
+#                 restaurant_paid_amount = subtotal
+#                 restaurant_due_amount = 0
+#                 restaurant_payment_status = "PAID"
+
+#                 supplier_paid_amount = 0
+#                 supplier_due_amount = subtotal
+#                 supplier_payment_status = "UNPAID"
+
+#             # ================= ORDER HEADER =================
+#             cur.execute("""
+#                 INSERT INTO order_header (
+#                     order_id, restaurant_id, supplier_id, order_date,
+#                     status, payment_status, total_amount, remarks,
+#                     payment_method, credit_due_date, credit_status,
+#                     restaurant_paid_amount, restaurant_due_amount, restaurant_payment_status,
+#                     supplier_paid_amount, supplier_due_amount, supplier_payment_status
+#                 )
+#                 VALUES (%s,%s,%s,%s,
+#                         'PLACED',%s,%s,%s,
+#                         %s,%s,%s,
+#                         %s,%s,%s,
+#                         %s,%s,%s)
+#             """, (
+#                 order_id,
+#                 restaurant_id,
+#                 supplier_id,
+#                 order_time,
+#                 payment_status,
+#                 subtotal,
+#                 data.get("note"),
+#                 payment_method,
+#                 credit_due_date,
+#                 credit_status,
+#                 restaurant_paid_amount,
+#                 restaurant_due_amount,
+#                 restaurant_payment_status,
+#                 supplier_paid_amount,
+#                 supplier_due_amount,
+#                 supplier_payment_status
+#             ))
+
+#             # cur.execute("""
+#             #     INSERT INTO order_header (
+#             #         order_id, restaurant_id, supplier_id, order_date,
+#             #         status, payment_status, total_amount, remarks,
+#             #         payment_method
+#             #     )
+#             #     VALUES (%s,%s,%s,%s,
+#             #             'PLACED','UNPAID',%s,%s,
+#             #             %s)
+#             # """, (
+#             #     order_id,
+#             #     restaurant_id,
+#             #     supplier_id,
+#             #     order_time,
+#             #     subtotal,
+#             #     data.get("note"),
+#             #     payment_method
+#             # ))
+
+#             # ================= SUPPLIER NOTIFICATION =================
+#             cur.execute("""
+#                 INSERT INTO supplier_notifications
+#                 (supplier_id, type, title, message, reference_id)
+#                 VALUES (%s,'NEW_ORDER','New Order Received',%s,%s)
+#             """, (
+#                 supplier_id,
+#                 f"You have received a new order #{order_id}",
+#                 order_id
+#             ))
+
+#             # ================= ORDER ITEMS =================
+#             cur.execute("""
+#                 INSERT INTO order_items (
+#                     order_id, product_id, product_name_english,
+#                     quantity, price_per_unit, discount, total_amount
+#                 )
+#                 SELECT
+#                     %s,
+#                     ci.product_id,
+#                     pm.product_name_english,
+#                     ci.quantity,
+#                     ci.price_per_unit,
+#                     0,
+#                     ci.quantity * ci.price_per_unit
+#                 FROM cart_items ci
+#                 JOIN product_management pm
+#                   ON pm.product_id = ci.product_id
+#                 WHERE ci.cart_id = %s AND ci.supplier_id = %s
+#             """, (order_id, cart_id, supplier_id))
+
+#             # =================================================
+#             # 📍 ORDER ADDRESS (UPDATED WITH LAT/LNG)
+#             # =================================================
+#             cur.execute("""
+#                 INSERT INTO order_address (
+#                     order_id, address_for, contact_name, phone, email,
+#                     address_line, street, zone,
+#                     building, unit_no,
+#                     city, country, zip_code,
+#                     lat, lng
+#                 )
+#                 VALUES (
+#                     %s,'RESTAURANT_DELIVERY',
+#                     %s,%s,%s,
+#                     %s,%s,%s,
+#                     NULL,NULL,
+#                     %s,%s,%s,
+#                     %s,%s
+#                 )
+#             """, (
+#                 order_id,
+#                 data["name"],
+#                 data["phone"],
+#                 data.get("email"),
+#                 data["address"],
+#                 data.get("state"),
+#                 data.get("note"),
+#                 data.get("city"),
+#                 data.get("country"),
+#                 data.get("zip"),
+#                 data.get("lat"),   # ✅ NEW
+#                 data.get("lng")    # ✅ NEW
+#             ))
+
+#             cur.execute("""
+#                 SELECT company_name_english,
+#                     company_name_arabic
+#                 FROM supplier_registration
+#                 WHERE supplier_id = %s
+#             """, (supplier_id,))
+
+#             supplier = cur.fetchone()
+
+#             created_orders.append({
+
+#                 "order_id": order_id,
+
+#                 "supplier_id": supplier_id,
+
+#                 "supplier_name_english":
+#                     supplier["company_name_english"],
+
+#                 "supplier_name_arabic":
+#                     supplier["company_name_arabic"],
+
+#                 "amount": subtotal,
+
+#                 "payment_method": payment_method
+
+#             })
+
+
+#        # ================= ARCHIVE =================
+#         cur.execute("""
+#             UPDATE cart_header
+#             SET status = 'ARCHIVED'
+#             WHERE restaurant_id = %s AND status = 'COMPLETED'
+#         """, (restaurant_id,))
+
+#         conn.commit()
+
+#         return jsonify({
+#             "success": True,
+#             "orders_created": created_orders
+#         }), 200
+
+#         # # ================= COMPLETE CART =================
+#         # cur.execute("""
+#         #     UPDATE cart_header
+#         #     SET status = 'COMPLETED', updated_at = NOW()
+#         #     WHERE cart_id = %s
+#         # """, (cart_id,))
+
+#         # # ================= NEW CART =================
+#         # cur.execute("""
+#         #     INSERT INTO cart_header (restaurant_id, status)
+#         #     VALUES (%s, 'ACTIVE')
+#         # """, (restaurant_id,))
+
+#         # conn.commit()
+
+#         # return jsonify({
+#         #     "success": True,
+#         #     "orders_created": created_orders
+#         # }), 200
+
+#     except Exception as e:
+#         conn.rollback()
+#         print("❌ CHECKOUT ERROR:", str(e))
+#         return jsonify({
+#             "error": "Checkout failed",
+#             "details": str(e)
+#         }), 500
+
+#     finally:
+#         cur.close()
+#         conn.close()
+
 
 
 # =====================================================
@@ -852,6 +1174,14 @@ def checkout():
             return jsonify({"error": "Cart is empty"}), 400
 
         created_orders = []
+
+        # ============================================
+        # MASTER REFERENCE ORDER
+        # ============================================
+        master_order_id = (
+            "MH-" +
+            datetime.now().strftime("%Y%m%d-%H%M%S")
+        )
 
         # =================================================
         # 🔁 LOOP SUPPLIERS
@@ -925,35 +1255,80 @@ def checkout():
             # ================= ORDER HEADER =================
             cur.execute("""
                 INSERT INTO order_header (
-                    order_id, restaurant_id, supplier_id, order_date,
+                    order_id, master_order_id, restaurant_id, supplier_id, order_date,
                     status, payment_status, total_amount, remarks,
-                    payment_method, credit_due_date, credit_status,
+                    payment_method, credit_due_date, credit_status, delivery_instructions,
                     restaurant_paid_amount, restaurant_due_amount, restaurant_payment_status,
                     supplier_paid_amount, supplier_due_amount, supplier_payment_status
                 )
-                VALUES (%s,%s,%s,%s,
-                        'PLACED',%s,%s,%s,
-                        %s,%s,%s,
-                        %s,%s,%s,
-                        %s,%s,%s)
-            """, (
-                order_id,
-                restaurant_id,
-                supplier_id,
-                order_time,
-                payment_status,
-                subtotal,
-                data.get("note"),
-                payment_method,
-                credit_due_date,
-                credit_status,
-                restaurant_paid_amount,
-                restaurant_due_amount,
-                restaurant_payment_status,
-                supplier_paid_amount,
-                supplier_due_amount,
-                supplier_payment_status
-            ))
+                VALUES (
+
+                %s, %s, %s, %s, %s,
+
+                'PLACED',
+
+                %s,
+                %s,
+                %s,
+
+                %s,
+                %s,
+                %s,
+                %s,
+
+                %s,
+                %s,
+                %s,
+
+                %s,
+                %s,
+                %s
+
+            )
+            """, 
+           (
+            order_id,
+            master_order_id,
+            restaurant_id,
+            supplier_id,
+            order_time,
+
+            payment_status,
+            subtotal,
+            data.get("note"),
+
+            payment_method,
+            credit_due_date,
+            credit_status,
+            data.get("delivery_instructions"),
+
+            restaurant_paid_amount,
+            restaurant_due_amount,
+            restaurant_payment_status,
+
+            supplier_paid_amount,
+            supplier_due_amount,
+            supplier_payment_status
+        ))
+
+            # cur.execute("""
+            #     INSERT INTO order_header (
+            #         order_id, restaurant_id, supplier_id, order_date,
+            #         status, payment_status, total_amount, remarks,
+            #         payment_method
+            #     )
+            #     VALUES (%s,%s,%s,%s,
+            #             'PLACED','UNPAID',%s,%s,
+            #             %s)
+            # """, (
+            #     order_id,
+            #     restaurant_id,
+            #     supplier_id,
+            #     order_time,
+            #     subtotal,
+            #     data.get("note"),
+            #     payment_method
+            # ))
 
             # ================= SUPPLIER NOTIFICATION =================
             cur.execute("""
@@ -1020,10 +1395,33 @@ def checkout():
                 data.get("lng")    # ✅ NEW
             ))
 
+            cur.execute("""
+                SELECT company_name_english,
+                    company_name_arabic
+                FROM supplier_registration
+                WHERE supplier_id = %s
+            """, (supplier_id,))
+
+            supplier = cur.fetchone()
+
             created_orders.append({
+
+                "master_order_id": master_order_id,
+
                 "order_id": order_id,
+
                 "supplier_id": supplier_id,
-                "amount": subtotal
+
+                "supplier_name_english":
+                    supplier["company_name_english"],
+
+                "supplier_name_arabic":
+                    supplier["company_name_arabic"],
+
+                "amount": subtotal,
+
+                "payment_method": payment_method
+
             })
 
 
@@ -1038,6 +1436,7 @@ def checkout():
 
         return jsonify({
             "success": True,
+            "master_order_id": master_order_id,
             "orders_created": created_orders
         }), 200
 
@@ -1320,4 +1719,4 @@ def notifications_count():
 
     finally:
         cur.close()
-        conn.close()  
+        conn.close()

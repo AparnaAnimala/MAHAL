@@ -677,22 +677,22 @@ def settle_orders():
 
 
         # ledger entry
-        cur.execute("""
-            INSERT INTO restaurant_credit_transactions
-            (
-                restaurant_id,
-                amount,
-                type,
-                payment_mode,
-                remarks
-            )
-            VALUES (%s,%s,'SETTLEMENT',%s,%s)
-        """, (
-            restaurant_id,
-            total_settled,
-            payment_mode,
-            remarks
-        ))
+        # cur.execute("""
+        #     INSERT INTO restaurant_credit_transactions
+        #     (
+        #         restaurant_id,
+        #         amount,
+        #         type,
+        #         payment_mode,
+        #         remarks
+        #     )
+        #     VALUES (%s,%s,'SETTLEMENT',%s,%s)
+        # """, (    
+        #     restaurant_id,
+        #     total_settled,
+        #     payment_mode,
+        #     remarks
+        # ))
 
         # ===============================
         # 🔔 CREATE RESTAURANT NOTIFICATION
@@ -710,7 +710,7 @@ def settle_orders():
         """, (
             restaurant_id,
             "Payment Settled",
-            f"Payment of QAR{total_settled:.2f} received. {len(order_ids)} orders updated.",
+            f"Payment of QAR {total_settled:.2f} received. {len(order_ids)} orders updated.",
             "PAYMENT_SETTLED",
             str(settlement_id)
         ))
@@ -975,9 +975,9 @@ def settlement_pdf(settlement_id):
     # =====================================================
 
     totals = [
-        ["Previous Due", f"QAR {previous_due:.2f}"],
-        ["Amount Paid", f"QAR {float(row['amount']):.2f}"],
-        ["Remaining Due", f"QAR {remaining_due:.2f}"]
+        ["Previous Due", f"QAR  {previous_due:.2f}"],
+        ["Amount Paid", f"QAR  {float(row['amount']):.2f}"],
+        ["Remaining Due", f"QAR  {remaining_due:.2f}"]
     ]
 
     totals_table = Table(totals, colWidths=[250, 200])

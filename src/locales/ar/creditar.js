@@ -1,0 +1,35 @@
+ export default {
+ "missing_date_range": "يرجى تحديد تاريخ البداية والنهاية",
+  "set_featured": "تعيين كعرض مميز",
+  "supplier_wallet": "محفظة ائتمان المورد",
+"credit_orders": "طلبات الائتمان",
+"payment_history": "سجل المدفوعات",
+"total_orders": "إجمالي الطلبات",
+"total_value": "القيمة الإجمالية",
+"admin_paid": "المدفوع من الإدارة",
+"outstanding": "المستحق",
+
+"order": "الطلب",
+"restaurant": "المطعم",
+"total": "الإجمالي",
+"paid": "المدفوع",
+"due": "المستحق",
+"status": "الحالة",
+
+"date": "التاريخ",
+"payment_id": "رقم الدفع",
+"amount": "المبلغ",
+"mode": "طريقة الدفع",
+"reference": "المرجع",
+"orders": "الطلبات",
+"paid_by": "تم الدفع بواسطة",
+"receipt": "الإيصال",
+
+"search_orders": "ابحث برقم الطلب أو المطعم...",
+"search_payments": "ابحث برقم الدفع أو المرجع...",
+pdf: "ملف PDF",
+receip: "الإيصال",
+pdf: "ملف PDF",
+no_payments: "لا توجد مدفوعات",
+"paid_orders": "الطلبات المدفوعة"
+ }

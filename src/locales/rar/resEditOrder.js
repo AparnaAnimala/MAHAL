@@ -1,0 +1,21 @@
+export default {
+  loadingOrder: "جاري تحميل الطلب...",
+  failedToLoadOrder: "فشل تحميل الطلب",
+  orderNotFound: "الطلب غير موجود",
+  orderCannotBeModified: "لا يمكن تعديل هذا الطلب بعد الآن.",
+  goBack: "العودة",
+  editOrder: "تعديل الطلب",
+  addProducts: "إضافة منتجات",
+  product: "المنتج",
+  qty: "الكمية",
+  lineTotal: "إجمالي السطر",
+  remove: "إزالة",
+  total: "الإجمالي",
+  saving: "جاري الحفظ...",
+  saveChanges: "حفظ التغييرات",
+  cancel: "إلغاء",
+  orderCannotBeEmpty: "لا يمكن أن يكون الطلب فارغًا",
+  orderUpdatedSuccessfully: "تم تحديث الطلب بنجاح",
+  failedToUpdateOrder: "فشل تحديث الطلب",
+  supplierNotFound: "لم يتم العثور على المورد لهذا الطلب"
+};

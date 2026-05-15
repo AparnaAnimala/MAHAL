@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import "../css/restaurantcredit.css";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {  useNavigate, useLocation } from "react-router-dom";
-const API = "http://192.168.1.193:5000/api/restaurant/credit";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/restaurant/credit";
 
 export default function RestaurantCreditWallet(){
 const location = useLocation();
@@ -15,6 +16,25 @@ const [previewUrl,setPreviewUrl] = useState(null);
 const [previewType,setPreviewType] = useState(null);
 const [rotation,setRotation] = useState(0);
 const [expandedRow, setExpandedRow] = useState(null);
+const { t, i18n } = useTranslation();
+const [searchOrder, setSearchOrder] = useState("");
+const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
+const [searchSettlement, setSearchSettlement] = useState("");
+const [payFromDate, setPayFromDate] = useState("");
+const [payToDate, setPayToDate] = useState("");
+
+const toArabicDigits = (value) => {
+  if (i18n.language !== "ar") return value;
+
+  return String(value).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+};
+
+const formatNumber = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  ).format(value || 0);
+};
 const [activeTab, setActiveTab] = useState(
   location.state?.openTab || "orders"
 );// NEW
@@ -30,18 +50,22 @@ headers:{Authorization:`Bearer ${token}`}
 .then(data=>setSummary(data));
 
 fetch(`${API}/orders`,{
-headers:{Authorization:`Bearer ${token}`}
+headers:{Authorization:`Bearer ${token}`,
+"Accept-Language": i18n.language}
+        
 })
 .then(res=>res.json())
 .then(data=>setOrders(data));
 
 fetch(`${API}/settlements`,{
-headers:{Authorization:`Bearer ${token}`}
+headers:{Authorization:`Bearer ${token}`,
+"Accept-Language": i18n.language}
+         
 })
 .then(res=>res.json())
 .then(data=>setSettlements(data));
 
-},[token]);
+},[token,i18n.language]);
 
 const usedPercent = summary.credit_limit
 ? (summary.credit_used / summary.credit_limit) * 100
@@ -53,11 +77,12 @@ const viewReceipt = async (id) => {
 try{
 
 const res = await fetch(`${API}/receipt/${id}`,{
-headers:{Authorization:`Bearer ${token}`}
+headers:{Authorization:`Bearer ${token}`,
+"Accept-Language": i18n.language}
 });
 
 if(!res.ok){
-alert("Receipt not available");
+alert(t("receiptNotAvailable"));
 return;
 }
 
@@ -74,18 +99,43 @@ console.error(err);
 
 };
 
+const formatCurrency = (value) =>
+  `${i18n.language === "ar" ? "ر.ق" : "QAR"} ${formatNumber(value)}`;
+
+const translateStatus = (status) => {
+  const val = (status || "").toUpperCase();
+
+  if (val === "PAID") return t("paid");
+  if (val === "UNPAID") return t("unpaid");
+  if (val === "PARTIAL") return t("partial");
+  if (val === "OVERDUE") return t("overdue");
+
+  return status;
+};
+
+const translatePaymentMode = (mode) => {
+  const val = (mode || "").toUpperCase();
+
+  if (val === "CASH") return t("cash");
+  if (val === "CARD") return t("card");
+  if (val === "BANK") return t("bank");
+  if (val === "ONLINE") return t("online");
+
+  return mode;
+};
+
 const downloadSettlementPDF = async (id) => {
 
 try{
 
 const res = await fetch(`${API}/settlement-pdf/${id}`,{
 headers:{
-Authorization:`Bearer ${token}`
+Authorization:`Bearer ${token}`,"Accept-Language": i18n.language
 }
 });
 
 if(!res.ok){
-alert("Unable to download PDF");
+alert(t("unableDownloadPdf"));
 return;
 }
 
@@ -95,7 +145,10 @@ const url = window.URL.createObjectURL(blob);
 
 const a = document.createElement("a");
 a.href = url;
-a.download = `Settlement_${id}.pdf`;
+a.download =
+  i18n.language === "ar"
+    ? `تسوية_${id}.pdf`
+    : `Settlement_${id}.pdf`;
 document.body.appendChild(a);
 a.click();
 a.remove();
@@ -112,9 +165,9 @@ useEffect(() => {
 }, [settlements, location.state]);
 return(
 
-<div className="credit_page">
+<div className="credit_page" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
 
-<h2 className="page_title">Credit Wallet</h2>
+<h2 className="page_title">{t("creditWallet")}</h2>
 
 {/* SUMMARY CARDS */}
 <div className="credit_cards">
@@ -122,31 +175,31 @@ return(
 <div className="credit_card limit">
 <div className="card_icon">💳</div>
 <div>
-<span>Credit Limit</span>
-<h3>QAR {summary.credit_limit || 0}</h3>
+<span>{t("creditLimit")}</span>
+<h3>{formatCurrency(summary.credit_limit)}</h3>
 </div>
 </div>
 
 <div className="credit_card used">
 <div className="card_icon">📉</div>
 <div>
-<span>Used Credit</span>
-<h3>QAR {summary.credit_used || 0}</h3>
+<span>{t("usedCredit")}</span>
+<h3>{formatCurrency(summary.credit_used)}</h3>
 </div>
 </div>
 
 <div className="credit_card available">
 <div className="card_icon">✅</div>
 <div>
-<span>Available</span>
-<h3>QAR {summary.credit_available || 0}</h3>
+<span>{t("available")}</span>
+<h3>{formatCurrency(summary.credit_available)}</h3>
 </div>
 </div>
 
 <div className="credit_card days">
 <div className="card_icon">📅</div>
 <div>
-<span>Credit Days</span>
+<span>{t("creditDays")}</span>
 <h3>{summary.credit_days || 0}</h3>
 </div>
 </div>
@@ -158,7 +211,7 @@ return(
 <div className="credit_usage">
 
 <div className="usage_header">
-<span>Credit Usage</span>
+<span>{t("creditUsage")}</span>
 <span>{usedPercent.toFixed(0)}%</span>
 </div>
 
@@ -180,14 +233,14 @@ style={{width:`${usedPercent}%`}}
 className={activeTab==="orders"?"active":""}
 onClick={()=>setActiveTab("orders")}
 >
-Outstanding Orders
+{t("outstandingOrders")}
 </button>
 
 <button
 className={activeTab==="payments"?"active":""}
 onClick={()=>setActiveTab("payments")}
 >
-Payment History
+{t("paymentHistory")}
 </button>
 
 </div>
@@ -199,38 +252,105 @@ Payment History
 {activeTab==="orders" && (
 
 <div className="section_card">
+  <div className="filters_bar">
+
+  {/* SEARCH */}
+  <input
+    type="text"
+    placeholder={t("searchOrder")}
+    value={searchOrder}
+    onChange={(e) => setSearchOrder(e.target.value)}
+    className="filter_input"
+  />
+
+  {/* FROM DATE */}
+  <input
+    type="date"
+    value={fromDate}
+    onChange={(e) => setFromDate(e.target.value)}
+    className="filter_input"
+  />
+
+  {/* TO DATE */}
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) => setToDate(e.target.value)}
+    className="filter_input"
+  />
+
+  {/* RESET */}
+  <button
+    className="reset_btn"
+    onClick={() => {
+      setSearchOrder("");
+      setFromDate("");
+      setToDate("");
+    }}
+  >
+    {t("reset")}
+  </button>
+
+</div>
 
 <table className="credit_table">
 
 <thead>
 <tr>
-<th>Order</th>
-<th>Total</th>
-<th>Due</th>
-<th>Due Date</th>
-<th>Status</th>
+<th>{t("order")}</th>
+<th>{t("total")}</th>
+<th>{t("due")}</th>
+<th>{t("dueDate")}</th>
+<th>{t("status")}</th>
 </tr>
 </thead>
 
 <tbody>
+{orders.length === 0 && (
+  <tr>
+    <td colSpan="5" style={{ textAlign: "center" }}>
+      {t("noData")}
+    </td>
+  </tr>
+)}
+{orders
+  .filter(o => {
 
-{orders.map(o=>(
+    // 🔍 SEARCH FILTER
+    const matchesSearch =
+      !searchOrder ||
+      o.order_id?.toLowerCase().includes(searchOrder.toLowerCase());
+
+    // 📅 DATE FILTER
+    const orderDate = o.credit_due_date
+      ? new Date(o.credit_due_date)
+      : null;
+
+    const matchesFrom =
+      !fromDate || (orderDate && orderDate >= new Date(fromDate));
+
+    const matchesTo =
+      !toDate || (orderDate && orderDate <= new Date(toDate));
+
+    return matchesSearch && matchesFrom && matchesTo;
+  })
+  .map(o => (
 
 <tr key={o.order_id}>
 
 <td>{o.order_id}</td>
 
-<td>QAR {o.total_amount}</td>
+<td>{formatCurrency(o.total_amount)}</td>
 
 <td className="due_amount">
-QAR {o.restaurant_due_amount}
+  {formatCurrency(o.restaurant_due_amount)}
 </td>
 
-<td>{o.credit_due_date}</td>
+<td>{toArabicDigits(o.credit_due_date)}</td>
 
 <td>
 <span className={`status ${o.restaurant_payment_status?.toLowerCase()}`}>
-{o.restaurant_payment_status}
+{translateStatus(o.restaurant_payment_status)}
 </span>
 </td>
 
@@ -253,27 +373,91 @@ QAR {o.restaurant_due_amount}
 {activeTab==="payments" && (
 
 <div className="section_card">
+{activeTab === "payments" && (
+  <div className="filters_bar">
 
+    {/* SEARCH */}
+    <input
+      type="text"
+      placeholder={t("searchSettlement")}
+      value={searchSettlement}
+      onChange={(e) => setSearchSettlement(e.target.value)}
+      className="filter_input"
+    />
+
+    {/* FROM DATE */}
+    <input
+      type="date"
+      value={payFromDate}
+      onChange={(e) => setPayFromDate(e.target.value)}
+      className="filter_input"
+    />
+
+    {/* TO DATE */}
+    <input
+      type="date"
+      value={payToDate}
+      onChange={(e) => setPayToDate(e.target.value)}
+      className="filter_input"
+    />
+
+    {/* RESET */}
+    <button
+      className="reset_btn"
+      onClick={() => {
+        setSearchSettlement("");
+        setPayFromDate("");
+        setPayToDate("");
+      }}
+    >
+      {t("reset")}
+    </button>
+
+  </div>
+)}
 <table className="credit_table">
 
 <thead>
 <tr>
-<th>Settlement ID</th>
-<th>Orders Paid</th>
-<th>Amount</th>
-<th>Mode</th>
-<th>Date</th>
-<th>Receipt</th>
+<th>{t("settlementId")}</th>
+<th>{t("ordersPaid")}</th>
+<th>{t("amount")}</th>
+<th>{t("mode")}</th>
+<th>{t("date")}</th>
+<th>{t("receipt")}</th>
 </tr>
 </thead>
 
 <tbody>
 
-{settlements.map(s=>(
+{settlements
+  .filter(s => {
+
+    // 🔍 SEARCH
+    const matchesSearch =
+      !searchSettlement ||
+      String(s.settlement_id)
+        .toLowerCase()
+        .includes(searchSettlement.toLowerCase());
+
+    // 📅 PAYMENT DATE FILTER
+    const payDate = s.created_at
+      ? new Date(s.created_at)
+      : null;
+
+    const matchesFrom =
+      !payFromDate || (payDate && payDate >= new Date(payFromDate));
+
+    const matchesTo =
+      !payToDate || (payDate && payDate <= new Date(payToDate));
+
+    return matchesSearch && matchesFrom && matchesTo;
+  })
+  .map(s => (
 
 <tr key={s.settlement_id}>
 
-<td>{s.settlement_id}</td>
+<td>{formatNumber(s.settlement_id)}</td>
 
 <td>
   <div className="order_ids_container">
@@ -283,7 +467,7 @@ QAR {o.restaurant_due_amount}
         className="order_chip"
         onClick={() => navigate(`/restaurantdashboard/orders/${id}`)}
       >
-        #{id}
+        {t("order")} #{id}
       </span>
     ))}
 
@@ -306,7 +490,7 @@ QAR {o.restaurant_due_amount}
           className="expanded_order_item"
           onClick={() => navigate(`/restaurantdashboard/orders/${id}`)}
         >
-          Order #{id}
+         {t("order")} #{id}
         </div>
       ))}
     </div>
@@ -314,32 +498,41 @@ QAR {o.restaurant_due_amount}
 </td>
 
 <td className="paid_amount">
-  <strong>QAR {s.amount}</strong>
+  <strong>{formatCurrency(s.amount)}</strong>
 </td>
 
-<td>{s.payment_mode}</td>
+<td>{translatePaymentMode(s.payment_mode)}</td>
 
 <td>
   <div className="date_block">
-    <span>{new Date(s.created_at).toLocaleDateString()}</span>
-    <small>{new Date(s.created_at).toLocaleTimeString()}</small>
+<span>
+  {new Date(s.created_at).toLocaleDateString(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  )}
+</span>
+
+<small>
+  {new Date(s.created_at).toLocaleTimeString(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  )}
+</small>
   </div>
 </td>
 
 <td className="receipt_actions">
 
-<button
+{/* <button
 className="receipt_btn"
 onClick={() => viewReceipt(s.settlement_id)}
 >
-View
-</button>
+{t("view")}
+</button> */}
 
 <button
 className="pdf_btn"
 onClick={() => downloadSettlementPDF(s.settlement_id)}
 >
-PDF
+{t("pdf")}
 </button>
 
 </td>
@@ -363,13 +556,13 @@ PDF
 <div className="receipt_box">
 
 <div className="receipt_header">
-<span>Receipt Preview</span>
+<span>{t("receiptPreview")}</span>
 
 <button
 className="close_btn"
 onClick={()=>setPreviewUrl(null)}
 >
-Close
+{t("close")}
 </button>
 </div>
 
@@ -393,9 +586,9 @@ title="receipt"
 
 <button onClick={() => zoomIn()}>+</button>
 <button onClick={() => zoomOut()}>-</button>
-<button onClick={() => resetTransform()}>Reset</button>
+<button onClick={() => resetTransform()}>{t("reset")}</button>
 <button onClick={()=>setRotation(rotation+90)}>
-Rotate
+{t("rotate")}
 </button>
 
 </div>
@@ -426,7 +619,7 @@ href={previewUrl}
 download="receipt"
 className="download_btn"
 >
-Download
+{t("download")}
 </a>
 
 </div>

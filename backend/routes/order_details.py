@@ -88,14 +88,17 @@ def get_order_details(order_id):
     # -------------------------------------------------
     cur.execute("""
         SELECT
-            product_name_english,
-            quantity,
-            price_per_unit,
-            discount,
-            total_amount
-        FROM order_items
-        WHERE order_id = %s
-        ORDER BY created_at
+            oi.product_name_english,
+            pm.product_name_arabic,
+            oi.quantity,
+            oi.price_per_unit,
+            oi.discount,
+            oi.total_amount
+        FROM order_items oi
+        LEFT JOIN product_management pm
+            ON pm.product_id = oi.product_id
+        WHERE oi.order_id = %s
+        ORDER BY oi.created_at
     """, (order_id,))
 
     items = cur.fetchall()

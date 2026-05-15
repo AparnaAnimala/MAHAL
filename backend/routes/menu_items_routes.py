@@ -10,7 +10,7 @@
 #         host="localhost",
 #         database="MAHALDATABASE",
 #         user="postgres",
-#         password="Appu1718",
+#         password="S@ndeep9392",
 #         port="5432"
 #     )
 

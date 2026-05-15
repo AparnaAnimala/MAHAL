@@ -24,7 +24,7 @@ const ProductsPage = ({ selectedCategory }) => {
           <div className="mm-product-card" key={item.id}>
             <img src="https://via.placeholder.com/150" alt={item.name} />
             <h5>{item.name}</h5>
-            <p>₹{item.price}</p>
+            <p>QAR {item.price}</p>
             <button>Add to Cart</button>
           </div>
         ))}

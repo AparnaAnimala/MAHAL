@@ -6,7 +6,7 @@
 // /* IMAGE PLACEHOLDER */
 // import p1 from "../images/product_img_1.jpg";
 
-// const API_BASE_URL = "http://127.0.0.1:5000/api";
+// const API_BASE_URL = "http://192.168.2.9:5000/api";
 
 // const Wishlist = () => {
 //   const [wishlist, setWishlist] = useState([]);
@@ -116,7 +116,7 @@
 
 //                 <div className="wishlist_body">
 //                   <h4>{item.product_name_english}</h4>
-//                   <h5>₹ {item.price_per_unit}</h5>
+//                   <h5>QAR  {item.price_per_unit}</h5>
 
 //                   <button
 //                     type="button"
@@ -159,7 +159,7 @@ import axios from "axios";
 /* IMAGE PLACEHOLDER */
 import p1 from "../images/product_img_1.jpg";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = "http://192.168.2.9:5000/api";
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
@@ -255,7 +255,7 @@ const Wishlist = () => {
 
                 <div className="wishlist_img">
                   <img
-                    src={`http://127.0.0.1:5000/api/image/${item.product_id}/0`}
+                    src={`http://192.168.2.9:5000/api/image/${item.product_id}/0`}
                     alt={item.product_name_english}
                     onError={(e) => {
                       e.target.src = p1;
@@ -271,7 +271,7 @@ const Wishlist = () => {
 
                 <div className="wishlist_body">
                   <h4>{item.product_name_english}</h4>
-                  <h5>₹ {item.price_per_unit}</h5>
+                  <h5>QAR  {item.price_per_unit}</h5>
 
                   <button
                     type="button"

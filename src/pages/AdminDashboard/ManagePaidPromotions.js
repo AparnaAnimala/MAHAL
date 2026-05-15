@@ -1,9 +1,16 @@
 import React, { useEffect, useState, useMemo } from "react";
-
 import axios from "axios";
 import Select from "react-select";
+import "../css/CouponManagement.css";
+import {
+  FiPause,
+  FiPlay,
+  FiSlash,
+  FiEdit2,
+  FiTrash2
+} from "react-icons/fi";
 
-const API = "http://127.0.0.1:5000/api/admin/promotions";
+const API = "http://192.168.2.9:5000/api/admin/promotions";
 
 export default function ManagePaidPromotions() {
 
@@ -536,324 +543,458 @@ export default function ManagePaidPromotions() {
 
   return (
 
-    <div className="container mt-4">
+    <div className="coupon-page">
 
-      <h2>Manage Paid Promotions</h2>
+      <div className="coupon-container">
 
-      <button
-        className="btn btn-success btn-sm mb-3"
-        onClick={() => setShowModal(true)}
-      >
-        Create Promotion
-      </button>
+        {/* HEADER */}
+        <div className="coupon-header">
 
-      {/* ========================================================= */}
-      {/* MODAL */}
-      {/* ========================================================= */}
+          <div className="coupon-header-left">
+            <h2>Manage Paid Promotions</h2>
+            <p>
+              Create, approve and manage supplier promotion campaigns
+            </p>
+          </div>
 
-      {showModal && (
+          <button
+            className="coupon-btn coupon-btn-primary"
+            onClick={() => setShowModal(true)}
+          >
+            Create Promotion
+          </button>
 
-        <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+        </div>
 
-          <div className="modal-dialog modal-lg">
+        {/* ========================================================= */}
+        {/* MODAL */}
+        {/* ========================================================= */}
 
-            <div className="modal-content">
+        {showModal && (
 
-              <div className="modal-header">
+          <div
+            className="modal d-block"
+            style={{
+              background:
+                "rgba(15,23,42,.45)"
+            }}
+          >
 
-                <h5>Create Supplier Promotion Campaign</h5>
+            <div className="modal-dialog modal-xl">
 
-                <button
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                />
+              <div className="modal-content coupon-card">
 
-              </div>
+                <div className="modal-header border-0 pb-0">
 
-              <div className="modal-body">
-
-                <label>Supplier</label>
-
-                <Select
-                  options={suppliers.map(s => ({
-                    value: s.supplier_id,
-                    label: s.company_name_english
-                  }))}
-                  value={form.supplier}
-                  onChange={(supplier) => {
-
-                    if (!supplier) {
-
-                      setForm({
-                        supplier: null,
-                        products: [],
-                        categories: [],
-                        subcategories: [],
-                        priority: 5,
-                        city: "",
-                        start_date: "",
-                        end_date: "",
-                        banner_title: "",
-                        banner_subtitle: "",
-                        banner_url: "",
-                        grid_position: "GRID_SUPPLIER_1"
-                      });
-
-                      setProducts([]);
-                      setSelectedProducts([]);
-                      setSelectedCities([]);
-                      setSelectAllProducts(false);
-                      return;
-
-
-                    }
-
-                    onSupplierChange(supplier);
-
-                  }}
-                  isClearable
-                />
-
-                <label className="mt-3 d-flex justify-content-between align-items-center">
-                  <span>Products</span>
+                  <h5 className="coupon-section-title m-0">
+                    Create Supplier Promotion Campaign
+                  </h5>
 
                   <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary py-0 px-2"
-                    onClick={() => {
-
-                      if (selectAllProducts) {
-                        setSelectedProducts([]);
-                        setSelectAllProducts(false);
-                      } else {
-                        const all = products.map(p => p.product_id);
-                        setSelectedProducts(all);
-                        setSelectAllProducts(true);
-                      }
-
-                    }}
-                  >
-                    {selectAllProducts ? "Unselect" : "Select All"}
-                  </button>
-                </label>
-
-                <Select
-                  options={productOptions}
-                  isMulti
-                  closeMenuOnSelect={false}
-                  hideSelectedOptions={false}
-
-                  value={productOptions.filter(option =>
-                    selectedProducts.includes(option.value)
-                  )}
-
-                  onChange={(selected) => {
-
-                    const values = selected ? selected.map(s => s.value) : [];
-
-                    setSelectedProducts(values);
-
-                    setSelectAllProducts(values.length === productOptions.length);
-
-                  }}
-
-                  components={{
-                    Option: (props) => {
-
-                      return (
-                        <div
-                          ref={props.innerRef}
-                          {...props.innerProps}
-                          style={{
-                            padding: "8px",
-                            background: props.isFocused ? "#eee" : "#fff"
-                          }}
-                        >
-
-                          <input
-                            type="checkbox"
-                            checked={props.isSelected}
-                            readOnly
-                          />
-
-                          <span style={{ marginLeft: "8px" }}>
-                            {props.label}
-                          </span>
-
-                        </div>
-                      );
+                    className="btn-close"
+                    onClick={() =>
+                      setShowModal(false)
                     }
-                  }}
-                />
-
-
-
-                <label className="mt-3 d-flex justify-content-between align-items-center">
-                  <span>Cities</span>
-
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary py-0 px-2"
-                    onClick={() => {
-
-                      if (selectedCities.length === QATAR_CITIES.length) {
-                        setSelectedCities([]);
-                      } else {
-                        setSelectedCities(QATAR_CITIES);
-                      }
-
-                    }}
-                  >
-                    {selectedCities.length === QATAR_CITIES.length
-                      ? "Unselect"
-                      : "Select All"}
-                  </button>
-                </label>
-
-                <div style={{ border: "1px solid #ddd", padding: "10px" }}>
-
-                  {QATAR_CITIES.map(city => (
-
-                    <div key={city}>
-
-                      <input
-                        type="checkbox"
-                        checked={selectedCities.includes(city)}
-                        onChange={() => toggleCity(city)}
-                      />
-
-                      {city}
-
-                    </div>
-
-                  ))}
+                  />
 
                 </div>
 
+                <div className="modal-body pt-3">
 
-                <label className="mt-2">Priority</label>
+                  <div className="coupon-form-grid">
 
-                <select
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, priority: Number(e.target.value) }))
-                  }
-                >
-                  <option value="1">Silver</option>
-                  <option value="5">Gold</option>
-                  <option value="10">Platinum</option>
-                </select>
+                    {/* SUPPLIER */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Supplier
+                      </label>
 
-                <label className="mt-2">Start Date</label>
+                      <Select
+                        classNamePrefix="coupon-select"
 
-                <input
-                  type="datetime-local"
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, start_date: e.target.value }))
-                  }
-                />
-                <label className="mt-2">Grid Position</label>
+                        options={suppliers.map((s) => ({
+                          value: s.supplier_id,
+                          label: s.company_name_english
+                        }))}
+                        value={form.supplier}
+                        onChange={(supplier) => {
+                          if (!supplier) {
+                            setForm({
+                              supplier: null,
+                              products: [],
+                              categories: [],
+                              subcategories: [],
+                              priority: 5,
+                              city: "",
+                              start_date: "",
+                              end_date: "",
+                              banner_title: "",
+                              banner_subtitle: "",
+                              banner_url: "",
+                              grid_position:
+                                "GRID_SUPPLIER_1"
+                            });
 
-                <select
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, grid_position: e.target.value }))
-                  }
-                >
+                            setProducts([]);
+                            setSelectedProducts([]);
+                            setSelectedCities([]);
+                            setSelectAllProducts(false);
+                            return;
+                          }
 
-                  {/* LEFT SLIDER */}
-                  <option value="LEFT_SLIDER_1">
-                    Left Slider 1
-                  </option>
+                          onSupplierChange(supplier);
+                        }}
+                        isClearable
+                      />
+                    </div>
 
-                  <option value="LEFT_SLIDER_2">
-                    Left Slider 2
-                  </option>
+                    {/* PRIORITY */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Priority
+                      </label>
 
-                  <option value="LEFT_SLIDER_3">
-                    Left Slider 3
-                  </option>
+                      <select
+                        className="coupon-select"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              priority:
+                                Number(
+                                  e
+                                    .target
+                                    .value
+                                )
+                            })
+                          )
+                        }
+                      >
+                        <option value="1">
+                          Silver
+                        </option>
+                        <option value="5">
+                          Gold
+                        </option>
+                        <option value="10">
+                          Platinum
+                        </option>
+                      </select>
+                    </div>
 
-                  {/* RIGHT SLIDER */}
-                  <option value="RIGHT_SLIDER_1">
-                    Right Slider 1
-                  </option>
+                    {/* START */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Start Date
+                      </label>
 
-                  <option value="RIGHT_SLIDER_2">
-                    Right Slider 2
-                  </option>
+                      <input
+                        type="datetime-local"
+                        className="coupon-input"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              start_date:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      />
+                    </div>
 
-                  <option value="RIGHT_SLIDER_3">
-                    Right Slider 3
-                  </option>
+                    {/* GRID */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Grid Position
+                      </label>
 
-                  {/* OPTIONAL: KEEP OLD (if still used elsewhere) */}
-                  <option value="GRID_SUPPLIER_1">
-                    Supplier Grid 1 (Top)
-                  </option>
+                      <select
+                        className="coupon-select"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              grid_position:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      >
+                        <option value="LEFT_SLIDER_1">
+                          Left Slider 1
+                        </option>
+                        <option value="LEFT_SLIDER_2">
+                          Left Slider 2
+                        </option>
+                        <option value="LEFT_SLIDER_3">
+                          Left Slider 3
+                        </option>
+                        <option value="RIGHT_SLIDER_1">
+                          Right Slider 1
+                        </option>
+                        <option value="RIGHT_SLIDER_2">
+                          Right Slider 2
+                        </option>
+                        <option value="RIGHT_SLIDER_3">
+                          Right Slider 3
+                        </option>
+                      </select>
+                    </div>
 
-                  <option value="GRID_SUPPLIER_2">
-                    Supplier Grid 2 (Bottom)
-                  </option>
+                    {/* END */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        End Date
+                      </label>
 
-                </select>
+                      <input
+                        type="datetime-local"
+                        className="coupon-input"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              end_date:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      />
+                    </div>
 
+                    {/* URL */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Banner URL
+                      </label>
 
-                <label className="mt-2">End Date</label>
+                      <input
+                        className="coupon-input"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              banner_url:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      />
+                    </div>
 
-                <input
-                  type="datetime-local"
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, end_date: e.target.value }))
-                  }
-                />
+                    {/* TITLE */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Banner Title
+                      </label>
 
-                <label className="mt-2">Banner URL</label>
+                      <input
+                        className="coupon-input"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              banner_title:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      />
+                    </div>
 
-                <input
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, banner_url: e.target.value }))
-                  }
-                />
+                    {/* SUBTITLE */}
+                    <div>
+                      <label className="mb-2 fw-bold">
+                        Banner Subtitle
+                      </label>
 
-                <label className="mt-2">Banner Title</label>
+                      <input
+                        className="coupon-input"
+                        onChange={(e) =>
+                          setForm(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              banner_subtitle:
+                                e
+                                  .target
+                                  .value
+                            })
+                          )
+                        }
+                      />
+                    </div>
 
-                <input
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, banner_title: e.target.value }))
-                  }
-                />
+                  </div>
 
-                <label className="mt-2">Banner Subtitle</label>
+                  {/* PRODUCTS */}
+                  <div className="mt-4">
 
-                <input
-                  className="form-control"
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, banner_subtitle: e.target.value }))
-                  }
-                />
+                    <div className="d-flex justify-content-between align-items-center mb-2">
 
-              </div>
+                      <label className="fw-bold m-0">
+                        Products
+                      </label>
 
-              <div className="modal-footer">
+                      <button
+                        type="button"
+                        className="coupon-btn coupon-btn-light"
+                        onClick={() => {
+                          if (selectAllProducts) {
+                            setSelectedProducts([]);
+                            setSelectAllProducts(false);
+                          } else {
+                            const all = products.map(
+                              (p) => p.product_id
+                            );
 
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={createPromotion}
-                >
-                  Create
-                </button>
+                            setSelectedProducts(all);
+                            setSelectAllProducts(true);
+                          }
+                        }}
+                      >
+                        {selectAllProducts
+                          ? "Unselect"
+                          : "Select All"}
+                      </button>
 
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
+                    </div>
+
+                    <Select
+
+                      classNamePrefix="coupon-select"
+                      options={productOptions}
+                      isMulti
+                      closeMenuOnSelect={false}
+                      hideSelectedOptions={false}
+                      value={productOptions.filter(
+                        (option) =>
+                          selectedProducts.includes(
+                            option.value
+                          )
+                      )}
+                      onChange={(selected) => {
+                        const values = selected
+                          ? selected.map(
+                            (s) => s.value
+                          )
+                          : [];
+
+                        setSelectedProducts(values);
+
+                        setSelectAllProducts(
+                          values.length ===
+                          productOptions.length
+                        );
+                      }}
+                    />
+
+                  </div>
+
+                  {/* CITIES */}
+                  <div className="mt-4">
+
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+
+                      <label className="fw-bold m-0">
+                        Cities
+                      </label>
+
+                      <button
+                        type="button"
+                        className="coupon-btn coupon-btn-light"
+                        onClick={() => {
+                          if (
+                            selectedCities.length ===
+                            QATAR_CITIES.length
+                          ) {
+                            setSelectedCities(
+                              []
+                            );
+                          } else {
+                            setSelectedCities(
+                              QATAR_CITIES
+                            );
+                          }
+                        }}
+                      >
+                        {selectedCities.length ===
+                          QATAR_CITIES.length
+                          ? "Unselect"
+                          : "Select All"}
+                      </button>
+
+                    </div>
+
+                    <div className="supplier-grid">
+
+                      {QATAR_CITIES.map(
+                        (city) => (
+
+                          <label className="supplier-item">
+                            <span>{city}</span>
+
+                            <input
+                              type="checkbox"
+                              checked={selectedCities.includes(city)}
+                              onChange={() => toggleCity(city)}
+                            />
+                          </label>
+
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div className="modal-footer border-0 pt-0">
+
+                  <button
+                    className="coupon-btn coupon-btn-primary"
+                    onClick={
+                      createPromotion
+                    }
+                  >
+                    Create
+                  </button>
+
+                  <button
+                    className="coupon-btn coupon-btn-light"
+                    onClick={() =>
+                      setShowModal(false)
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
 
               </div>
 
@@ -861,130 +1002,242 @@ export default function ManagePaidPromotions() {
 
           </div>
 
+        )}
+
+        {/* ========================================================= */}
+        {/* REQUEST TABLE */}
+        {/* ========================================================= */}
+
+        <div className="coupon-card mb-4">
+
+          <div className="coupon-section-title">
+            Supplier Requests
+          </div>
+
+
+
+          <table className="coupon-table">
+
+            <tbody>
+
+              {requests.map((r) => (
+
+                <tr key={r.request_id}>
+
+                  <td>
+                    {
+                      r.company_name_english
+                    }
+                  </td>
+
+                  <td>
+                    {
+                      r.product_name_english
+                    }
+                  </td>
+
+                  <td>
+                    {r.start_date &&
+                      r.end_date
+                      ? getDuration(
+                        r.start_date,
+                        r.end_date
+                      )
+                      : "—"}
+                  </td>
+
+                  <td>
+                    {r.status}
+                  </td>
+
+                  <td>
+
+                    <div className="coupon-actions">
+
+                      <button
+                        className="coupon-btn coupon-btn-sm coupon-btn-success"
+                        onClick={() =>
+                          approveRequest(
+                            r
+                          )
+                        }
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        className="coupon-btn coupon-btn-sm coupon-btn-danger"
+                        onClick={() =>
+                          rejectRequest(
+                            r.request_id
+                          )
+                        }
+                      >
+                        Reject
+                      </button>
+
+                    </div>
+
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
+
+
         </div>
 
-      )}
+        {/* ========================================================= */}
+        {/* ACTIVE PROMOTIONS */}
+        {/* ========================================================= */}
 
-      {/* ========================================================= */}
-      {/* REQUEST TABLE */}
-      {/* ========================================================= */}
+        <div className="coupon-card">
 
-      <h4>Supplier Requests</h4>
-
-      <table className="table">
-
-        <tbody>
-
-          {requests.map(r => (
-            <tr key={r.request_id}>
-              <td>{r.company_name_english}</td>
-              <td>{r.product_name_english}</td>
-              <td>
-                {r.start_date && r.end_date
-                  ? getDuration(r.start_date, r.end_date)
-                  : "—"}
-              </td>
-
-              <td>{r.status}</td>
-
-              <td>
-
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={() => approveRequest(r)}
-                >
-                  Approve
-                </button>
-
-                <button
-                  className="btn btn-danger btn-sm ms-2"
-                  onClick={() => rejectRequest(r.request_id)}
-                >
-                  Reject
-                </button>
-
-              </td>
-
-            </tr>
-          ))}
-
-        </tbody>
-
-      </table>
-
-      {/* ========================================================= */}
-      {/* PROMOTION TABLE */}
-      {/* ========================================================= */}
-
-      <h4>Active Promotions</h4>
-
-      <table className="table">
-
-        <tbody>
-
-          {promotions.map(p => (
-            <tr key={`${p.promotion_id}-${p.city}`}>
-
-              <td>{p.promotion_type} Campaign</td>
-
-              <td>{p.company_name_english}</td>
-
-              <td>{p.city}</td>
-
-              <td>{priorityBadge(p.priority)}</td>
-
-              <td>{getDuration(p.start_date, p.end_date)}</td>
-
-              <td>{statusBadge(p.status)}</td>
-
-              <td>
-
-                <button
-                  className="btn btn-warning btn-sm"
-                  onClick={() => changeStatus(p.promotion_id, "PAUSED")}
-                >
-                  Pause
-                </button>
-
-                <button
-                  className="btn btn-success btn-sm ms-2"
-                  onClick={() => changeStatus(p.promotion_id, "ACTIVE")}
-                >
-                  Resume
-                </button>
-
-                <button
-                  className="btn btn-danger btn-sm ms-2"
-                  onClick={() => changeStatus(p.promotion_id, "EXPIRED")}
-                >
-                  Stop
-                </button>
-                <button
-                  className="btn btn-primary btn-sm ms-2"
-                  onClick={() => editPromotion(p)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="btn btn-danger btn-sm ms-2"
-                  onClick={() => deletePromotion(p.promotion_id)}
-                >
-                  Delete
-                </button>
+          <div className="coupon-section-title">
+            Active Promotions
+          </div>
 
 
 
-              </td>
+          <table className="coupon-table">
 
-            </tr>
-          ))}
+            <tbody>
 
-        </tbody>
+              {promotions.map(
+                (p) => (
 
-      </table>
+                  <tr
+                    key={`${p.promotion_id}-${p.city}`}
+                  >
+
+                    <td>
+                      {
+                        p.promotion_type
+                      }{" "}
+                      Campaign
+                    </td>
+
+                    <td>
+                      {
+                        p.company_name_english
+                      }
+                    </td>
+
+                    <td>
+                      {p.city}
+                    </td>
+
+                    <td>
+                      {priorityBadge(
+                        p.priority
+                      )}
+                    </td>
+
+                    <td>
+                      {getDuration(
+                        p.start_date,
+                        p.end_date
+                      )}
+                    </td>
+
+                    <td>
+                      {statusBadge(
+                        p.status
+                      )}
+                    </td>
+
+                    <td>
+
+                      <div className="coupon-actions">
+
+                        {/* PAUSE */}
+                        <button
+                          className="soft-btn soft-orange"
+                          title="Pause Promotion"
+                          onClick={() =>
+                            changeStatus(
+                              p.promotion_id,
+                              "PAUSED"
+                            )
+                          }
+                        >
+                          <FiPause />
+                        </button>
+
+                        {/* RESUME */}
+                        <button
+                          className="soft-btn soft-green"
+                          title="Resume Promotion"
+                          onClick={() =>
+                            changeStatus(
+                              p.promotion_id,
+                              "ACTIVE"
+                            )
+                          }
+                        >
+                          <FiPlay />
+                        </button>
+
+                        {/* STOP */}
+                        <button
+                          className="soft-btn soft-red"
+                          title="Stop Promotion"
+                          onClick={() =>
+                            changeStatus(
+                              p.promotion_id,
+                              "EXPIRED"
+                            )
+                          }
+                        >
+                          <FiSlash />
+                        </button>
+
+                        {/* EDIT */}
+                        <button
+                          className="soft-btn soft-orange"
+                          title="Edit Promotion"
+                          onClick={() =>
+                            editPromotion(p)
+                          }
+                        >
+                          <FiEdit2 />
+                        </button>
+
+                        {/* DELETE */}
+                        <button
+                          className="soft-btn soft-red"
+                          title="Delete Promotion"
+                          onClick={() =>
+                            deletePromotion(
+                              p.promotion_id
+                            )
+                          }
+                        >
+                          <FiTrash2 />
+                        </button>
+
+                      </div>
+                    </td>
+
+                  </tr>
+
+                )
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
 
     </div>
 
   );
-
 }

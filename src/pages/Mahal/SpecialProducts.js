@@ -113,25 +113,63 @@ import axios from "axios";
 /* IMAGE IMPORT */
 import bannerImg from "../../images/special_pro_banner_img.jpg";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+
+const API_BASE = "http://192.168.2.9:5000/api";
 
 const SpecialProducts = () => {
   const [products, setProducts] = useState([]);
+const [ratings, setRatings] = useState({});
+
+
+
 
   /* ================= FETCH FROM BACKEND ================= */
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/special-products")
+    fetch("http://192.168.2.9:5000/api/special-products")
       .then((res) => res.json())
       .then((data) => {
         if (data.products) {
           setProducts(data.products);
+          fetchRatings(data.products);
         }
       })
       .catch((err) =>
         console.error("Error fetching special products:", err)
       );
   }, []);
+
+  const fetchRatings = async (products) => {
+  try {
+    const ratingData = {};
+
+    await Promise.all(
+      products.map(async (p) => {
+        const productId = p.id || p.product_id;
+
+        try {
+          const res = await fetch(
+            `http://192.168.2.9:5000/api/reviews/product/${productId}`
+          );
+          const data = await res.json();
+
+          if (data.length > 0) {
+            const total = data.reduce((sum, r) => sum + r.rating, 0);
+            ratingData[productId] = total / data.length;
+          } else {
+            ratingData[productId] = 0;
+          }
+        } catch {
+          ratingData[productId] = 0;
+        }
+      })
+    );
+
+    setRatings(ratingData);
+  } catch (err) {
+    console.error("Rating fetch error:", err);
+  }
+};
 
   /* ================= ADD TO CART ================= */
 
@@ -214,58 +252,73 @@ const SpecialProducts = () => {
           <div className="col-xl-8">
             <div className="row g-4">
 
-              {products.slice(0, 8).map((item, index) => (
-                <div className="col-md-6 col-lg-3" key={item.id || index}>
-                  <div className="mm-special-card">
+                {products.slice(0, 8).map((item, index) => {
+                  const productId = item.id || item.product_id;   // ✅ ADD
+                  const ratingValue = ratings[productId] || 0;    // ✅ ADD
 
-                    {item.label && (
-                      <span className="mm-discount-tag">
-                        {item.label}
-                      </span>
-                    )}
+                  return (
+                    <div className="col-md-6 col-lg-3" key={productId || index}>
+                      <div className="mm-special-card">
 
-                    <div className="mm-special-img">
-                      <img
-                        src={item.img1 || "/placeholder.jpg"}
-                        alt={item.title || item.name}
-                      />
-
-                      {/* 👁️ SHOP DETAILS */}
-                      <Link to={`/shopdetails/${item.id || item.product_id}`}>
-                        <i className="fa fa-eye"></i>
-                      </Link>
-                    </div>
-
-                    <div className="mm-special-content">
-                      <h5>{item.title || item.name}</h5>
-
-                      <div className="mm-rating">
-                        {[...Array(item.stars || 4)].map((_, i) => (
-                          <FaStar key={i} className="active" />
-                        ))}
-                      </div>
-
-                      <div className="mm-price">
-                        <span className="mm-new">
-                          ₹{item.price || item.price_per_unit}
-                        </span>
-                        {item.old && (
-                          <span className="mm-old">{item.old}</span>
+                        {item.label && (
+                          <span className="mm-discount-tag">
+                            {item.label}
+                          </span>
                         )}
+
+                        <div className="mm-special-img">
+                          <img
+                            src={item.img1 || "/placeholder.jpg"}
+                            alt={item.title || item.name}
+                          />
+
+                          <Link to={`/shopdetails/${productId}`}>
+                            <i className="fa fa-eye"></i>
+                          </Link>
+                        </div>
+
+                        <div className="mm-special-content">
+                          <h5>{item.title || item.name}</h5>
+
+                          {/* ✅ FIXED RATING */}
+                          <div className="mm-rating">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <FaStar
+                                key={i}
+                                color={
+                                  i < Math.round(ratingValue)
+                                    ? "#f59e0b"
+                                    : "#e5e7eb"
+                                }
+                              />
+                            ))}
+
+                            <span className="ms-1 text-muted">
+                              ({ratingValue.toFixed(1)})
+                            </span>
+                          </div>
+
+                          <div className="mm-price">
+                            <span className="mm-new">
+                              QAR{item.price || item.price_per_unit}
+                            </span>
+                            {item.old && (
+                              <span className="mm-old">{item.old}</span>
+                            )}
+                          </div>
+
+                          <button
+                            className="mm-cart-btn"
+                            onClick={() => addToCart(item)}
+                          >
+                            <FaShoppingCart /> Add
+                          </button>
+
+                        </div>
                       </div>
-
-                      {/* ✅ ADD TO CART */}
-                      <button
-                        className="mm-cart-btn"
-                        onClick={() => addToCart(item)}
-                      >
-                        <FaShoppingCart /> Add
-                      </button>
-
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
 
             </div>
           </div>

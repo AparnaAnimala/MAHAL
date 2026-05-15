@@ -32,7 +32,7 @@
 //         </div>
 //         <div className="stat_card">
 //           <p>Revenue</p>
-//           <h3>QAR 0</h3>
+//           <h3>QAR  0</h3>
 //         </div>
 //         <div className="stat_card">
 //           <p>New Orders</p>
@@ -105,14 +105,16 @@ import {
 import introJs from "intro.js";
 import { dashboardTourSteps } from "../../tours/dashboardTour";
 import { tourLock } from "../../utils/tourLock";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api";
+const API = "http://192.168.2.9:5000/api";
 const LOW_STOCK_LIMIT = 10;
 
 const DashboardHome = () => {
   const supplierId = localStorage.getItem("linked_id");
   const token = localStorage.getItem("token");
   const tourStartedRef = React.useRef(false);
+  const { t, i18n } = useTranslation();
 
 
   /* ================= KPIs ================= */
@@ -171,7 +173,10 @@ const DashboardHome = () => {
 
       /* ----- MONTHLY SALES & ORDERS ----- */
       const monthly = Array.from({ length: 12 }, (_, i) => ({
-        month: new Date(0, i).toLocaleString("default", { month: "short" }),
+        month: new Date(0, i).toLocaleString(
+          i18n.language === "ar" ? "ar-EG" : "en-US",
+          { month: "short" }
+        ),
         sales: 0,
         orders: 0,
       }));
@@ -266,29 +271,41 @@ useEffect(() => {
   tourLock.dashboard = true;
 
   // 🧹 clear manual trigger immediately
-  localStorage.removeItem("startDashboardTour");
+  // localStorage.removeItem("startDashboardTour");
 
   const timer = setTimeout(() => {
+    const isArabic = localStorage.getItem("i18nextLng") === "ar";
     introJs()
+    
       .setOptions({
-        steps: dashboardTourSteps,
+        steps: dashboardTourSteps.map(step => ({
+          ...step,
+          intro:
+            localStorage.getItem("i18nextLng") === "ar"
+              ? step.intro // Arabic already inside
+              : step.intro,
+        })),
         showProgress: true,
         showBullets: false,
         exitOnOverlayClick: false,
-        nextLabel: "Next →",
-        prevLabel: "← Back",
-        doneLabel: "Finish",
+        
+
+        nextLabel: isArabic ? "التالي →" : "Next →",
+        prevLabel: isArabic ? "← السابق" : "← Back",
+        doneLabel: isArabic ? "إنهاء" : "Finish",
         overlayOpacity: 0.65,
       })
       .oncomplete(() => {
         localStorage.setItem("supplierDashboardTourSeen", "true");
-        localStorage.setItem("startToolsTour", "true"); // 👉 chain sidebar tour
+        localStorage.setItem("startToolsTour", "true");
+        localStorage.removeItem("startDashboardTour"); // 👉 chain sidebar tour
         tourLock.dashboard = false;
         window.dispatchEvent(new Event("storage"));
       })
       .onexit(() => {
         localStorage.setItem("supplierDashboardTourSeen", "true");
         localStorage.setItem("startToolsTour", "true");
+        localStorage.removeItem("startDashboardTour"); 
         tourLock.dashboard = false;
         window.dispatchEvent(new Event("storage"));
       })
@@ -297,6 +314,24 @@ useEffect(() => {
 
   return () => clearTimeout(timer);
 }, []);
+const isArabic = i18n.language?.startsWith("ar");
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat(
+    isArabic ? "ar-EG" : "en-US"
+  ).format(num);
+};
+
+const formatCurrency = (num) => {
+  const value = formatNumber(Number(num || 0).toFixed(2));
+  return isArabic ? `ر.ق ${value}` : `QAR ${value}`;
+};
+
+const formatPercent = (num) => {
+  return isArabic
+    ? `${formatNumber(num)}٪`
+    : `${num}%`;
+};
 
 
 
@@ -307,23 +342,23 @@ useEffect(() => {
       {/* ================= TOP STATS ================= */}
       <div className="card_grid">
         <div className="stat_card" id="tour-fulfillment">
-          <p>Fulfillment Rate</p>
-          <h3>{fulfillmentRate}%</h3>
+          <p>{t("fulfillment_rate")}</p>
+          <h3>{formatPercent(fulfillmentRate)}</h3>
         </div>
 
         <div className="stat_card" id="tour-revenue">
-          <p>Revenue</p>
-          <h3>QAR {revenue.toLocaleString()}</h3>
+          <p>{t("revenue")}</p>
+          <h3>{formatCurrency(revenue)}</h3>
         </div>
 
         <div className="stat_card" id="tour-dashboard-orders">
-          <p>New Orders</p>
-          <h3>{ordersCount}</h3>
+          <p>{t("new_orders")}</p>
+          <h3>{formatNumber(ordersCount)}</h3>
         </div>
 
         <div className="stat_card highlight" id="tour-expiring">
-          <p>Expiring Today</p>
-          <h3>{expiringToday}</h3>
+          <p>{t("expiring_today")}</p>
+          <h3>{formatNumber(expiringToday)}</h3>
         </div>
       </div>
 
@@ -332,13 +367,15 @@ useEffect(() => {
 
         {/* SALES CHART */}
         <div className="chart_card" id="tour-sales-chart">
-          <h4>Sales</h4>
+          <h4>{t("sales")}</h4>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
+              <YAxis width={60} tickFormatter={(v) => formatNumber(v)} />
+              <Tooltip
+                formatter={(value) => formatNumber(value)}
+              />
               <Line
                 type="monotone"
                 dataKey="sales"
@@ -351,13 +388,13 @@ useEffect(() => {
 
         {/* ORDERS CHART */}
         <div className="chart_card" id="tour-orders-chart">
-          <h4>Orders</h4>
+          <h4>{t("orders")}</h4>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
+              <YAxis width={60} tickFormatter={(v) => formatNumber(v)} />
+              <Tooltip formatter={(value) => formatNumber(value)} />
               <Bar dataKey="orders" fill="#ff9800" />
             </BarChart>
           </ResponsiveContainer>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-
+import { useTranslation } from "react-i18next";
 const OfferModal = ({ product, offer, onClose, onSave }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
+  const { t, i18n } = useTranslation();
   const [type, setType] = useState("");
   const [percentage, setPercentage] = useState("");
   const [flat, setFlat] = useState("");
@@ -59,13 +59,18 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
       <div className="modal_box large edit_modal">
 
         <h3 className="modal_title">
-          {offer ? "Edit Offer" : "Create Offer"}
+          {offer ? t("edit_offer") : t("create_offer")}
         </h3>
-        <p className="product_name">{product.name}</p>
+
+        <p className="product_name">
+          {i18n.language === "ar"
+            ? product.product_name_arabic || product.product_name_english
+            : product.product_name_english}
+        </p>
 
         {/* Offer Title */}
         <div className="form_group">
-          <label>Offer Title</label>
+          <label>{t("offer_title")}</label>
           <input
             type="text"
             value={title}
@@ -75,7 +80,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
 
         {/* Description */}
         <div className="form_group">
-          <label>Description</label>
+          <label>{t("description")}</label>
           <textarea
             rows={2}
             value={description}
@@ -85,18 +90,18 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
 
         {/* Offer Type */}
         <div className="form_group">
-          <label>Offer Type</label>
+          <label>{t("offer_type")}</label>
           <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="">Select Offer Type</option>
-            <option value="Percentage">Percentage</option>
-            <option value="Flat">Flat</option>
-            <option value="BOGO">BOGO</option>
+            <option value="">{t("select_offer_type")}</option>
+            <option value="Percentage">{t("percentage")}</option>
+            <option value="Flat">{t("flat")}</option>
+            <option value="BOGO">{t("bogo")}</option>
           </select>
         </div>
 
         {type === "Percentage" && (
           <div className="form_group">
-            <label>Discount Percentage (%)</label>
+            <label>{t("discount_percentage")} (%)</label>
             <input
               type="number"
               min="1"
@@ -108,7 +113,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
 
         {type === "Flat" && (
           <div className="form_group">
-            <label>Flat Discount Amount</label>
+            <label>{t("flat_discount")}</label>
             <input
               type="number"
               min="1"
@@ -121,7 +126,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         {type === "BOGO" && (
           <>
             <div className="form_group">
-              <label>Buy Quantity</label>
+              <label>{t("buy_quantity")}</label>
               <input
                 type="number"
                 min="1"
@@ -131,7 +136,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
             </div>
 
             <div className="form_group">
-              <label>Get Quantity</label>
+              <label>{t("get_quantity")}</label>
               <input
                 type="number"
                 min="1"
@@ -144,7 +149,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
 
         {/* Dates */}
         <div className="form_group">
-          <label>Start Date</label>
+          <label>{t("start_date")}</label>
           <input
             type="date"
             value={startDate}
@@ -153,7 +158,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         </div>
 
         <div className="form_group">
-          <label>End Date</label>
+          <label>{t("end_date")}</label>
           <input
             type="date"
             value={endDate}
@@ -162,7 +167,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         </div>
 
         <div className="form_group">
-          <label>Start Time</label>
+          <label>{t("start_time")}</label>
           <input
             type="time"
             value={startTime}
@@ -171,7 +176,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         </div>
 
         <div className="form_group">
-          <label>End Time</label>
+          <label>{t("end_time")}</label>
           <input
             type="time"
             value={endTime}
@@ -182,7 +187,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         {offer && (
           <>
             <div className="offer_status">
-              Status: <b>{offer.offer_status}</b>
+              {t("status")}: <b>{t(offer.offer_status?.toLowerCase())}</b>
             </div>
 
             <div className="form_group">
@@ -192,7 +197,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
                   checked={isInactive}
                   onChange={(e) => setIsInactive(e.target.checked)}
                 />
-                Deactivate / Activate this offer
+                {t("toggle_offer")}
               </label>
             </div>
           </>
@@ -201,8 +206,8 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
         {/* Actions */}
         <div className="modal_actions">
           <button className="btn cancel" onClick={onClose}>
-            Cancel
-          </button>
+  {t("cancel")}
+</button>
 
           <button
             className="btn save"
@@ -224,7 +229,7 @@ const OfferModal = ({ product, offer, onClose, onSave }) => {
               })
             }
           >
-            {offer ? "Update Offer" : "Create Offer"}
+            {offer ? t("update_offer") : t("create_offer")}
           </button>
         </div>
 

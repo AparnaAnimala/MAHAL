@@ -631,14 +631,25 @@ def supplier_issues():
             ir.reported_at,
             ir.resolved_at,
             oh.order_id,
+
+            -- ✅ ADD THIS
             rr.restaurant_name_english,
+            rr.restaurant_name_arabic,
 
             COALESCE(
                 json_agg(
                     DISTINCT jsonb_build_object(
-                        'product_id', oip.product_id,
-                        'product_name', oip.product_name
-                    )
+                            'product_id', oip.product_id,
+
+                            'product_name_english',
+                            COALESCE(
+                                pm.product_name_english,
+                                oip.product_name
+                            ),
+
+                            'product_name_arabic',
+                            pm.product_name_arabic
+                        )
                 ) FILTER (WHERE oip.product_id IS NOT NULL),
                 '[]'
             ) AS damaged_products,
@@ -650,9 +661,12 @@ def supplier_issues():
 
         FROM order_issue_reports ir
         JOIN order_header oh ON oh.order_id = ir.order_id
-        JOIN restaurant_registration rr ON rr.restaurant_id = ir.restaurant_id
+        JOIN restaurant_registration rr 
+            ON rr.restaurant_id = ir.restaurant_id
         LEFT JOIN order_issue_products oip
             ON oip.issue_report_id = ir.issue_report_id
+        LEFT JOIN product_management pm
+            ON pm.product_id = oip.product_id
 
         WHERE ir.supplier_id = %s
 
@@ -668,6 +682,7 @@ def supplier_issues():
             ir.resolved_at,
             oh.order_id,
             rr.restaurant_name_english,
+            rr.restaurant_name_arabic,  -- ✅ IMPORTANT
             ir.issue_images
 
         ORDER BY ir.reported_at DESC

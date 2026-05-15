@@ -1,0 +1,27 @@
+export default {
+  invoice_report: "تقرير الفواتير",
+  download_excel: "إكسل",
+  download_pdf: "بي دي إف",
+  all_status: "كل الحالات",
+
+  invoice_id: "رقم الفاتورة",
+  invoice_no: "رقم الفاتورة",
+  order: "الطلب",
+  date: "التاريخ",
+  restaurant: "المطعم",
+  product: "المنتج",
+  qty: "الكمية",
+  price: "السعر",
+  discount: "الخصم",
+  item_total: "إجمالي العنصر",
+  subtotal: "المجموع الفرعي",
+  tax: "الضريبة",
+  grand_total: "الإجمالي",
+  status: "الحالة",
+  payment: "الدفع",
+
+  prev: "السابق",
+  next: "التالي",
+  page: "صفحة",
+  of: "من",
+};

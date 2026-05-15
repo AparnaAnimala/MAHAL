@@ -17,8 +17,7 @@ admin_promotions_bp = Blueprint(
 # ============================================
 
 VALID_GRID_POSITIONS = [
-    "GRID_SUPPLIER_1",
-    "GRID_SUPPLIER_2",
+
 
     "LEFT_SLIDER_1",
     "LEFT_SLIDER_2",

@@ -1,6 +1,6 @@
 // import React, { useEffect, useState } from "react";
 
-// const API = "http://127.0.0.1:5000/api/v1";
+// const API = "http://192.168.2.9:5000/api/v1";
 
 // const CreateGRN = ({ orderId }) => {
 //   const token = localStorage.getItem("token");
@@ -218,7 +218,7 @@
 
 // import React, { useEffect, useState } from "react";
 // import "../../css/grn.css"; 
-// const API = "http://127.0.0.1:5000/api/v1";
+// const API = "http://192.168.2.9:5000/api/v1";
 
 // const CreateGRN = ({ orderId }) => {
 //   const token = localStorage.getItem("token");
@@ -446,7 +446,7 @@
 // import { useParams, useNavigate } from "react-router-dom";
 
 
-// const API = "http://127.0.0.1:5000/api/v1";
+// const API = "http://192.168.2.9:5000/api/v1";
 
 // export default function CreateGRN() {
 //   const { orderId } = useParams();
@@ -864,9 +864,10 @@
 import React, { useEffect, useState } from "react";
 import "../css/grn_new.css";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 
-const API = "http://127.0.0.1:5000/api/v1";
+const API = "http://192.168.2.9:5000/api/v1";
 
 export default function CreateGRN() {
   const { orderId } = useParams();
@@ -880,6 +881,29 @@ export default function CreateGRN() {
   const [remarks, setRemarks] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const { t, i18n } = useTranslation();
+
+  const formatNumber = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  ).format(value);
+};
+
+const formatGRN = (id) => {
+  const base = `GRN-${String(id).padStart(5, "0")}`;
+
+  if (i18n.language !== "ar") return base;
+
+  return base.replace(/\d/g, (d) =>
+    new Intl.NumberFormat("ar-QA").format(d)
+  );
+};
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  );
+};
 
   useEffect(() => {
     if (!orderId) return;
@@ -929,7 +953,7 @@ export default function CreateGRN() {
     setGrn({ ...grn, items: updated });
   };
 
-  const grnNo = `GRN-${String(grn.header.grn_id).padStart(5, "0")}`;
+ const grnNo = formatGRN(grn.header.grn_id);
 
   const totals = grn.items.reduce(
   (a, i) => {
@@ -1055,20 +1079,21 @@ const printPDF = async () => {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="dashboard_page grn_page">
+    <div className="dashboard_page grn_page" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
       {/* HEADER */}
       <div className="page_header glass">
-        <h2>Goods Receipt Note (GRN)</h2>
+        <h2>{t("grn_title")}</h2>
 
-        <button className="btn_save glow" onClick={() => navigate(-1)}>
-          <i className="fa fa-arrow-left me-2"></i>  Back to Orders
-        </button>
+      <button className="btn_save glow" onClick={() => navigate(-1)}>
+        <i className="fa fa-arrow-left me-2"></i>
+        {t("grn_back")}
+      </button>
       
       </div>
       {/* <div className="grn-topbar"> */}
         <div className="grn-top-actions">
           <span className={`grn-status ${grn.header?.status?.toLowerCase()}`}>
-            {grn.header.status}
+            {t("grn_no")}: {grnNo}
           </span>
 
           {isConfirmed && (
@@ -1085,25 +1110,29 @@ const printPDF = async () => {
       {/* </div> */}
 
 
-      <div className="section_card soft d-flex align-items-center gap-3 mb-3">GRN No: {grnNo}</div>
+      <div className="section_card soft d-flex align-items-center gap-3 mb-3">{t("grn_no")}: {grnNo}</div>
 
       {/* HEADER DETAILS */}
      <div className="section_card soft mb-3">
        <div className="row">
 
     <div className="col-md-4">
-      <small className="muted">Supplier</small>
-      <div>{grn.header.supplier_name}</div>
+      <small className="muted">{t("grn_supplier")}</small>
+    <div>
+      {i18n.language === "ar"
+        ? grn.header.supplier_name_arabic || grn.header.supplier_name
+        : grn.header.supplier_name}
+    </div>
     </div>
 
     <div className="col-md-4">
-      <small className="muted">Received By</small>
+      <small className="muted">{t("grn_received_by")}</small>
       <div>{localStorage.getItem("username")}</div>
     </div>
 
     <div className="col-md-4">
-      <small className="muted">GRN Date</small>
-      <div>{new Date().toLocaleDateString()}</div>
+      <small className="muted">{t("grn_date")}</small>
+      <div>{formatDate(new Date())}</div>
     </div>
 
     </div>
@@ -1116,20 +1145,24 @@ const printPDF = async () => {
             <table className="table align-middle">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>UOM</th>
-                <th>Ordered</th>
-                <th>Received</th>
-                <th>Rejected</th>
-                <th>Status</th>
+                <th>{t("grn_product")}</th>
+                <th>{t("grn_uom")}</th>
+                <th>{t("grn_ordered")}</th>
+                <th>{t("grn_received")}</th>
+                <th>{t("grn_rejected")}</th>
+                <th>{t("grn_status")}</th>
               </tr>
             </thead>
             <tbody>
               {grn.items?.map(i => (
                 <tr key={i.grn_item_id}>
-                  <td>{i.product_name}</td>
+                  <td>
+                    {i18n.language === "ar"
+                      ? i.product_name_arabic || i.product_name
+                      : i.product_name}
+                  </td>
                   <td>{i.uom}</td>
-                  <td>{i.ordered_quantity}</td>
+                  <td>{formatNumber(i.ordered_quantity)}</td>
                   <td>
                     <input
                         type="number"
@@ -1169,13 +1202,15 @@ const printPDF = async () => {
 /> */}
 
                   </td>
-                  <td>{i.rejected_quantity}</td>
+                  <td>{formatNumber(i.rejected_quantity)}</td>
                   <td>
                     {i.rejected_quantity > 0 ? (
-                      <span className="short">Short {i.rejected_quantity}</span>
+                      <span className="short">
+                        {t("grn_short")} {formatNumber(i.rejected_quantity)}
+                      </span>
                     ) : (
-                      <span className="ok">Perfect</span>
-                    )}
+                      <span className="ok">{t("grn_perfect")}</span>
+)}
                   </td>
                 </tr>
               ))}
@@ -1184,27 +1219,27 @@ const printPDF = async () => {
         </div>
 
         {/* SUMMARY */}
-        <div className="grn-summary-card">
-  <h4>GRN Summary</h4>
+<div className="grn-summary-card">
+  <h4>{t("grn_summary")}</h4>
 
   <div className="col-md-4">
-    <span>Total Items</span>
-    <b>{grn.items.length}</b>
+    <span>{t("grn_total_items")}</span>
+    <b>{formatNumber(grn.items.length)}</b>
   </div>
 
   <div className="col-md-4">
-    <span>Total Ordered Qty</span>
-    <b>{totals.ordered}</b>
+    <span>{t("grn_total_ordered")}</span>
+    <b>{formatNumber(totals.ordered)}</b>
   </div>
 
   <div className="col-md-4">
-    <span>Total Received Qty</span>
-    <b>{totals.received}</b>
+    <span>{t("grn_total_received")}</span>
+    <b>{formatNumber(totals.received)}</b>
   </div>
 
   <div className="col-md-4">
-    <span>Total Rejected Qty</span>
-    <b>{totals.rejected}</b>
+    <span>{t("grn_total_rejected")}</span>
+    <b>{formatNumber(totals.rejected)}</b>
   </div>
 </div>
 
@@ -1213,9 +1248,9 @@ const printPDF = async () => {
 
       {/* REMARKS */}
       <div className="mt-3">
-        <label className="form-label">GRN Remarks</label>
+        <label className="form-label">{t("grn_remarks")}</label>
         <textarea
-          placeholder="Enter remarks (optional)"
+         placeholder={t("grn_remarks_placeholder")}
           value={remarks}
           onChange={e => setRemarks(e.target.value)}
         />
@@ -1228,7 +1263,7 @@ const printPDF = async () => {
           onClick={() => document.getElementById("grn-proof-input").click()}
         >
           {!imagePreview ? (
-            <span className="sign-text">Tap to Sign</span>
+            <span className="sign-text">{t("grn_tap_sign")}</span>
           ) : (
             <img src={imagePreview} alt="GRN Proof" className="sign-preview" />
           )}
@@ -1261,11 +1296,11 @@ const printPDF = async () => {
         {!isConfirmed && (
           <><div className="d-flex justify-content-center gap-3">
             <button className="btn btn-outline-orange" onClick={saveGRN}>
-              Save Draft
+              {t("grn_save")}
             </button>
 
             <button className="btn_save glow" onClick={confirmGRN}>
-              Confirm GRN
+              {t("grn_confirm")}
             </button>
             </div>
           </>
@@ -1274,7 +1309,7 @@ const printPDF = async () => {
         {isConfirmed && (
           <button onClick={downloadPDF}>
               <i className="fa fa-download me-2"></i>
-              Download PDF
+              {t("grn_download")}
             </button>
         )}
 
@@ -1283,7 +1318,7 @@ const printPDF = async () => {
 
       {isConfirmed && (
         <div className="grn-success">
-          ✔ GRN Confirmed — Inventory successfully updated
+           {t("grn_success")}
         </div>
       )}
     </div>

@@ -1,8 +1,7 @@
 import React from "react";
 
-import Topbar from "../components/Topbar";
-// import Header from "../components/Header";
 import Header from "../components/Mahal/Header";
+import Topbar from "../components/Mahal/Topbar";
 
 // import PageBreadcrumb from "../components/PageBreadcrumb";
 

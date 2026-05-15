@@ -101,7 +101,8 @@
 import React, { useEffect, useState } from "react";
 import InvoiceDetailsModal from "./InvoiceDetailsModal";
 import "../css/receipt.css";
-const API = "http://127.0.0.1:5000/api/v1/invoice";
+import { useTranslation } from "react-i18next";
+const API = "http://192.168.2.9:5000/api/v1/invoice";
 
 const Invoice = () => {
   const [invoices, setInvoices] = useState([]);
@@ -109,6 +110,7 @@ const Invoice = () => {
   const [searchInvoiceId, setSearchInvoiceId] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const { t, i18n } = useTranslation();
 
   const token = localStorage.getItem("token");
 
@@ -118,7 +120,7 @@ const Invoice = () => {
   useEffect(() => {
     if (!token) return;
 
-    fetch(API, {
+    fetch(`${API}?lang=${i18n.language}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -133,13 +135,15 @@ const Invoice = () => {
         setInvoices([]);
       });
   }, [token]);
-
+useEffect(() => {
+  document.body.dir = i18n.language === "ar" ? "rtl" : "ltr";
+}, [i18n.language]);
   /* =========================
      LOAD SINGLE INVOICE
   ========================= */
   const loadInvoice = async (invoiceId) => {
     try {
-      const res = await fetch(`${API}/${invoiceId}`, {
+      const res = await fetch(`${API}/${invoiceId}?lang=${i18n.language}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -155,14 +159,21 @@ const Invoice = () => {
      FILTER
   ========================= */
   const filteredInvoices = invoices.filter((i) => {
-    const search = searchInvoiceId.toLowerCase();
+    // const search = searchInvoiceId.toLowerCase();
 
     // ✅ SEARCH (multi-field)
+    const normalize = (val) =>
+      String(val)
+        .toLowerCase()
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+
+    const search = normalize(searchInvoiceId);
+
     const searchOk =
       search === "" ||
-      String(i.invoice_id).includes(search) ||
-      String(i.order_id).includes(search) ||
-      (i.restaurant_name_english || "").toLowerCase().includes(search);
+      normalize(i.invoice_id).includes(search) ||
+      normalize(i.order_id).includes(search) ||
+      normalize(i.restaurant_name_english).includes(search);
 
     // ✅ DATE FILTER
     const invoiceDate = new Date(i.invoice_date);
@@ -178,22 +189,47 @@ const Invoice = () => {
     return searchOk && fromOk && toOk;
   });
 
+  const isArabic = i18n.language?.startsWith("ar");
+
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat(
+      isArabic ? "ar-EG" : "en-US"
+    ).format(num);
+  };
+
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat(
+      isArabic ? "ar-EG" : "en-GB"
+    ).format(new Date(date));
+  };
+
+  const formatId = (id) => {
+    if (!isArabic) return id;
+
+    const prefix = String(id).replace(/[0-9]/g, "");
+    const numbers = String(id).replace(/\D/g, "");
+
+    return prefix + formatNumber(numbers);
+  };
+
+  const currency = isArabic ? "ر.ق" : "QAR";
+
   return (
     <div className="orders_page">
-      <h3 className="page_title">Invoice History</h3>
+      <h3 className="page_title">{t("invoice_history")}</h3>
 
       {/* SEARCH */}
       <div className="filter_bar modern">
 
         <input
           type="text"
-          placeholder="Search Invoice / Order / Restaurant..."
+          placeholder={t("search_invoice")}
           value={searchInvoiceId}
           onChange={(e) => setSearchInvoiceId(e.target.value)}
           className="search-input"
         />
       {/* <div className="date_group"> */}
-        <label>From:</label>
+        <label>{t("from")}:</label>
         <input
           type="date"
           value={fromDate}
@@ -202,7 +238,7 @@ const Invoice = () => {
         />
       {/* </div> */}
       {/* <div className="date_group"> */}
-        <label>To:</label>
+        <label>{t("to")}:</label>
         <input
           type="date"
           value={toDate}
@@ -219,13 +255,13 @@ const Invoice = () => {
           <thead>
             <tr>
               <th>#</th>
-              <th>Invoice ID</th>
-              <th>Order ID</th>
-              <th>Restaurant</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th>{t("invoice_id")}</th>
+              <th>{t("order_id")}</th>
+              <th>{t("restaurant")}</th>
+              <th>{t("date")}</th>
+              <th>{t("total")}</th>
+              <th>{t("status")}</th>
+              <th>{t("action")}</th>
             </tr>
           </thead>
 
@@ -233,26 +269,30 @@ const Invoice = () => {
             {filteredInvoices.length === 0 && (
               <tr>
                 <td colSpan="8" style={{ textAlign: "center", padding: 20 }}>
-                  No invoices found
+                  {t("no_invoices")}
                 </td>
               </tr>
             )}
 
             {filteredInvoices.map((inv, index) => (
               <tr key={inv.invoice_id}>
-                <td>{index + 1}</td>
-                <td>{inv.invoice_id}</td>
-                <td>{inv.order_id}</td>
-                <td>{inv.restaurant_name_english}</td>
+                <td>{formatNumber(index + 1)}</td>
+                <td>{formatId(inv.invoice_id)}</td>
+                <td>{formatId(inv.order_id)}</td>
                 <td>
-                  {inv.invoice_date
-                    ? new Date(inv.invoice_date).toLocaleDateString()
-                    : "-"}
+                  {isArabic
+                    ? inv.restaurant_name_arabic || inv.restaurant_name
+                    : inv.restaurant_name_english || inv.restaurant_name}
                 </td>
-                <td>QAR {inv.grand_total}</td>
+                <td>
+                  {inv.invoice_date ? formatDate(inv.invoice_date) : "-"}
+                </td>
+                <td>
+                  {currency} {formatNumber(inv.grand_total)}
+                </td>
                 <td>
                   <span className={`status ${inv.invoice_status}`}>
-                    {inv.invoice_status}
+                    {t(inv.invoice_status.toLowerCase())}
                   </span>
                 </td>
                 <td>
@@ -260,7 +300,7 @@ const Invoice = () => {
                     className="view_btn"
                     onClick={() => loadInvoice(inv.invoice_id)}
                   >
-                    View
+                    {t("view")}
                   </button>
                 </td>
               </tr>

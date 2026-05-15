@@ -12,7 +12,7 @@ def get_db():
         host="localhost",
         database="MAHALDATABASE",
         user="postgres",
-        password="Appu1718"
+        password="S@ndeep9392"
     )
 
 
@@ -131,23 +131,37 @@ def get_receipt(order_id):
     try:
         cur.execute("""
             SELECT
-                receipt_id,
-                receipt_number,
-                receipt_date,
-                settlement_type,
-                status,
-                total_amount,
-                remarks,
-                restaurant_name,
-                restaurant_vat,
-                restaurant_phone,
-                restaurant_city,
-                supplier_name,
-                supplier_vat,
-                supplier_phone,
-                supplier_city
-            FROM receipt
-            WHERE order_id = %s
+                r.receipt_id,
+                r.receipt_number,
+                r.receipt_date,
+                r.settlement_type,
+                r.status,
+                r.total_amount,
+                r.remarks,
+
+                -- RESTAURANT
+                rr.restaurant_name_english,
+                rr.restaurant_name_arabic,
+                rr.vat_tax_number AS restaurant_vat,
+                rr.contact_person_mobile AS restaurant_phone,
+                rr.city AS restaurant_city,
+
+                -- SUPPLIER
+                sr.company_name_english AS supplier_name_english,
+                sr.company_name_arabic AS supplier_name_arabic,
+                sr.city AS supplier_city,
+                sr.contact_person_mobile AS supplier_phone,
+                sr.vat_tax_number AS supplier_vat
+
+            FROM receipt r
+
+            LEFT JOIN restaurant_registration rr
+                ON rr.restaurant_id = r.restaurant_id
+
+            LEFT JOIN supplier_registration sr
+                ON sr.supplier_id = r.supplier_id
+
+            WHERE r.order_id = %s
         """, (order_id,))
         receipt = cur.fetchone()
 
@@ -157,12 +171,19 @@ def get_receipt(order_id):
         # Items
         cur.execute("""
             SELECT
-                product_name_english AS product,
-                quantity,
-                price_per_unit AS unit_price,
-                discount,
-                total_amount AS line_total
-            FROM order_items WHERE order_id=%s
+                COALESCE(oi.product_name_english, pm.product_name_english) AS product_english,
+                pm.product_name_arabic AS product_arabic,
+
+                oi.quantity,
+                oi.price_per_unit AS unit_price,
+                oi.discount,
+                oi.total_amount AS line_total
+
+            FROM order_items oi
+            LEFT JOIN product_management pm
+                ON pm.product_id = oi.product_id
+
+            WHERE oi.order_id = %s
         """, (order_id,))
         items = cur.fetchall()
 

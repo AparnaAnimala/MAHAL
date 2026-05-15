@@ -3,7 +3,7 @@ import os
 from flask import Flask, redirect, send_from_directory
 from flask_cors import CORS
 from flask_mail import Mail
-
+from apscheduler.schedulers.background import BackgroundScheduler
 mail = Mail()
 
 def create_app():
@@ -13,18 +13,110 @@ def create_app():
     # CORS FIX (GLOBAL)
     # =========================
     CORS(
-        app,
-        resources={r"/api/*": {"origins": "*"}},
-        supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    )
+            app,
+            resources={r"/api/*": {"origins": "*"}},
+            supports_credentials=True,
+            allow_headers=["Content-Type", "Authorization"],
+            methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+        )
+    
+    # ✅ FIXED INDENTATION
+    def run_recurring_orders():
+        from db import get_db_connection
+        from psycopg2.extras import RealDictCursor
+
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        try:
+            cur.execute("""
+                SELECT *
+                FROM recurring_orders
+                WHERE next_run_date = CURRENT_DATE
+                AND status = 'ACTIVE'
+            """)
+
+            rows = cur.fetchall()
+
+            for r in rows:
+                order_id = r["order_id"]
+
+                cur.execute("""
+                    INSERT INTO order_header (
+                        restaurant_id,
+                        supplier_id,
+                        order_date,
+                        expected_delivery_date,
+                        total_amount,
+                        status,
+                        payment_status,
+                        payment_method,
+                        is_recurring
+                    )
+                    SELECT
+                        restaurant_id,
+                        supplier_id,
+                        CURRENT_TIMESTAMP,
+                        expected_delivery_date,
+                        total_amount,
+                        'PLACED',
+                        payment_status,
+                        payment_method,
+                        TRUE
+                    FROM order_header
+                    WHERE order_id = %s
+                    RETURNING order_id
+                """, (order_id,))
+
+                new_order_id = cur.fetchone()["order_id"]
+
+                cur.execute("""
+                    INSERT INTO order_items (
+                        order_id,
+                        product_id,
+                        product_name_english,
+                        quantity,
+                        price_per_unit,
+                        total_amount
+                    )
+                    SELECT
+                        %s,
+                        product_id,
+                        product_name_english,
+                        quantity,
+                        price_per_unit,
+                        total_amount
+                    FROM order_items
+                    WHERE order_id = %s
+                """, (new_order_id, order_id))
+
+                cur.execute("""
+                    UPDATE recurring_orders
+                    SET next_run_date =
+                        CASE
+                            WHEN frequency = 'DAILY' THEN next_run_date + INTERVAL '1 day'
+                            WHEN frequency = 'WEEKLY' THEN next_run_date + INTERVAL '7 day'
+                            WHEN frequency = 'MONTHLY' THEN next_run_date + INTERVAL '1 month'
+                        END
+                    WHERE order_id = %s
+                """, (order_id,))
+
+            conn.commit()
+            print(f"✅ Recurring executed: {len(rows)}")
+
+        except Exception as e:
+            conn.rollback()
+            print("❌ Recurring error:", e)
+
+        finally:
+            cur.close()
+            conn.close()
 
     @app.after_request
     def handle_options(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
         return response
 
     # Flask-Mail config
@@ -108,6 +200,7 @@ def create_app():
     from routes.support_admin_bp import support_admin_bp
     from routes.admin_promotions_routes import admin_promotions_bp
     from routes.admin_promotions import admin_promotions
+    from routes.category_routes import category_bp
     # ==============================================================
     # REGISTER BLUEPRINTS
     # ==============================================================
@@ -174,10 +267,23 @@ def create_app():
     app.register_blueprint(support_admin_bp)
     app.register_blueprint(admin_promotions_bp)
     app.register_blueprint(admin_promotions, url_prefix="/api/v1")
-    # 
+    app.register_blueprint(category_bp,url_prefix="/api")
     # ==============================================================
     # ROOT REDIRECT TO FRONTEND
     # ==============================================================
+
+    # ✅ FIXED SCHEDULER (inside function properly)
+    scheduler = BackgroundScheduler(timezone='Asia/Qatar')
+
+    scheduler.add_job(
+        run_recurring_orders,
+        trigger='cron',
+        hour=0,
+        minute=0
+    )
+
+    scheduler.start()
+
     @app.route("/")
     def home():
         return redirect(os.getenv("FRONTEND_URL", "http://localhost:3000"), code=302)

@@ -1,14 +1,16 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../../pages/css/status.css";
 
 const NewOrderPopup = ({ notification, onClose }) => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (!notification) return;
-    const t = setTimeout(onClose, 8000);
-    return () => clearTimeout(t);
+    const tmr = setTimeout(onClose, 8000);
+    return () => clearTimeout(tmr);
   }, [notification, onClose]);
 
   if (!notification) return null;
@@ -16,18 +18,25 @@ const NewOrderPopup = ({ notification, onClose }) => {
   const isIssue = notification.type === "ORDER_ISSUE";
 
   return (
-    <div className="order_popup">
+    <div className={`order_popup ${i18n.language === "ar" ? "rtl" : ""}`}>
+      
+      {/* HEADER */}
       <div className="order_popup_header">
         <span className="dot" />
+
         <strong>
-          {isIssue ? "New Order Issue Reported" : "New Order Received"}
+          {isIssue
+            ? t("popup.new_issue")
+            : t("popup.new_order")}
         </strong>
+
         <button className="popup_close" onClick={onClose}>×</button>
       </div>
 
+      {/* BODY */}
       <div className="order_popup_body">
         <p>
-          {isIssue ? "Order ID" : "Order ID"}
+          {t("popup.order_id")}
           <br />
           <b>{notification.reference_id}</b>
         </p>
@@ -47,7 +56,8 @@ const NewOrderPopup = ({ notification, onClose }) => {
             onClose();
           }}
         >
-          View {isIssue ? "Issue" : "Order"}
+          {t("popup.view")}{" "}
+          {isIssue ? t("popup.issue") : t("popup.order")}
         </button>
       </div>
     </div>

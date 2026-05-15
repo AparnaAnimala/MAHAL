@@ -1,0 +1,41 @@
+export default {
+  receipt_history: "Receipt History",
+  search_placeholder: "Search Receipt / Order / Restaurant...",
+  from: "From",
+  to: "To",
+
+  receipt_id: "Receipt ID",
+  order_id: "Order ID",
+  restaurant: "Restaurant",
+  date: "Date",
+  total: "Total",
+  status: "Status",
+  action: "Action",
+  view: "View",
+  paid: "Paid",
+
+  receipt_details: {
+  title: "Order Receipt",
+  no: "Receipt No",
+  restaurant: "Restaurant",
+  supplier: "Supplier"
+},
+product: "Product",
+qty: "Qty",
+price: "Price",
+discount: "Discount",
+total: "Total",
+grand_total: "Grand Total",
+status: "Status",
+paid: "Paid",
+back: "Back",
+print: "Print",
+download_pdf: "Download PDF",
+settlement: "Settlement",
+system_generated: "System Generated",
+city: "City",
+phone: "Phone",
+date: "Date",
+no_receipt: "No receipt found",
+receipt_error: "Failed to load receipt"
+};

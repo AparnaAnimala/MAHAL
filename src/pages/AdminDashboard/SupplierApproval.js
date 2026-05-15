@@ -1,186 +1,207 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import "../css/approval.css";
+import "../css/approval-modern.css";
 import { useNavigate } from "react-router-dom";
+import {
+    FaUser,
+    FaEnvelope,
+    FaPhone,
+    FaStore,
+    FaGlobe,
+    FaMapMarkerAlt,
+    FaFileAlt,
+    FaCheckCircle,
+    FaTimesCircle,
+    FaRedoAlt,
+    FaBuilding   // ✅ ADD THIS
+} from "react-icons/fa";
 
 // API Configuration
-const API_ROOT = "http://127.0.0.1:5000/api";
+const API_ROOT = "http://192.168.2.9:5000/api";
 const ADMIN_BASE = `${API_ROOT}/v1`;
 
 export default function AdminReview() {
-  const ADMIN_TOKEN = localStorage.getItem("admin_token");
-const ADMIN_ROLE = localStorage.getItem("admin_role"); // may be null
+    const ADMIN_TOKEN = localStorage.getItem("admin_token");
+    const ADMIN_ROLE = localStorage.getItem("admin_role"); // may be null
 
-const ADMIN_PERMS = JSON.parse(
-  localStorage.getItem("admin_permissions") || "[]"
-);
-
-// SUPER ADMIN if they have ALL critical powers
-const isSuperAdmin =
-  ADMIN_PERMS.includes("MANAGE_ADMIN_USERS") &&
-  ADMIN_PERMS.includes("APPROVE_SUPPLIERS");
-
-  const isOpsAdmin = ADMIN_ROLE === "OPS_ADMIN";
-
-
-
-
-  /* =====================================================
-     ✅ ALL HOOKS FIRST — NO RETURNS ABOVE THIS LINE
-  ===================================================== */
-
-  // Table + details state
-  const [items, setItems] = useState([]);
-  const [selected, setSelected] = useState(null);
-
-  // UI state
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  // Image preview
-  const [showImage, setShowImage] = useState(false);
-  const [imageSrc, setImageSrc] = useState("");
-
-  // Search controls
-  const [filterBy, setFilterBy] = useState("");
-  const [filterValue, setFilterValue] = useState("");
-  const [selectedId, setSelectedId] = useState("");
-
-  // Reject/Resubmit modals
-  const [showReject, setShowReject] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-
-  const [showResubmit, setShowResubmit] = useState(false);
-  const [resubmitReason, setResubmitReason] = useState("");
-
-  const [showAllotModal, setShowAllotModal] = useState(false);
-  const [opsAdmins, setOpsAdmins] = useState([]);
-  const [selectedSupplierForAllot, setSelectedSupplierForAllot] = useState(null);
-  const [assignLoading, setAssignLoading] = useState(false);
-
-const authHeaders = useMemo(
-  () => ({ Authorization: `Bearer ${ADMIN_TOKEN}` }),
-  [ADMIN_TOKEN]
-);
-const navigate = useNavigate();
-// ─────────────────────────────────────────────
-// ✅ ALL HOOKS FIRST — NO RETURNS ABOVE HERE
-// ─────────────────────────────────────────────
-
-// Redirect effect (still a hook)
-useEffect(() => {
-  if (!ADMIN_TOKEN) {
-    window.location.href = "/admin/login";
-  }
-}, [ADMIN_TOKEN]);
-
-// ---------- FETCH PENDING (HOOK-SAFE) ----------
-const fetchPending = useCallback(async () => {
-  setLoading(true);
-  setMessage("");
-  setError("");
-
-  try {
-    const res = await axios.get(
-      `${ADMIN_BASE}/admin/suppliers/pending`,
-      { headers: authHeaders }
+    const ADMIN_PERMS = JSON.parse(
+        localStorage.getItem("admin_permissions") || "[]"
     );
 
-    const suppliers = res.data?.items || [];
+    // SUPER ADMIN if they have ALL critical powers
+    const isSuperAdmin =
+        ADMIN_PERMS.includes("MANAGE_ADMIN_USERS") &&
+        ADMIN_PERMS.includes("APPROVE_SUPPLIERS");
 
-    if (isSuperAdmin) {
-      setItems(suppliers);
-      return;
+    const isOpsAdmin = ADMIN_ROLE === "OPS_ADMIN";
+
+
+
+
+    /* =====================================================
+       ✅ ALL HOOKS FIRST — NO RETURNS ABOVE THIS LINE
+    ===================================================== */
+
+    // Table + details state
+    const [items, setItems] = useState([]);
+    const [selected, setSelected] = useState(null);
+
+    // UI state
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+
+    // Image preview
+    const [showImage, setShowImage] = useState(false);
+    const [imageSrc, setImageSrc] = useState("");
+
+    // Search controls
+    const [filterBy, setFilterBy] = useState("");
+    const [filterValue, setFilterValue] = useState("");
+    const [selectedId, setSelectedId] = useState("");
+
+    // Reject/Resubmit modals
+    const [showReject, setShowReject] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+
+    const [showResubmit, setShowResubmit] = useState(false);
+    const [resubmitReason, setResubmitReason] = useState("");
+
+    const [showAllotModal, setShowAllotModal] = useState(false);
+    const [opsAdmins, setOpsAdmins] = useState([]);
+    const [selectedSupplierForAllot, setSelectedSupplierForAllot] = useState(null);
+    const [assignLoading, setAssignLoading] = useState(false);
+
+    const authHeaders = useMemo(
+        () => ({ Authorization: `Bearer ${ADMIN_TOKEN}` }),
+        [ADMIN_TOKEN]
+    );
+    const navigate = useNavigate();
+    // ─────────────────────────────────────────────
+    // ✅ ALL HOOKS FIRST — NO RETURNS ABOVE HERE
+    // ─────────────────────────────────────────────
+
+    // Redirect effect (still a hook)
+    useEffect(() => {
+        if (!ADMIN_TOKEN) {
+            window.location.href = "/admin/login";
+        }
+    }, [ADMIN_TOKEN]);
+
+    // ---------- FETCH PENDING (HOOK-SAFE) ----------
+    const fetchPending = useCallback(async () => {
+        setLoading(true);
+        setMessage("");
+        setError("");
+
+        try {
+            const res = await axios.get(
+                `${ADMIN_BASE}/admin/suppliers/pending`,
+                { headers: authHeaders }
+            );
+
+            const suppliers = res.data?.items || [];
+
+            if (isSuperAdmin) {
+                const filtered = suppliers.filter(
+                    s =>
+                        ["Pending", "Assigned", "Profile Completed", "Under Review"].includes(s.approval_status)
+                );
+
+                setItems(filtered);
+                return;
+            }
+
+            const myAdminId = localStorage.getItem("admin_id");
+            const mine = suppliers.filter(
+                s => String(s.assigned_admin_id) === String(myAdminId)
+            );
+
+            const filtered = mine.filter(
+                s => ["Assigned", "Profile Completed"].includes(s.approval_status)
+            );
+
+            setItems(filtered);
+
+            setMessage(
+                filtered.length === 0
+                    ? "No suppliers assigned to you yet."
+                    : ""
+            );
+        } catch (err) {
+            if (err?.response?.status === 401) {
+                localStorage.removeItem("admin_token");
+                localStorage.removeItem("admin_role");
+                localStorage.removeItem("admin_permissions");
+                window.location.href = "/admin/login";
+                return;
+            }
+
+            setError("Failed to fetch pending suppliers.");
+        } finally {
+            setLoading(false);
+        }
+    }, [authHeaders, isSuperAdmin]);
+
+    // Run on mount
+    useEffect(() => {
+        fetchPending();
+    }, [fetchPending]);
+
+    // ---------- LOAD OPS ADMINS (HOOK-SAFE) ----------
+    async function loadOpsAdmins() {
+        try {
+            setAssignLoading(true);
+
+            const res = await axios.get(
+                `${ADMIN_BASE}/admin/admins/ops`,
+                { headers: authHeaders }
+            );
+
+            setOpsAdmins(res.data?.admins || []);
+        } catch (err) {
+            alert("Failed to load OPS admins");
+        } finally {
+            setAssignLoading(false);
+        }
     }
 
-    const myAdminId = localStorage.getItem("admin_id");
+    useEffect(() => {
+        if (isSuperAdmin) {
+            loadOpsAdmins();
+        }
+    }, [isSuperAdmin]);
 
-    const mine = suppliers.filter(
-      s => String(s.assigned_admin_id) === String(myAdminId)
-    );
-
-    if (mine.length === 0) {
-      setMessage("No suppliers assigned to you yet.");
-    } else {
-      setMessage("");
+    // ─────────────────────────────────────────────
+    // ✅ ONLY NOW you are allowed to guard/return
+    // ─────────────────────────────────────────────
+    if (!ADMIN_TOKEN) {
+        return <div>Redirecting to admin login...</div>;
     }
 
-    setItems(mine);
-  } catch (err) {
-    if (err?.response?.status === 401) {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_role");
-      localStorage.removeItem("admin_permissions");
-      window.location.href = "/admin/login";
-      return;
+    const canApproveSupplier = isSuperAdmin;
+
+    // ---------- AUTO ALLOCATE (UNCHANGED LOGIC) ----------
+    async function handleAutoAllocate() {
+        if (!window.confirm("Auto-allocate all pending suppliers?")) return;
+
+        setLoading(true);
+
+        try {
+            await axios.patch(
+                `${ADMIN_BASE}/admin/suppliers/auto-assign`,
+                {},
+                { headers: authHeaders }
+            );
+
+            alert("Auto-allocation completed. Refreshing assignments.");
+            await fetchPending();
+        } catch (err) {
+            alert(err?.response?.data?.error || "Auto-allocation failed.");
+        } finally {
+            setLoading(false);
+        }
     }
-
-    setError("Failed to fetch pending suppliers.");
-  } finally {
-    setLoading(false);
-  }
-}, [authHeaders, isSuperAdmin]);
-
-// Run on mount
-useEffect(() => {
-  fetchPending();
-}, [fetchPending]);
-
-// ---------- LOAD OPS ADMINS (HOOK-SAFE) ----------
-async function loadOpsAdmins() {
-  try {
-    setAssignLoading(true);
-
-    const res = await axios.get(
-      `${ADMIN_BASE}/admin/admins/ops`,
-      { headers: authHeaders }
-    );
-
-    setOpsAdmins(res.data?.admins || []);
-  } catch (err) {
-    alert("Failed to load OPS admins");
-  } finally {
-    setAssignLoading(false);
-  }
-}
-
-useEffect(() => {
-  if (isSuperAdmin) {
-    loadOpsAdmins();
-  }
-}, [isSuperAdmin]);
-
-// ─────────────────────────────────────────────
-// ✅ ONLY NOW you are allowed to guard/return
-// ─────────────────────────────────────────────
-if (!ADMIN_TOKEN) {
-  return <div>Redirecting to admin login...</div>;
-}
-
-const canApproveSupplier = isSuperAdmin;
-
-// ---------- AUTO ALLOCATE (UNCHANGED LOGIC) ----------
-async function handleAutoAllocate() {
-  if (!window.confirm("Auto-allocate all pending suppliers?")) return;
-
-  setLoading(true);
-
-  try {
-    await axios.patch(
-      `${ADMIN_BASE}/admin/suppliers/auto-assign`,
-      {},
-      { headers: authHeaders }
-    );
-
-    alert("Auto-allocation completed. Refreshing assignments.");
-    await fetchPending();
-  } catch (err) {
-    alert(err?.response?.data?.error || "Auto-allocation failed.");
-  } finally {
-    setLoading(false);
-  }
-}
 
     // ---------------------------------------------------------
     // Search Logic
@@ -224,6 +245,8 @@ async function handleAutoAllocate() {
             setLoading(false);
         }
     }
+
+
 
     // ---------------------------------------------------------
     // View Supplier Details
@@ -326,96 +349,101 @@ async function handleAutoAllocate() {
     }
 
     // ---------------------------------------------------------
-// OPS ADMIN → MARK PROFILE AS COMPLETED
-// ---------------------------------------------------------
-async function handleProfileCompleted() {
+    // OPS ADMIN → MARK PROFILE AS COMPLETED
+    // ---------------------------------------------------------
+    async function handleProfileCompleted() {
 
-  if (!selected?.supplier_id) return;
+        if (!selected?.supplier_id) return;
 
-  if (!window.confirm("Mark profile as completed?")) {
-    return;
-  }
+        if (!window.confirm("Mark profile as completed?")) {
+            return;
+        }
 
-  setLoading(true);
-  setError("");
-  setMessage("");
+        setLoading(true);
+        setError("");
+        setMessage("");
 
-  try {
+        try {
 
-    await axios.patch(
-      `${ADMIN_BASE}/admin/supplier/${selected.supplier_id}/complete-profile`,
-      {},
-      { headers: authHeaders }
-    );
+            await axios.patch(
+                `${ADMIN_BASE}/admin/supplier/${selected.supplier_id}/complete-profile`,
+                {},
+                { headers: authHeaders }
+            );
 
-    setMessage("✅ Profile marked as completed.");
+            setMessage("✅ Profile marked as completed.");
 
-    setSelected(null);
-    setSelectedId("");
+            setSelected(null);
+            setSelectedId("");
 
-    fetchPending();
+            fetchPending();
 
-  } catch (err) {
+        } catch (err) {
 
-    setError(
-      err?.response?.data?.error ||
-      "Failed to mark profile completed"
-    );
+            setError(
+                err?.response?.data?.error ||
+                "Failed to mark profile completed"
+            );
 
-  } finally {
-    setLoading(false);
-  }
+        } finally {
+            setLoading(false);
+        }
 
-}
+    }
 
     // ---------------------------------------------------------
-// OPS ADMIN → SEND TO SUPER ADMIN FOR FINAL REVIEW
-// ---------------------------------------------------------
-async function handleSendToReview() {
-  if (!selected?.supplier_id) return;
+    // OPS ADMIN → SEND TO SUPER ADMIN FOR FINAL REVIEW
+    // ---------------------------------------------------------
+    async function handleSendToReview() {
+        if (!selected?.supplier_id) return;
 
-  if (!window.confirm("Send supplier to Super Admin for final verification?")) {
-    return;
-  }
+        if (!window.confirm("Send supplier to Super Admin for final verification?")) {
+            return;
+        }
 
-  setLoading(true);
-  setError("");
-  setMessage("");
+        setLoading(true);
+        setError("");
+        setMessage("");
 
-  try {
+        try {
 
-    await axios.patch(
-      `${ADMIN_BASE}/admin/supplier/${selected.supplier_id}/send-to-review`,
-      {},
-      { headers: authHeaders }
-    );
+            await axios.patch(
+                `${ADMIN_BASE}/admin/supplier/${selected.supplier_id}/send-to-review`,
+                {},
+                { headers: authHeaders }
+            );
 
-    setMessage("✅ Sent to Super Admin for final verification.");
+            setMessage("✅ Sent to Super Admin for final verification.");
 
-    setSelected(null);
-    setSelectedId("");
+            setSelected(null);
+            setSelectedId("");
 
-    fetchPending();
+            fetchPending();
 
-  } catch (err) {
+        } catch (err) {
 
-    setError(
-      err?.response?.data?.error ||
-      "Failed to send to Super Admin"
-    );
+            setError(
+                err?.response?.data?.error ||
+                "Failed to send to Super Admin"
+            );
 
-  } finally {
-    setLoading(false);
-  }
-}
+        } finally {
+            setLoading(false);
+        }
+    }
 
     // ---------------------------------------------------------
     // Approval Flow
     // ---------------------------------------------------------
     async function handleApprove() {
-        if (!selected?.supplier_id) return;
 
-        if (!window.confirm("Approve supplier?")) {
+        if (!isSuperAdmin) {
+            setError("Only Super Admin can approve");
+            return;
+        }
+
+        if (!selected?.supplier_id) {
+            setError("No supplier selected");
             return;
         }
 
@@ -525,18 +553,25 @@ async function handleSendToReview() {
     // ---------------------------------------------------------
     // Field Component (Label : Value)
     // ---------------------------------------------------------
-    const Field = ({ label, value }) => (
+    const Field = ({ icon, label, value }) => (
         <div className="detail-item">
+
+            {/* ICON */}
+            <div className="d-icon">{icon}</div>
+
+            {/* LABEL */}
             <div className="d-label">{label}</div>
+
+            {/* COLON */}
             <div className="d-sep">:</div>
+
+            {/* VALUE */}
             <div className="d-value">{value || "-"}</div>
+
         </div>
     );
     return (
         <div className="approve-container container form-container">
-
-            {/* Heading */}
-            <h2 style={{ color: "var(--primary)" }}>Admin • Supplier Review</h2>
 
             {/* Logic for showing either the Table or the Details */}
             {!selected ? (
@@ -582,19 +617,18 @@ async function handleSendToReview() {
                         </div>
 
                         <div className="approval_btn">
-                            <button className="btn-primary" onClick={handleSearch}>
+                            <button className="btn btn-primary" onClick={handleSearch}>
                                 Search
                             </button>
 
-                            <button className="btn-secondary1" onClick={fetchPending}>
+                            <button className="btn btn-secondary1" onClick={fetchPending}>
                                 Reset
                             </button>
 
                             {isSuperAdmin && (
                                 <button
-                                    className="btn-warning"
+                                    className="btn btn-warning"
                                     onClick={handleAutoAllocate}
-                                    title="Distributes suppliers to least-busy OPS admins"
                                 >
                                     ⚡ Auto Allocate
                                 </button>
@@ -695,7 +729,7 @@ async function handleSendToReview() {
                                                         onClick={async () => {
                                                             try {
                                                                 const res = await fetch(
-                                                                    "http://127.0.0.1:5000/api/v1/admin/suppliers/send-excel-template",
+                                                                    "http://192.168.2.9:5000/api/v1/admin/suppliers/send-excel-template",
                                                                     {
                                                                         method: "POST",
                                                                         headers: {
@@ -741,44 +775,42 @@ async function handleSendToReview() {
 
                                             {/* ACTION COLUMN */}
                                             <td>
-                                                <button
-                                                    className="btn-review"
-                                                    onClick={() => viewDetails(s.supplier_id)}
-                                                >
-                                                    Review
-                                                </button>
-
-                                                {isSuperAdmin && (
+                                                <div className="table-actions">
                                                     <button
-                                                        className="btn-warning"
-                                                        style={{ marginLeft: 8 }}
-                                                        onClick={() => {
-                                                            setSelectedSupplierForAllot(s.supplier_id);
-                                                            setShowAllotModal(true);
-                                                            loadOpsAdmins();
-                                                        }}
+                                                        className="btn-review12"
+                                                        onClick={() => viewDetails(s.supplier_id)}
                                                     >
-                                                        🔄 Allot
+                                                        Review
                                                     </button>
-                                                )}
+                                                    {isSuperAdmin && (
+                                                        <button
+                                                            className="btn-warning12"
+                                                            onClick={async () => {
+                                                                setSelectedSupplierForAllot(s.supplier_id);
+                                                                setShowAllotModal(true);
+                                                                loadOpsAdmins();
+                                                            }}
+                                                        >
+                                                            Allot
+                                                        </button>
+                                                    )}
 
 
-                                                <button
-                                                    className="btn-view-profile"
-                                                    onClick={() =>
-                                                        navigate(`/admin/profile/supplier/${s.supplier_id}`)
-                                                    }
-                                                    style={{ marginLeft: 8 }}
+                                                    <button
+                                                        className="btn-view-profile"
+                                                        onClick={() =>
+                                                            navigate(`/admin/profile/supplier/${s.supplier_id}`)
+                                                        }
                                                     >
-                                                    Profile
-                                                </button>
+                                                        Profile
+                                                    </button>
 
-                                                {/* <button
+                                                    {/* <button
                                                     className="btn btn-warning"
                                                     onClick={async () => {
                                                         try {
                                                         const res = await fetch(
-                                                            "http://127.0.0.1:5000/api/v1/admin/send-remaining-profile-mail",
+                                                            "http://192.168.2.9:5000/api/v1/admin/send-remaining-profile-mail",
                                                             {
                                                             method: "POST",
                                                             headers: {
@@ -808,6 +840,7 @@ async function handleSendToReview() {
                                                     >
                                                     📧 Request Remaining Details
                                                 </button> */}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -834,142 +867,164 @@ async function handleSendToReview() {
                         </span>
                     </div>
 
-                    <div className="form-card">
+                    <div className="review-container">
+
+                        <h2 className="page-title">Supplier Registration Review</h2>
+
+                        <div className="review-content">
+
+                            <div className="info-grid">
+
+                                {/* APPLICANT DETAILS */}
+                                <div className="info-card">
+                                    <h3>Applicant Details</h3>
 
 
-                        <h3>Supplier Registration Details</h3>
-                        <div className="details-grid">
-                            <Field label="Full Name" value={selected.fullName} />
-                            <Field label="Company Name" value={selected.companyName} />
-                            <Field label="Email" value={selected.email} />
-                            <Field label="Phone Number" value={selected.phoneNumber} />
-                            <Field label="Country" value={selected.country} />
-                            <Field label="City" value={selected.city} />
+                                    <h3>Supplier Registration Details</h3>
+                                    <div className="details-grid">
+                                        <Field icon={<FaUser />} label="Full Name" value={selected.fullName} />
+                                        <Field icon={<FaEnvelope />} label="Email" value={selected.email} />
+                                        <Field icon={<FaPhone />} label="Phone Number" value={selected.phoneNumber} />
+                                    </div>
+                                </div>
+
+                                {/* SUPPLIER DETAILS */}
+                                <div className="info-card">
+                                    <h3>Supplier Details</h3>
+
+                                    <div className="details-grid">
+                                        <Field icon={<FaBuilding />} label="Company Name" value={selected.companyName} />
+                                        <Field icon={<FaGlobe />} label="Country" value={selected.country} />
+                                        <Field icon={<FaMapMarkerAlt />} label="City" value={selected.city} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="documents-section">
+
+                                <h3 className="doc-heading">Documents</h3>
+
+                                <div className="documents-grid">
+
+                                    <div className="doc-box">
+                                        <div className="doc-title">Trade License</div>
+                                        {renderFilePreview("tradeLicense", selected.tradeLicense)}
+                                    </div>
+
+                                    <div className="doc-box">
+                                        <div className="doc-title">VAT Certificate</div>
+                                        {renderFilePreview("vatCertificate", selected.vatCertificate)}
+                                    </div>
+
+                                    <div className="doc-box">
+                                        <div className="doc-title">CR Copy</div>
+                                        {renderFilePreview("crCopy", selected.crCopy)}
+                                    </div>
+
+                                    <div className="doc-box">
+                                        <div className="doc-title">Computer Card Copy</div>
+                                        {renderFilePreview("computerCardCopy", selected.computerCardCopy)}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            {/* SUPER ADMIN BUTTONS */}
+                            {isSuperAdmin &&
+                                ["Under Review"].includes(selected?.approval_status) && (
+                                    <div className="action-buttons">
+
+                                        <button
+                                            className="btn btn-approve"
+                                            onClick={() => submitReview("approve")}
+                                        >
+                                            <FaCheckCircle className="btn-icon btn-md" /> Approve
+                                        </button>
+
+                                        <button
+                                            className="btn btn-reject"
+                                            onClick={() => setShowReject(true)}
+                                        >
+                                            <FaTimesCircle className="btn-icon btn-md" /> Reject
+                                        </button>
+
+                                        <button
+                                            className="btn btn-warning"
+                                            onClick={() => setShowResubmit(true)}
+                                        >
+                                            <FaRedoAlt className="btn-icon btn-md" /> Request Resubmission
+                                        </button>
+
+                                    </div>
+                                )}
+
+                            {/* OPS ADMIN SEND TO SUPER ADMIN */}
+                            {/* OPS ADMIN ACTIONS */}
+                            {isOpsAdmin && (
+                                <div className="action-center">
+
+                                    {/* PROFILE COMPLETED BUTTON */}
+                                    {selected?.approval_status === "Assigned" && isOpsAdmin && (
+                                        <button
+                                            onClick={handleProfileCompleted}
+                                            className="btn-warning"
+                                        >
+                                            Mark Profile Completed
+                                        </button>
+                                    )}
+
+                                    {/* SEND TO SUPER ADMIN BUTTON */}
+                                    {selected?.approval_status === "Profile Completed" && isOpsAdmin && (
+                                        <button
+                                            onClick={handleSendToReview}
+                                            className="btn-primary"
+                                        >
+                                            Send to Super Admin for Final Verification
+                                        </button>
+                                    )}
+
+                                </div>
+                            )}
+
+
+
+
+                            {showReject && (
+                                <div className="reject-box">
+                                    <textarea
+                                        value={rejectReason}
+                                        onChange={(e) => setRejectReason(e.target.value)}
+                                        placeholder="Reason for rejection..."
+                                    />
+                                    <button onClick={handleRejectSubmit} className="btn-reject">Confirm Reject</button>
+                                    <button className="btn-secondary" onClick={() => setShowReject(false)}>Cancel</button>
+                                </div>
+                            )}
+
+                            {showResubmit && (
+                                <div className="reject-box">
+                                    <textarea
+                                        value={resubmitReason}
+                                        onChange={(e) => setResubmitReason(e.target.value)}
+                                        placeholder="Enter reason for resubmission..."
+                                    />
+                                    <button onClick={handleResubmitSubmit} className="btn-warning1">Confirm Resubmission</button>
+                                    <button className="btn-secondary" onClick={() => setShowResubmit(false)}>Cancel</button>
+                                </div>
+                            )}
                         </div>
-
-                        <h3 style={{ marginTop: 20 }}>Documents</h3>
-                        <div className="documents-grid">
-                            <div className="doc-box">
-                                <div className="doc-title">Trade License</div>
-                                {renderFilePreview("tradeLicense", selected.tradeLicense)}
-                            </div>
-                            <div className="doc-box">
-                                <div className="doc-title">VAT Certificate</div>
-                                {renderFilePreview("vatCertificate", selected.vatCertificate)}
-                            </div>
-                            <div className="doc-box">
-                                <div className="doc-title">CR Copy</div>
-                                {renderFilePreview("crCopy", selected.crCopy)}
-                            </div>
-                            <div className="doc-box">
-                                <div className="doc-title">Computer Card Copy</div>
-                                {renderFilePreview("computerCardCopy", selected.computerCardCopy)}
-                            </div>
-                        </div>
-
-                        {/* SUPER ADMIN BUTTONS */}
-{isSuperAdmin && (
-  <div className="action-center">
-
-    <button
-      onClick={handleApprove}
-      className="btn-approve"
-    >
-      Approve
-    </button>
-
-    <button
-      onClick={() => setShowReject(true)}
-      className="btn-reject"
-    >
-      Reject
-    </button>
-
-    <button
-      onClick={() => setShowResubmit(true)}
-      className="btn-warning"
-    >
-      Request Resubmission
-    </button>
-
-  </div>
-)}
-
-{/* OPS ADMIN SEND TO SUPER ADMIN */}
-{/* OPS ADMIN ACTIONS */}
-{isOpsAdmin && (
-  <div className="action-center">
-
-    {/* PROFILE COMPLETED BUTTON */}
-    {selected?.approval_status === "Assigned" && (
-      <button
-        onClick={handleProfileCompleted}
-        className="btn-warning"
-        style={{
-          backgroundColor: "#ff9800",
-          fontWeight: "bold",
-          marginRight: "10px"
-        }}
-      >
-        ✅ Mark Profile Completed
-      </button>
-    )}
-
-    {/* SEND TO SUPER ADMIN BUTTON */}
-    {selected?.approval_status === "Profile Completed" && (
-      <button
-        onClick={handleSendToReview}
-        className="btn-primary"
-        style={{
-          backgroundColor: "#0066ff",
-          fontWeight: "bold"
-        }}
-      >
-        📤 Send to Super Admin for Final Verification
-      </button>
-    )}
-
-  </div>
-)}
-
-
-
-
-                        {showReject && (
-                            <div className="reject-box">
-                                <textarea
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
-                                    placeholder="Reason for rejection..."
-                                />
-                                <button onClick={handleRejectSubmit} className="btn-reject">Confirm Reject</button>
-                                <button className="btn-secondary" onClick={() => setShowReject(false)}>Cancel</button>
-                            </div>
-                        )}
-
-                        {showResubmit && (
-                            <div className="reject-box">
-                                <textarea
-                                    value={resubmitReason}
-                                    onChange={(e) => setResubmitReason(e.target.value)}
-                                    placeholder="Enter reason for resubmission..."
-                                />
-                                <button onClick={handleResubmitSubmit} className="btn-warning1">Confirm Resubmission</button>
-                                <button className="btn-secondary" onClick={() => setShowResubmit(false)}>Cancel</button>
-                            </div>
-                        )}
                     </div>
                 </>
             )}
 
             {showAllotModal && (
                 <div className="img-modal">
-                    <div className="form-card" style={{ width: "500px" }}>
+                    <div className="form-card">
                         <h3>Allot to OPS Admin</h3>
 
                         {opsAdmins.length === 0 && <p>Loading admins...</p>}
 
-                        <table style={{ width: "100%", marginTop: "10px" }}>
+                        <table >
                             <thead>
                                 <tr>
                                     <th>Admin</th>
@@ -1011,7 +1066,6 @@ async function handleSendToReview() {
                                             {/* NEW: DEASSIGN BUTTON */}
                                             <button
                                                 className="btn-reject"
-                                                style={{ marginLeft: 8 }}
                                                 disabled={assignLoading}
                                                 onClick={async () => {
                                                     setAssignLoading(true);
@@ -1043,7 +1097,6 @@ async function handleSendToReview() {
 
                         <button
                             className="btn-secondary"
-                            style={{ marginTop: "15px" }}
                             onClick={() => setShowAllotModal(false)}
                         >
                             Cancel

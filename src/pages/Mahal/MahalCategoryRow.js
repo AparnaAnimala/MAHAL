@@ -56,12 +56,12 @@ const MahalCategoryRow = ({ title, products = [] }) => {
                 <div className="mahal-price-row">
                   <div>
                     <span className="mahal-price">
-                      ₹{item?.price}
+                      QAR {item?.price}
                     </span>
 
                     {item?.oldPrice && (
                       <span className="mahal-old">
-                        ₹{item.oldPrice}
+                        QAR {item.oldPrice}
                       </span>
                     )}
                   </div>

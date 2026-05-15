@@ -389,7 +389,7 @@ def get_products():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT product_id, product_name_english, price_per_unit
+        SELECT product_id, product_name_english,product_name_arabic, price_per_unit
         FROM product_management
         WHERE supplier_id = %s AND flag = 'A'
         ORDER BY created_at DESC
@@ -402,6 +402,7 @@ def get_products():
     products = [{
         "product_id": r["product_id"],
         "product_name_english": r["product_name_english"],
+        "product_name_arabic": r.get("product_name_arabic"),
         "price_per_unit": r["price_per_unit"],
         "image_url": f"/api/products/image/{r['product_id']}"
     } for r in rows]
@@ -461,6 +462,7 @@ def get_offers():
             o.product_id,
 
             p.product_name_english,
+            p.product_name_arabic, 
             p.price_per_unit,
 
             o.discount_percentage,
@@ -504,6 +506,7 @@ def get_offers():
             "product_id": r["product_id"],
 
             "product_name_english": r["product_name_english"],
+            "product_name_arabic": r.get("product_name_arabic"),
             "price_per_unit": float(r["price_per_unit"]) if r["price_per_unit"] else None,
 
             "discount_percentage": float(r["discount_percentage"]) if r["discount_percentage"] else "",
@@ -1825,3 +1828,106 @@ def get_active_coupons():
         "total_offers": len(offers),
         "offers": offers
     }), 200
+@bp.route("/deals", methods=["GET"])
+@cross_origin()
+def get_deals():
+    from datetime import date
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    today = date.today()
+
+    try:
+        cur.execute("""
+            SELECT 
+                o.*,
+                p.product_name_english,
+                p.product_name_arabic,
+                p.price_per_unit,
+                p.product_images
+            FROM offers o
+            LEFT JOIN product_management p 
+                ON o.product_id = p.product_id
+            WHERE o.is_active = true
+              AND o.start_date <= %s
+              AND o.end_date >= %s
+              AND p.flag = 'A'
+            ORDER BY o.is_featured DESC, o.created_at DESC
+            LIMIT 20
+        """, (today, today))
+
+        rows = cur.fetchall()
+
+        deals = []
+        host = request.host_url.rstrip("/")
+
+        for o in rows:
+
+            # ❌ skip invalid price
+            if not o.get("price_per_unit"):
+                continue
+
+            base = float(o["price_per_unit"])
+
+            if base <= 0:
+                continue
+
+            # ---------------- IMAGE ----------------
+            image = None
+            imgs = o.get("product_images") or []
+
+            if isinstance(imgs, list) and len(imgs) > 0:
+                image = f"{host}/api/products/image/{o['product_id']}"
+            else:
+                image = None
+
+            # ---------------- PRICE ----------------
+            new_price = base
+            old_price = base
+            off = 0
+            title = ""
+
+            if o["offer_type"] == "Percentage" and o.get("discount_percentage"):
+                off = float(o["discount_percentage"])
+                new_price = base - (base * off / 100)
+                title = f"{int(off)}% OFF"
+
+            elif o["offer_type"] == "Flat" and o.get("flat_amount"):
+                flat = float(o["flat_amount"])
+                new_price = base - flat
+                off = (flat / base) * 100
+                title = f"{int(flat)} OFF"
+
+            elif o.get("buy_quantity") and o.get("get_quantity"):
+                title = f"Buy {o['buy_quantity']} Get {o['get_quantity']}"
+
+            elif o.get("free_delivery"):
+                title = "Free Delivery"
+
+            else:
+                title = o.get("offer_title") or "Special Offer"
+
+            new_price = max(new_price, 0)
+
+            deals.append({
+                "id": o["offer_id"],
+                "name": o.get("product_name_arabic") or o.get("product_name_english"),
+                "deal_title": title,
+                "price": round(new_price, 2),
+                "old_price": round(old_price, 2),
+                "off": int(off),
+                "image": image,
+                "end_date": str(o.get("end_date")),
+                "end_time": str(o.get("end_time") or "23:59:59")
+            })
+
+        return jsonify(deals), 200
+
+    except Exception as e:
+        print("DEALS ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()

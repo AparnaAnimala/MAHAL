@@ -194,15 +194,24 @@ def get_orders():
             SELECT
                 oh.order_id,
                 oh.supplier_id,
-                rr.restaurant_name_english AS restaurant_name,
+                rr.restaurant_name_english,
+                rr.restaurant_name_arabic,
                 oh.order_date,
                 oh.total_amount,
                 oh.status,
                 oh.payment_status,
-                oh.payment_method 
+                oh.payment_method,
+                    -- ✅ ADD THIS BACK
+                oh.is_recurring,
+                ro.frequency,
+                ro.next_run_date,
+                ro.status AS recurring_status
             FROM order_header oh
             JOIN restaurant_registration rr
                 ON rr.restaurant_id = oh.restaurant_id
+                    
+            LEFT JOIN recurring_orders ro
+                ON ro.order_id = oh.order_id
             WHERE oh.supplier_id = %s
             ORDER BY oh.order_date DESC
         """, (supplier_id,))
@@ -228,58 +237,59 @@ def get_order_details(order_id):
     try:
         cur.execute("""
            SELECT
-    oh.order_id,
-    oh.restaurant_id,
-    oh.supplier_id,
-    oh.order_date,
-    oh.expected_delivery_date,
-    oh.status,
-    oh.payment_status,
-    oh.total_amount,
-    oh.remarks,
+            oh.order_id,
+            oh.restaurant_id,
+            oh.supplier_id,
+            oh.order_date,
+            oh.expected_delivery_date,
+            oh.status,
+            oh.payment_status,
+            oh.total_amount,
+            oh.remarks,
 
-    gh.status AS grn_status,
+            gh.status AS grn_status,
 
-    rr.restaurant_name_english,
+            rr.restaurant_name_english,
+            rr.restaurant_name_arabic,
 
-    -- Names
-    COALESCE(rs.branch_name, rr.restaurant_name_english) AS branch_name,
-    COALESCE(rs.store_name_english, rr.restaurant_name_english) AS store_name_english,
-    COALESCE(rs.contact_person_name, rr.contact_person_name) AS contact_person_name,
+            -- Names
+            COALESCE(rs.branch_name, rr.restaurant_name_english) AS branch_name,
+            COALESCE(rs.store_name_english, rr.restaurant_name_english) AS store_name_english,
+            COALESCE(rs.contact_person_name, rr.contact_person_name) AS contact_person_name,
 
-    -- 🔑 FIXED: phone + email
-    COALESCE(
-        rs.contact_person_mobile,
-        rr.contact_person_mobile::text
-    ) AS contact_person_mobile,
+            -- 🔑 FIXED: phone + email
+            COALESCE(
+                rs.contact_person_mobile,
+                rr.contact_person_mobile::text
+            ) AS contact_person_mobile,
 
-    COALESCE(
-        rs.email,
-        rr.contact_person_email
-    ) AS email,
+            COALESCE(
+                rs.email,
+                rr.contact_person_email
+            ) AS email,
 
-    -- Address
-    COALESCE(rs.street, rr.city) AS street,
-    COALESCE(rs.zone, '') AS zone,
-    COALESCE(rs.building, '') AS building,
-    COALESCE(rs.shop_no, '') AS shop_no,
-    COALESCE(rs.city, rr.city) AS city,
-    COALESCE(rs.country, rr.country) AS country
+            -- Address
+            COALESCE(rs.street, rr.city) AS street,
+            COALESCE(rs.zone, '') AS zone,
+            COALESCE(rs.building, '') AS building,
+            COALESCE(rs.shop_no, '') AS shop_no,
+            COALESCE(rs.city, rr.city) AS city,
+            COALESCE(rs.country, rr.country) AS country
 
-FROM order_header oh
-JOIN restaurant_registration rr
-  ON rr.restaurant_id = oh.restaurant_id
-LEFT JOIN restaurant_store_registration rs
-  ON rs.store_id = oh.store_id
-LEFT JOIN LATERAL (
-    SELECT status
-    FROM grn_header
-    WHERE order_id = oh.order_id
-    ORDER BY created_at DESC
-    LIMIT 1
-) gh ON true
-WHERE oh.order_id = %s
-  AND oh.supplier_id = %s;
+        FROM order_header oh
+        JOIN restaurant_registration rr
+        ON rr.restaurant_id = oh.restaurant_id
+        LEFT JOIN restaurant_store_registration rs
+        ON rs.store_id = oh.store_id
+        LEFT JOIN LATERAL (
+            SELECT status
+            FROM grn_header
+            WHERE order_id = oh.order_id
+            ORDER BY created_at DESC
+            LIMIT 1
+        ) gh ON true
+        WHERE oh.order_id = %s
+        AND oh.supplier_id = %s;
 
         """, (order_id, supplier_id))
 
@@ -295,16 +305,20 @@ WHERE oh.order_id = %s
         # ===============================
         cur.execute("""
             SELECT
-                item_id,
-                product_id,
-                product_name_english,
-                quantity,
-                price_per_unit,
-                discount,
-                total_amount
-            FROM order_items
-            WHERE order_id = %s
-            ORDER BY item_id
+                oi.item_id,
+                oi.product_id,   -- ✅ FIXED
+                oi.product_name_english,
+                COALESCE(NULLIF(pm.product_name_arabic, ''), oi.product_name_english) 
+                AS product_name_arabic,
+                oi.quantity,
+                oi.price_per_unit,
+                oi.discount,
+                oi.total_amount
+            FROM order_items oi
+            LEFT JOIN product_management pm
+                ON pm.product_id = oi.product_id
+            WHERE oi.order_id = %s
+            ORDER BY oi.item_id
         """, (order_id,))
         items = cur.fetchall()
 
@@ -341,12 +355,32 @@ WHERE oh.order_id = %s
         has_pending_modification = modification_status == "PENDING"
 
 
+                # ===============================
+        # ✅ RECURRING (FIXED POSITION)
+        # ===============================
+        cur.execute("""
+            SELECT
+                frequency,
+                start_date,
+                end_date,
+                next_run_date,
+                status,
+                weekdays
+            FROM recurring_orders
+            WHERE order_id = %s
+            LIMIT 1
+        """, (order_id,))
+
+        recurring = cur.fetchone()
+
+
         return jsonify({
             "header": header,
             "items": items,
             "timeline": timeline,
             "has_pending_modification": has_pending_modification,
-            "modification_status": modification_status
+            "modification_status": modification_status,
+            "recurring": recurring
         }), 200
 
     finally:
@@ -1063,8 +1097,11 @@ def supplier_notifications():
     if err:
         return jsonify({"error": err[0]}), err[1]
 
+    lang = request.headers.get("Accept-Language", "en")
+
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
+
     cur.execute("""
       SELECT *
       FROM supplier_notifications
@@ -1073,8 +1110,57 @@ def supplier_notifications():
     """, (supplier_id,))
 
     rows = cur.fetchall()
+
+    # ✅ TRANSLATION ENGINE
+    def translate(r):
+        if not lang.startswith("ar"):
+            return r   # 👉 keep English as default
+
+        ref = r.get("reference_id")
+
+        translations = {
+            "NEW_ORDER": {
+                "title": "تم استلام طلب جديد",
+                "message": f"لقد استلمت طلبًا جديدًا رقم #{ref}"
+            },
+            "ORDER_ISSUE": {
+                "title": "تم الإبلاغ عن مشكلة",
+                "message": f"تم الإبلاغ عن مشكلة في الطلب #{ref}"
+            },
+            "PAYMENT_RECEIVED": {
+                "title": "تم استلام دفعة",
+                "message": "تم استلام دفعة جديدة"
+            },
+            "PROMOTION_INVITE": {
+                "title": "دعوة عرض",
+                "message": "تمت دعوتك للمشاركة في عرض"
+            },
+            "PROMOTION_DECISION": {
+                "title": "قرار العرض",
+                "message": "تم تحديث حالة العرض"
+            },
+            "LOW_STOCK": {
+                "title": "تنبيه انخفاض المخزون",
+                "message": "المنتج على وشك النفاد"
+            },
+            "OUT_OF_STOCK": {
+                "title": "نفاد المخزون",
+                "message": "المنتج غير متوفر الآن"
+            }
+        }
+
+        if r["type"] in translations:
+            r["title"] = translations[r["type"]]["title"]
+            r["message"] = translations[r["type"]]["message"]
+
+        return r
+
+    # ✅ APPLY TRANSLATION
+    rows = [translate(r) for r in rows]
+
     cur.close()
     conn.close()
+
     return jsonify(rows)
 
 
@@ -1867,6 +1953,67 @@ Open this link to start delivery:
         })
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+@order_bp.route("/<order_id>/skip-today", methods=["PUT"])
+def skip_today(order_id):
+
+    supplier_id, err = get_supplier_from_token()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cur.execute("""
+            SELECT supplier_id
+            FROM order_header
+            WHERE order_id = %s
+        """, (order_id,))
+
+        order = cur.fetchone()
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+
+        if order["supplier_id"] != supplier_id:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        cur.execute("""
+            SELECT next_run_date, frequency
+            FROM recurring_orders
+            WHERE order_id = %s
+        """, (order_id,))
+
+        rec = cur.fetchone()
+        if not rec:
+            return jsonify({"error": "Not a recurring order"}), 400
+
+        cur.execute("""
+            UPDATE recurring_orders
+            SET next_run_date =
+                CASE
+                    WHEN frequency = 'DAILY' THEN next_run_date + INTERVAL '1 day'
+                    WHEN frequency = 'WEEKLY' THEN next_run_date + INTERVAL '7 day'
+                    WHEN frequency = 'MONTHLY' THEN next_run_date + INTERVAL '1 month'
+                    ELSE next_run_date + INTERVAL '1 day'
+                END
+            WHERE order_id = %s
+        """, (order_id,))
+
+        conn.commit()
+
+        return jsonify({
+            "message": "Skipped successfully"
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
 
     finally:

@@ -1,0 +1,22 @@
+export default {
+welcome: "Welcome",
+      search_placeholder: "Search products, orders, invoices...",
+      profile: "My Profile",
+      logout: "Logout",
+
+      my_products: "My Products",
+      add_product: "Add New Product",
+      offers: "Offers",
+      orders: "Orders",
+      credit_wallet: "Credit Wallet",
+      invoice: "Invoice Form",
+      receipts: "Receipt Manager",
+      reports: "Reports",
+      issues: "Order Issues",
+      delivery: "Delivery Boys",
+      promotion_review: "Promotion Review",
+      paid_promotion: "Paid Promotion",
+      support: "Support",
+      documentation: "Documentation",
+      help: "Help",
+};

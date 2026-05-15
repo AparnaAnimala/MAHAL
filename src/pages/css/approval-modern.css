@@ -1,0 +1,410 @@
+/* =====================================================
+🔥 FULL FINAL MODERN UI (PRODUCTION READY)
+===================================================== */
+
+body {
+  background: #f4f6fb;
+  font-family: "Inter", sans-serif;
+}
+
+/* ===============================
+PAGE
+=============================== */
+.form-container {
+  padding: 25px;
+}
+
+/* ===============================
+TOP CARD
+=============================== */
+.search-section-wrapper {
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  border-radius: 18px;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+}
+
+/* ===============================
+GRID
+=============================== */
+.search-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* INPUTS */
+.search-bar select {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+}
+
+/* ===============================
+SEARCH INPUT WITH ICON
+=============================== */
+.search-input-box {
+  position: relative;
+  grid-column: span 2;
+}
+
+.search-input-box input {
+  width: 100%;
+  padding: 14px 14px 14px 42px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+/* ===============================
+BUTTON ROW (FIXED)
+=============================== */
+.approval_btn {
+  display: flex;
+  gap: 16px;
+  /* 🔽 reduce gap slightly */
+  margin-top: 20px;
+  /* 🔽 tighter spacing */
+  align-items: center;
+  justify-content: center;
+  /* center buttons */
+  flex-wrap: wrap;
+  /* responsive */
+}
+
+
+/* Button Base */
+.approval_btn .btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px !important;
+  border: none !important;
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff !important;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+}
+
+/* Gradient Style */
+.approval_btn .btn-primary,
+.approval_btn .btn-secondary1,
+.approval_btn .btn-warning {
+  background: linear-gradient(135deg, #ff7a00, #ff3d3d) !important;
+}
+
+/* Hover Effect */
+.approval_btn .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(255, 122, 0, 0.25);
+}
+
+/* Active (Click feel) */
+.approval_btn .btn:active {
+  transform: scale(0.98);
+}
+
+/* ===============================
+TABLE CARD
+=============================== */
+.table-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* ===============================
+TABLE HEADER
+=============================== */
+.Approvaltable table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+/* HEADER (LIGHT GREY LIKE FIRST IMAGE) */
+.Approvaltable thead th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 14px !important;
+  font-weight: 700;
+}
+
+/* ROWS */
+.Approvaltable tbody tr {
+  background: #fff7ed !important;
+}
+
+/* CELLS */
+.Approvaltable td {
+  border: 1px solid #fed7aa !important;
+  padding: 14px !important;
+}
+
+/* HOVER */
+.Approvaltable tbody tr:hover {
+  background: #ffedd5 !important;
+}
+
+/* ===============================
+ID
+=============================== */
+.id-badge {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+/* ===============================
+RESTAURANT
+=============================== */
+.restaurant-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.restaurant-icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #e6fffa, #ccfbf1);
+  color: #0f766e;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.restaurant-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* ===============================
+STATUS
+=============================== */
+.status-badge {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ===============================
+EMAIL
+=============================== */
+.email-cell {
+  max-width: 220px;
+  word-break: break-word;
+}
+
+/* =====================================================
+🔥 ACTION BUTTONS (FIXED LIKE FIRST IMAGE)
+===================================================== */
+
+.table-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* COMMON */
+.btn-review12,
+.btn-warning12,
+.btn-view-profile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* REVIEW */
+.btn-review12 {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+
+/* ALLOT */
+.btn-warning12 {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  border: 1px solid #fed7aa !important;
+}
+
+/* PROFILE */
+.btn-view-profile {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border: 1px solid #ddd6fe !important;
+}
+
+/* HOVER */
+.btn-review12:hover {
+  background: #d1fae5 !important;
+}
+
+.btn-warning12:hover {
+  background: #ffedd5 !important;
+}
+
+.btn-view-profile:hover {
+  background: #ede9fe !important;
+}
+
+/* ===============================
+CALL + EMAIL BUTTONS
+=============================== */
+.btn-call,
+.btn-email {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-call {
+  color: #ea580c;
+}
+
+.btn-email {
+  color: #b45309;
+}
+
+/* ===============================
+MESSAGES
+=============================== */
+.success {
+  background: #dcfce7;
+  color: #166534;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* ===============================
+RESPONSIVE
+=============================== */
+@media (max-width: 768px) {
+  .search-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .search-input-box {
+    grid-column: span 1;
+  }
+
+  .approval_btn {
+    flex-direction: column;
+  }
+}
+
+/* =====================================================
+🔥 STATUS FIX (LIKE OLD SIMPLE STYLE)
+===================================================== */
+
+.status-badge {
+  background: transparent !important;
+  color: #059669 !important;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* green dot */
+.status-badge::before {
+  content: "● ";
+  color: #10b981;
+}
+
+/* =====================================================
+🔥 TABLE ICON (MATCH FIRST IMAGE)
+===================================================== */
+
+.table-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-style {
+  color: #059669;
+  font-size: 20px;
+}
+
+
+
+/* =====================================================
+🔥 HEADER PERFECT ALIGN (MATCH FIRST IMAGE)
+===================================================== */
+
+.table-header {
+  display: flex;
+  align-items: center;
+}
+
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.table-heading-text h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* ICON BOX */
+.table-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ICON */
+.icon-style {
+  font-size: 20px;
+  color: #059669;
+}

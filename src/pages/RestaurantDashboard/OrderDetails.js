@@ -29,7 +29,7 @@
 
 //     axios
 //       .get(
-//         `http://127.0.0.1:5000/api/v1/orders/restaurant/orders/${orderId}`,
+//         `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${orderId}`,
 //         { headers: { Authorization: `Bearer ${token}` } }
 //       )
 //       .then((res) => setData(res.data))
@@ -105,7 +105,7 @@
 
 //         <div className="summary_right">
 //           <span>Total Amount</span>
-//           <h3>QAR {header.total_amount}</h3>
+//           <h3>QAR  {header.total_amount}</h3>
 //         </div>
 //       </div>
 
@@ -211,7 +211,7 @@
 //               <tr key={idx}>
 //                 <td>{i.product_name_english}</td>
 //                 <td>{i.quantity}</td>
-//                 <td className="text-end">QAR {i.total_amount}</td>
+//                 <td className="text-end">QAR  {i.total_amount}</td>
 //               </tr>
 //             ))}
 //           </tbody>
@@ -303,6 +303,7 @@ import InvoiceForm from "./RestaurantInvoiceForm";
 import { useNavigate } from "react-router-dom";
 /* ✅ IMPORT REVIEW MODAL */
 import ReviewModal from "./ReviewModal";
+import { useTranslation } from "react-i18next";
 
 const OrderDetails = ({ orderId, onBack, onTrack }) => {
   const navigate = useNavigate();
@@ -312,6 +313,44 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const { t, i18n } = useTranslation();
+
+  const formatCurrency = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US",
+    {
+      style: "currency",
+      currency: "QAR",
+    }
+  ).format(value);
+};
+
+const formatOrderId = (id) => {
+  if (i18n.language !== "ar") return id;
+
+  return id.replace(/\d/g, (d) =>
+    new Intl.NumberFormat("ar-QA").format(d)
+  );
+};
+
+
+  const formatDateTime = (date) => {
+  if (!date) return "-";
+
+  const d = new Date(date);
+
+  return d.toLocaleString(
+    i18n.language === "ar" ? "ar-QA" : "en-US",
+    {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    }
+  );
+};
 
   useEffect(() => {
     if (!orderId) return;
@@ -319,7 +358,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
     setLoading(true);
     axios
       .get(
-        `http://127.0.0.1:5000/api/v1/orders/restaurant/orders/${orderId}`,
+        `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${orderId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then(res => setData(res.data))
@@ -349,13 +388,13 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
   //   );
   // }
 
- const statusLabel = (s) => {
-    if (s === "OUT_FOR_DELIVERY") return "Out For Delivery";
-    if (s === "ACCEPTED") return "Confirmed";
-    if (s === "DELIVERED") return "Delivered";
-    if (s === "REJECTED") return "Cancelled";
-    return "Placed";
-  };
+const statusLabel = (s) => {
+  if (s === "OUT_FOR_DELIVERY") return t("resout_for_delivery");
+  if (s === "ACCEPTED") return t("resconfirmed");
+  if (s === "DELIVERED") return t("resdelivered");
+  if (s === "REJECTED") return t("rescancelled");
+  return t("resplaced");
+};
 
   const statusClass = (s) => {
     if (s === "DELIVERED") return "success";
@@ -369,27 +408,34 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
 
       {/* HEADER */}
       <div className="page_header">
-        <h2>Order Details</h2>
-        <button className="btn_add_item_v2" onClick={onBack}>
-          <i className="fa fa-arrow-left me-2"></i>Back
-        </button>
+      <h2>{t("resorder_details")}</h2>
+
+      <button className="btn_add_item_v2" onClick={onBack}>
+        <i className="fa fa-arrow-left me-2"></i>{t("resback")}
+      </button>
       </div>
 
       {/* ORDER SUMMARY */}
       <div className="card order_summary">
         <div className="summary_left">
-          <p><b>Order ID:</b> {header.order_id}</p>
-          <p><b>Order Date:</b> {new Date(header.order_date).toLocaleString()}</p>
-          <p><b>Supplier:</b> {header.supplier_name}</p>
-
+          <p>
+            <b>{t("resorder_id")}:</b>{" "}
+            <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+              {formatOrderId(header.order_id)}
+            </span>
+          </p>
+          <p><b>{t("resorder_date")}:</b>{" "}{formatDateTime(header.order_date)}</p>
+          <p><b>{t("ressupplier")}:</b> {i18n.language === "ar"
+            ? header.company_name_arabic || header.company_name_english
+            : header.company_name_english}</p>
           <span className={`status_badge ${statusClass(header.status)}`}>
             {statusLabel(header.status)}
           </span>
         </div>
 
         <div className="summary_right">
-          <span>Total Amount</span>
-          <h3>QAR {header.total_amount}</h3>
+          <span>{t("restotal_amount")}</span>
+          <h3>{formatCurrency(header.total_amount)}</h3>
         </div>
       </div>
 
@@ -399,18 +445,23 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
       {/* RESTAURANT DETAILS */}
       <div className="col-md-6">
         <div className="card">
-          <h5 className="card_title">Restaurant Details</h5>
+          <h5 className="card_title">{t("resrestaurant_details")}</h5>
 
-          <p><b>Name:</b> {header.restaurant_name_english}</p>
-          <p><b>Contact:</b> {header.restaurant_contact_name}</p>
-          <p><b>Mobile:</b> {header.restaurant_contact_mobile}</p>
-          <p><b>Email:</b> {header.restaurant_contact_email}</p>
+          <p>
+            <b>{t("resname")}:</b>{" "}
+            {i18n.language === "ar"
+              ? header.restaurant_name_arabic || header.restaurant_name_english
+              : header.restaurant_name_english}
+          </p>
+          <p><b>{t("rescontact")}:</b> {header.restaurant_contact_name}</p>
+          <p><b>{t("resmobile")}:</b> {header.restaurant_contact_mobile}</p>
+          <p><b>{t("resemail")}:</b> {header.restaurant_contact_email}</p>
 
           <p className="mt-2">
-            <b>Address:</b><br />
+            <b>{t("resaddress")}:</b><br />
             {header.restaurant_street}, {header.restaurant_building}<br />
-            Shop No: {header.restaurant_shop_no}<br />
-            Zone: {header.restaurant_zone}<br />
+            {t("resshop_no")}: {header.restaurant_shop_no}<br />
+            {t("reszone")}: {header.restaurant_zone}<br />
             {header.restaurant_city}, {header.restaurant_country}
           </p>
         </div>
@@ -420,17 +471,22 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
       {/* SUPPLIER DETAILS */}
       <div className="col-md-6">
         <div className="card">
-          <h5 className="card_title">Supplier Details</h5>
+          <h5 className="card_title">{t("ressupplier_details")}</h5>
 
-          <p><b>Name:</b> {header.supplier_name}</p>
-          <p><b>Contact:</b> {header.supplier_contact}</p>
-          <p><b>Mobile:</b> {header.supplier_mobile}</p>
-          <p><b>Email:</b> {header.supplier_email}</p>
+          <p>
+            <b>{t("resname")}:</b>{" "}
+            {i18n.language === "ar"
+              ? header.company_name_arabic || header.company_name_english
+              : header.company_name_english}
+          </p>
+          <p><b>{t("rescontact")}:</b> {header.supplier_contact}</p>
+          <p><b>{t("resmobile")}:</b> {header.supplier_mobile}</p>
+          <p><b>{t("resemail")}:</b> {header.supplier_email}</p>
 
           <p className="mt-2">
-            <b>Address:</b><br />
+            <b>{t("resaddress")}:</b><br />
             {header.supplier_address || header.supplier_street}<br />
-            Zone: {header.supplier_zone}<br />
+            {t("reszone")}: {header.supplier_zone}<br />
             {header.supplier_country}
           </p>
         </div>
@@ -441,45 +497,39 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
       {/* DELIVERY DETAILS */}
       {delivery && header.status === "OUT_FOR_DELIVERY" && (
         <div className="card mt-4">
-          <h5 className="card_title">🚚 Delivery Details</h5>
+            <h5 className="card_title">🚚 {t("resdelivery_details")}</h5>
 
-          <p><b>Delivery Type:</b> {delivery.delivery_type}</p>
+            <p><b>{t("resdelivery_type")}:</b> {delivery.delivery_type}</p>
 
           {delivery.delivery_type === "OWN" && (
             <>
-              <p><b>Driver:</b> {delivery.driver_name}</p>
+              <p><b>{t("resdriver")}:</b> {delivery.driver_name}</p>
+              <p><b>{t("resdriver_mobile")}:</b> {delivery.driver_mobile}</p>
 
-              <p>
-                <b>Driver Mobile:</b>{" "}
-                <a href={`tel:${delivery.driver_mobile}`}>
-                  {delivery.driver_mobile}
-                </a>
-              </p>
-
-              <p><b>Vehicle Type:</b> {delivery.vehicle_type || "-"}</p>
-              <p><b>Vehicle Number:</b> {delivery.vehicle_number || "-"}</p>
+              <p><b>{t("resvehicle_type")}:</b> {delivery.vehicle_type || "-"}</p>
+              <p><b>{t("resvehicle_number")}:</b> {delivery.vehicle_number || "-"}</p>
             </>
           )}
 
           {delivery.delivery_type === "PARTNER" && (
             <>
-              <p><b>Partner:</b> {delivery.partner_name}</p>
+              <p><b>{t("respartner")}:</b> {delivery.partner_name}</p>
             </>
           )}
 
-          <p>
-            <b>Estimated Arrival:</b>{" "}
-            {delivery.estimated_delivery_time
-              ? new Date(delivery.estimated_delivery_time).toLocaleString()
-              : "-"}
-          </p>
+            <p>
+              <b>{t("resestimated_arrival")}:</b>{" "}
+              {delivery.estimated_delivery_time
+                ? formatDateTime(delivery.estimated_delivery_time)
+                : "-"}
+            </p>
         </div>
       )}
 
 
       {delivery && header.status === "DELIVERED" && (
         <div className="card mt-4 border-success">
-          <h5 className="card_title">✅ Delivery Completed</h5>
+          <h5 className="card_title">✅ {t("resdelivery_completed")}</h5>
 
           {/* <p>
             <b>Delivered To:</b>{" "}
@@ -495,35 +545,36 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
 
           <hr />
 
-          <p><b>Driver:</b> {delivery.driver_name}</p>
-          <p><b>Driver Mobile:</b> {delivery.driver_mobile}</p>
-          <p>
-            <b>Vehicle:</b>{" "}
-            {delivery.vehicle_type || "-"} {delivery.vehicle_number || ""}
-          </p>
+            <p><b>{t("resdriver")}:</b> {delivery.driver_name}</p>
+            <p><b>{t("resdriver_mobile")}:</b> {delivery.driver_mobile}</p>
+
+            <p>
+              <b>{t("resvehicle")}:</b>{" "}
+              {delivery.vehicle_type || "-"} {delivery.vehicle_number || ""}
+            </p>
         </div>
       )}
       
 
       {recurring && (
         <div className="card mt-3">
-          <h5 className="card_title">Recurring Schedule</h5>
+          <h5 className="card_title">{t("resrecurring_schedule")}</h5>
 
-          <p><b>Frequency:</b> {recurring.frequency}</p>
+          <p><b>{t("resfrequency")}:</b> {recurring.frequency}</p>
 
           {recurring.weekdays?.length > 0 && (
-            <p><b>Days:</b> {recurring.weekdays.join(", ")}</p>
+            <p><b>{t("resdays")}:</b> {recurring.weekdays.join(", ")}</p>
           )}
 
-          <p><b>Start Date:</b> {recurring.start_date}</p>
+          <p><b>{t("resstart_date")}:</b> {formatDateTime(recurring.start_date)}</p>
 
           {recurring.end_date && (
-            <p><b>End Date:</b> {recurring.end_date}</p>
+            <p><b>{t("resend_date")}:</b> {formatDateTime(recurring.end_date)}</p>
           )}
 
-          <p><b>Next Run:</b> {recurring.next_run_date}</p>
+          <p><b>{t("resnext_run")}:</b> {formatDateTime(recurring.next_run_date)}</p>
 
-          <p><b>Status:</b> {recurring.status}</p>
+          <p><b>{t("resstatus")}:</b> {recurring.status}</p>
         </div>
       )}
 
@@ -531,21 +582,27 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
 
       {/* ITEMS */}
       <div className="card mt-4">
-        <h5 className="card_title">Order Items</h5>
+        <h5 className="card_title">{t("resorder_items")}</h5>
         <table className="table order_table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th className="text-end">Price</th>
+              <th>{t("resitem")}</th>
+              <th>{t("resqty")}</th>
+              <th className="text-end">{t("resprice")}</th>
             </tr>
           </thead>
           <tbody>
             {items.map((i, idx) => (
               <tr key={idx}>
-                <td>{i.product_name_english}</td>
+                <td>
+                  {i18n.language === "ar"
+                    ? i.product_name_arabic || i.product_name_english
+                    : i.product_name_english}
+                </td>
                 <td>{i.quantity}</td>
-                <td className="text-end">QAR {i.total_amount}</td>
+                <td className="text-end" dir="ltr">
+                  {formatCurrency(i.total_amount)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -575,7 +632,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
             onClick={() => onTrack(orderId)}
           >
             <i className="fa fa-location-arrow me-2"></i>
-            Track Your Order
+            {t("restrack_order")}
           </button>
         )}
 
@@ -586,7 +643,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
               className="btn btn-outline-success btn-lg"
               onClick={() => setShowReviewModal(true)}
             >
-              ⭐ Submit Review
+              {t("ressubmit_review")}
             </button>
             <button
               className="btn btn-outline-danger btn-lg"
@@ -594,7 +651,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
                 navigate(`/restaurantdashboard/issues/${header.order_id}`)
               }
             >
-              Report Issue
+              {t("resreport_issue")}
             </button>
 
             <button
@@ -605,7 +662,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
                 })
               }
             >
-              View Invoice
+              {t("resview_invoice")}
             </button>
 
 
@@ -615,7 +672,7 @@ const OrderDetails = ({ orderId, onBack, onTrack }) => {
                 navigate(`/restaurantdashboard/grn/${header.order_id}`)
               }
             >
-              Create / View GRN
+              {t("rescreate_grn")}
             </button>
 
           </>

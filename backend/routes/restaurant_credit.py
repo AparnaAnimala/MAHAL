@@ -308,9 +308,9 @@ def settlement_pdf(settlement_id):
     # =====================================================
 
     totals = [
-        ["Previous Due", f"QAR {previous_due:.2f}"],
-        ["Amount Paid", f"QAR {float(row['amount']):.2f}"],
-        ["Remaining Due", f"QAR {remaining_due:.2f}"]
+        ["Previous Due", f"QAR  {previous_due:.2f}"],
+        ["Amount Paid", f"QAR  {float(row['amount']):.2f}"],
+        ["Remaining Due", f"QAR  {remaining_due:.2f}"]
     ]
 
     totals_table = Table(totals, colWidths=[250,200])

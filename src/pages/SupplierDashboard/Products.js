@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-
+import { useTranslation } from "react-i18next";
 import InventoryCard from "./InventoryCard";
 import ProductActionsModal from "./ProductActionsModal";
 import EditInventoryModal from "./EditInventoryModal";
@@ -9,6 +9,7 @@ import OfferModal from "./OfferModal";
 const LOW_STOCK_LIMIT = 10;
 const formatProduct = (p) => {
   const stock = p.stock_availability ?? 0;
+  
 
   const stockStatus =
     stock === 0
@@ -25,6 +26,7 @@ const formatProduct = (p) => {
   return {
     id: p.product_id,
     name: p.product_name_english || "",
+    country: p.country_of_origin || "",
     image: p.product_images?.[0] || "",
     price: p.price_per_unit ?? 0,
     expiry: p.expiry_date || "",
@@ -39,6 +41,7 @@ const formatProduct = (p) => {
 };
 
 const Products = () => {
+  const { t, i18n } = useTranslation();
   const supplierId = localStorage.getItem("linked_id");
   const token = localStorage.getItem("token");
 
@@ -55,8 +58,7 @@ const Products = () => {
   //   setSelectedProduct(null);
   // };
   const [existingOffer, setExistingOffer] = useState(null);
-
-
+  const [countryFilter, setCountryFilter] = useState("");
 
     /* ===== SEARCH & FILTER STATES ===== */
   const [showSearch, setShowSearch] = useState(false);
@@ -82,11 +84,15 @@ const Products = () => {
       (offerFilter === "NO_OFFER" && !p.offer) ||
       (p.offer && p.offer.offer_type === offerFilter);
 
+    const matchesCountry =
+      countryFilter === "" || p.country === countryFilter;
+
     return (
       matchesSearch &&
       matchesStock &&
       matchesExpiry &&
-      matchesOffer
+      matchesOffer &&
+      matchesCountry
     );
   });
 
@@ -102,7 +108,7 @@ const Products = () => {
 const fetchOfferByProduct = async (productId) => {
   try {
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/offers/by-product/${productId}`
+      `http://192.168.2.9:5000/api/offers/by-product/${productId}`
     );
     return res.data; // null OR offer object
   } catch (err) {
@@ -111,118 +117,125 @@ const fetchOfferByProduct = async (productId) => {
   }
 };
 
-  /* =========================
-     LOAD INVENTORY
-  ========================= */
-  const loadInventory = async () => {
+//   const loadInventory = async () => {
+//     if (!supplierId) return;
+
+//     try {
+//       const res = await axios.get(
+//         `http://192.168.2.9:5000/api/products/inventory?supplier_id=${supplierId}`
+//       );
+
+//       const formatted = await Promise.all(
+//   (res.data || []).map(async (p) => {
+//     const stock = p.stock_availability ?? 0;
+
+//     const stockStatus =
+//       stock === 0
+//         ? "OUT_OF_STOCK"
+//         : stock <= LOW_STOCK_LIMIT
+//         ? "LOW_STOCK"
+//         : "IN_STOCK";
+
+//     const expiryStatus =
+//       p.expiry_date && new Date(p.expiry_date) < new Date()
+//         ? "EXPIRED"
+//         : "VALID";
+
+//     // 🔥 FETCH OFFER PER PRODUCT
+//     const offer = await fetchOfferByProduct(p.product_id);
+
+//     return {
+//       id: p.product_id,
+//       name: p.product_name_english,
+//       image: p.product_images?.[0],
+//       price: p.price_per_unit,
+//       expiry_date: p.expiry_date,
+//       expiry_time: p.expiry_time,
+//       moq: p.minimum_order_quantity,
+//       uom: p.unit_of_measure,
+//       currency: p.currency,
+//       units: stock,
+//       stockStatus,
+//       expiryStatus,
+
+//       // ✅ THIS IS WHAT InventoryCard USES
+//       offer,
+
+//       __raw: p,
+//     };
+//   })
+// );
+
+
+//       setProducts(formatted);
+//     } catch (err) {
+//       console.error("Failed to load inventory", err);
+//     }
+//   };
+
+  const loadInventory = useCallback(async () => {
     if (!supplierId) return;
 
     try {
       const res = await axios.get(
-        `http://127.0.0.1:5000/api/products/inventory?supplier_id=${supplierId}`
+        `http://192.168.2.9:5000/api/products/inventory?supplier_id=${supplierId}`
       );
 
-      const formatted = await Promise.all(
-  (res.data || []).map(async (p) => {
-    const stock = p.stock_availability ?? 0;
+      const formatted = (res.data || []).map((p) => {
+        const stock = p.stock_availability ?? 0;
 
-    const stockStatus =
-      stock === 0
-        ? "OUT_OF_STOCK"
-        : stock <= LOW_STOCK_LIMIT
-        ? "LOW_STOCK"
-        : "IN_STOCK";
+        const stockStatus =
+          stock === 0
+            ? "OUT_OF_STOCK"
+            : stock <= LOW_STOCK_LIMIT
+            ? "LOW_STOCK"
+            : "IN_STOCK";
 
-    const expiryStatus =
-      p.expiry_date && new Date(p.expiry_date) < new Date()
-        ? "EXPIRED"
-        : "VALID";
+        const expiryStatus =
+          p.expiry_date && new Date(p.expiry_date) < new Date()
+            ? "EXPIRED"
+            : "VALID";
 
-    // 🔥 FETCH OFFER PER PRODUCT
-    const offer = await fetchOfferByProduct(p.product_id);
+        return {
+          id: p.product_id,
+          name: p.product_name_english,
+          product_name_english: p.product_name_english,
+          product_name_arabic: p.product_name_arabic,
+          country: p.country_of_origin || "",
+          primary_image: p.primary_image,
+          image: p.product_images?.[0],
+          price: p.price_per_unit,
+          expiry_date: p.expiry_date,
+          expiry_time: p.expiry_time,
+          moq: p.minimum_order_quantity,
+          uom: p.unit_of_measure,
+          currency: p.currency,
+          units: stock,
+          delivery_time_minutes: p.delivery_time_minutes,
+          stockStatus,
+          expiryStatus,
 
-    return {
-      id: p.product_id,
-      name: p.product_name_english,
-      image: p.product_images?.[0],
-      price: p.price_per_unit,
-      expiry_date: p.expiry_date,
-      expiry_time: p.expiry_time,
-      moq: p.minimum_order_quantity,
-      uom: p.unit_of_measure,
-      currency: p.currency,
-      units: stock,
-      stockStatus,
-      expiryStatus,
+          // ✅ DIRECTLY FROM BACKEND
+          offer: p.offer,
 
-      // ✅ THIS IS WHAT InventoryCard USES
-      offer,
-
-      __raw: p,
-    };
-  })
-);
-
+          __raw: p,
+        };
+      });
 
       setProducts(formatted);
+
     } catch (err) {
       console.error("Failed to load inventory", err);
     }
-  };
+  }, [supplierId]);
 
-// const loadInventory = async () => {
-//   if (!supplierId) return;
-
-//   try {
-//     const res = await axios.get(
-//       `http://127.0.0.1:5000/api/products/inventory?supplier_id=${supplierId}`
-//     );
-
-//     const formatted = (res.data || []).map((p) => {
-//       const stock = p.stock_availability ?? 0;
-
-//       const stockStatus =
-//         stock === 0
-//           ? "OUT_OF_STOCK"
-//           : stock <= LOW_STOCK_LIMIT
-//           ? "LOW_STOCK"
-//           : "IN_STOCK";
-
-//       const expiryStatus =
-//         p.expiry_date && new Date(p.expiry_date) < new Date()
-//           ? "EXPIRED"
-//           : "VALID";
-
-//       return {
-//         id: p.product_id,
-//         name: p.product_name_english,
-//         image: p.product_images?.[0],
-//         price: p.price_per_unit,
-//         expiry_date: p.expiry_date,
-//         expiry_time: p.expiry_time,
-//         moq: p.minimum_order_quantity,
-//         uom: p.unit_of_measure,
-//         currency: p.currency,
-//         units: stock,
-//         stockStatus,
-//         expiryStatus,
-
-//         // 🔥 NOW OFFER COMES DIRECTLY FROM JOIN
-//         offer: p.offer,
-
-//         __raw: p,
-//       };
-//     });
-
-//     setProducts(formatted);
-//   } catch (err) {
-//     console.error("Failed to load inventory", err);
-//   }
-// };
+  // useEffect(() => {
+  //   loadInventory();
+  // }, [supplierId]);
 
   useEffect(() => {
     loadInventory();
-  }, [supplierId]);
+  }, [loadInventory]);
 
   /* =========================
      SAVE EDIT (✅ FIXED)
@@ -231,14 +244,19 @@ const fetchOfferByProduct = async (productId) => {
   try {
     // 1️⃣ Update inventory fields
     await axios.put(
-      "http://127.0.0.1:5000/api/products/update-inventory",
+      "http://192.168.2.9:5000/api/products/update-inventory",
       {
         product_id: data.product_id,
+        product_name_english: data.product_name_english,
+        product_name_arabic: data.product_name_arabic,
+        country_of_origin: data.country_of_origin,
         stock: Number(data.units),
         price_per_unit: Number(data.price),
         minimum_order_quantity: Number(data.moq),
         currency: data.currency,
         unit_of_measure: data.uom,
+        delivery_time_minutes: Number(data.delivery_time_minutes),
+        primary_image: data.primary_image,
 
         // ✅ FIXED
         expiry_date: data.expiry_date || null,
@@ -261,7 +279,7 @@ const fetchOfferByProduct = async (productId) => {
       });
 
       await axios.post(
-        `http://127.0.0.1:5000/api/products/upload-images/${data.product_id}`,
+        `http://192.168.2.9:5000/api/products/upload-images/${data.product_id}`,
         formData,
         {
           headers: {
@@ -291,7 +309,7 @@ const fetchOfferByProduct = async (productId) => {
   const handleDeactivate = async (productId) => {
     try {
       await axios.delete(
-        `http://127.0.0.1:5000/api/products/${productId}/delete`,
+        `http://192.168.2.9:5000/api/products/${productId}/delete`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -308,7 +326,7 @@ const fetchOfferByProduct = async (productId) => {
 
   try {
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/products/inventory?flag=D&supplier_id=${supplierId}`
+      `http://192.168.2.9:5000/api/products/inventory?flag=D&supplier_id=${supplierId}`
     );
 
     const formatted = (res.data || []).map(formatProduct);
@@ -321,7 +339,7 @@ const fetchOfferByProduct = async (productId) => {
   const handleRestore = async (productId) => {
   try {
     await axios.put(
-      `http://127.0.0.1:5000/api/products/${productId}/restore`,
+      `http://192.168.2.9:5000/api/products/${productId}/restore`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -358,20 +376,20 @@ const handleSaveOffer = async (offerData) => {
     };
 
     const existing = await axios.get(
-      `http://127.0.0.1:5000/api/offers/by-product/${offerData.product_id}`
+      `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`
     );
 
     if (existing.data?.offer_id) {
       // ✅ UPDATE
       await axios.put(
-        `http://127.0.0.1:5000/api/offers/by-product/${offerData.product_id}`,
+        `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } else {
       // ✅ CREATE (NEW ROUTE)
       await axios.post(
-        `http://127.0.0.1:5000/api/offers/by-product/${offerData.product_id}`,
+        `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -391,7 +409,7 @@ const handleSaveOffer = async (offerData) => {
 const handleEditOffer = async (product) => {
   try {
     const res = await axios.get(
-      `http://127.0.0.1:5000/api/offers/by-product/${product.product_id}`
+      `http://192.168.2.9:5000/api/offers/by-product/${product.product_id}`
     );
 
     setExistingOffer(res.data); // may be null
@@ -428,7 +446,7 @@ const handleEditOffer = async (product) => {
             <input
               autoFocus
               type="text"
-              placeholder="Search products..."
+              placeholder={t("products_search")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             
@@ -447,16 +465,17 @@ const handleEditOffer = async (product) => {
       </div>
 
       {/* FILTERS */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div className="inv_top_filter_bar">
+      <div className="inv_filter_group">
         <select
           value={stockFilter}
           onChange={(e) => setStockFilter(e.target.value)}
           
         >
-          <option value="">Stock</option>
-          <option value="IN_STOCK">In Stock</option>
-          <option value="LOW_STOCK">Low Stock</option>
-          <option value="OUT_OF_STOCK">Out of Stock</option>
+          <option value="">{t("stock")}</option>
+          <option value="IN_STOCK">{t("in_stock")}</option>
+          <option value="LOW_STOCK">{t("low_stock")}</option>
+          <option value="OUT_OF_STOCK">{t("out_of_stock")}</option>
         </select>
 
         <select
@@ -464,22 +483,34 @@ const handleEditOffer = async (product) => {
           onChange={(e) => setExpiryFilter(e.target.value)}
           
         >
-          <option value="">Expiry</option>
-          <option value="VALID">Valid</option>
-          <option value="EXPIRED">Expired</option>
+          <option value="">{t("expiry")}</option>
+          <option value="VALID">{t("valid")}</option>
+          <option value="EXPIRED">{t("expired")}</option>
         </select>
 
         <select
           value={offerFilter}
           onChange={(e) => setOfferFilter(e.target.value)}
         >
-          <option value="">Offer</option>
-          <option value="Percentage">Percentage</option>
-          <option value="Flat">Flat</option>
-          <option value="BOGO">BOGO</option>
-          <option value="NO_OFFER">No Offer</option>
+          <option value="">{t("offer")}</option>
+          <option value="Percentage">{t("percentage")}</option>
+          <option value="Flat">{t("flat")}</option>
+          <option value="BOGO">{t("bogo")}</option>
+          <option value="NO_OFFER">{t("no_offer")}</option>
         </select>
 
+        <select
+          value={countryFilter}
+          onChange={(e) => setCountryFilter(e.target.value)}
+        >
+          <option value="">{t("country")}</option>
+
+          {[...new Set(products.map(p => p.country).filter(Boolean))].map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
         {(stockFilter || expiryFilter || search) && (
           <button
@@ -491,20 +522,24 @@ const handleEditOffer = async (product) => {
             }}
           
           >
-            Reset
+            {t("reset")}
           </button>
         )}
+        
       </div>
 
       <button
+        className={`inv_inactive_toggle_btn ${
+          showArchived ? "active_archive_btn" : ""
+        }`}
         onClick={async () => {
           if (!showArchived) await loadArchivedProducts();
           setShowArchived(!showArchived);
         }}
-        
       >
-        {showArchived ? "⬅️ Hide InActive Products" : "🗄️ View InActive Products"}
+        {showArchived ? t("hide_inactive") : t("view_inactive")}
       </button>
+      </div>
 
       {/* ACTIVE LIST */}
       {!showArchived && (
@@ -526,7 +561,7 @@ const handleEditOffer = async (product) => {
             <div key={p.id} className="archived_card">
               <InventoryCard product={p} disabled />
               <button onClick={() => handleRestore(p.id)} className="btn restore">
-                ♻️ Restore
+                ♻️ {t("restore")}
               </button>
             </div>
           ))}
@@ -557,14 +592,20 @@ const handleEditOffer = async (product) => {
         <EditInventoryModal
           product={{
             product_id: editProduct.product_id,
-            name: editProduct.product_name_english,
+
+            // 🔥 ADD THESE (THIS IS THE FIX)
+            product_name_english: editProduct.product_name_english || "",
+            product_name_arabic: editProduct.product_name_arabic || "",
+
             price: editProduct.price_per_unit,
             expiry_date: editProduct.expiry_date,
             expiry_time: editProduct.expiry_time,
             moq: editProduct.minimum_order_quantity,
             uom: editProduct.unit_of_measure,
             currency: editProduct.currency,
+            country_of_origin: editProduct.country_of_origin,
             units: editProduct.stock_availability,
+            delivery_time_minutes: editProduct.delivery_time_minutes,
             images: editProduct.product_images || [],
           }}
           onClose={() => setEditProduct(null)}

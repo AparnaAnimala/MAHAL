@@ -1364,7 +1364,7 @@ box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px
 .mm-stepper {
   position: absolute;
   bottom: 12px;
-  right: 12px;
+  right: 82px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4124,15 +4124,33 @@ background: transparent;
 }
 
 .discount-ribbon span {
-  position: absolute;
-  top: 4px;
- left: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
+        position: absolute;
+    top: 4px;
+    left: 8px;
+    font-size: 12px;
+    width: 50px;
+    font-weight: 700;
+    color: #fff;
 }
 
- 
+ .product_actions {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* or space-between if you want spread */
+  gap: 10px;
+  margin-top: 10px;
+}
+.delivery_strip_label_new {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  background: transparent; /* remove pill bg if needed */
+  padding: 0;
+  box-shadow: none;
+  margin-top: 10px;
+
+}
 
 /* Section background clean */
  
@@ -4412,6 +4430,19 @@ background: transparent;
   font-weight: 600;
 
   animation: ribbonPulse 1.6s infinite;
+}
+
+.mm-ribbon1 {
+    position: absolute;
+    top: 128px;
+    left: 162px;
+    background: linear-gradient(135deg, #ff8c00, #ff3d00);
+    color: #000;
+    font-size: 13px;
+    padding: 4px 40px;
+    transform: rotate(-45deg);
+    font-weight: 600;
+    animation: ribbonPulse 1.6s infinite;
 }
 
 /* Timer */

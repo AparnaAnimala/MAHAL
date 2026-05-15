@@ -1,0 +1,27 @@
+export default {
+  invoice_report: "Invoice Report",
+  download_excel: "Excel",
+  download_pdf: "PDF",
+  all_status: "All Status",
+
+  invoice_id: "Invoice ID",
+  invoice_no: "Invoice No",
+  order: "Order",
+  date: "Date",
+  restaurant: "Restaurant",
+  product: "Product",
+  qty: "Qty",
+  price: "Price",
+  discount: "Discount",
+  item_total: "Item Total",
+  subtotal: "Subtotal",
+  tax: "Tax",
+  grand_total: "Grand Total",
+  status: "Status",
+  payment: "Payment",
+
+  prev: "Prev",
+  next: "Next",
+  page: "Page",
+  of: "of",
+};

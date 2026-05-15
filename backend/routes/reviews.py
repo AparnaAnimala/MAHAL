@@ -232,3 +232,27 @@ def get_product_reviews(product_id):
     conn.close()
 
     return jsonify(rows), 200
+@reviews_bp.route("/reviews/all", methods=["GET"])
+def get_all_reviews():
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        SELECT
+            review_id,
+            product_name,
+            rating,
+            review_text,
+            created_at
+        FROM product_reviews
+        ORDER BY created_at DESC
+        LIMIT 20
+    """)
+
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(rows), 200

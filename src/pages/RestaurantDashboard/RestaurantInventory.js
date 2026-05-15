@@ -3,9 +3,10 @@ import axios from "axios";
 import "../css/restaurant_inventory.css";
 import { useNavigate } from "react-router-dom";
 import { FaUtensils, FaShoppingCart } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
-const API = "http://127.0.0.1:5000/api/inventory";
-const CART_API = "http://127.0.0.1:5000/api/cart/add";
+const API = "http://192.168.2.9:5000/api/inventory";
+const CART_API = "http://192.168.2.9:5000/api/cart/add";
 
 const RestaurantInventory = () => {
 
@@ -28,6 +29,13 @@ const RestaurantInventory = () => {
 
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("ALL");
+  // Inside component
+  const { t, i18n } = useTranslation();
+  const formatNumber = (value) => {
+  return new Intl.NumberFormat(
+    i18n.language === "ar" ? "ar-QA" : "en-US"
+  ).format(value);
+};
 
 
   /* ================= FETCH INVENTORY ================= */
@@ -37,12 +45,13 @@ const RestaurantInventory = () => {
     axios
       .get(`${API}/restaurant/stock?restaurant_id=${restaurantId}`)
       .then(res => {
+        console.log(res.data);
         setItems(res.data || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
 
-  }, [restaurantId]);
+  }, [restaurantId, i18n.language]);
 
 
   /* ================= SUMMARY ================= */
@@ -56,7 +65,7 @@ const RestaurantInventory = () => {
   ).length;
 
 
-  if (loading) return <div className="inv-loading">Loading inventory…</div>;
+  if (loading) return <div className="inv-loading">{t("ResloadingInventory")}</div>;
 
 
   /* ================= FILTER ================= */
@@ -64,7 +73,10 @@ const RestaurantInventory = () => {
 
     const qty = Number(item.available_qty || 0);
 
-    const name = (item.product_name || "").toLowerCase();
+const name =
+  i18n.language === "ar"
+    ? (item.product_name_arabic || item.product_name || "").toLowerCase()
+    : (item.product_name || "").toLowerCase();
     const query = search.trim().toLowerCase();
 
     const matchesSearch = name.includes(query);
@@ -110,7 +122,7 @@ const RestaurantInventory = () => {
       alert("Added to cart");
       setReorderItemData(null);
 
-      navigate("/restaurantdashboard/cartview");
+      navigate("/cartview");
 
     } catch (err) {
       console.error(err);
@@ -122,13 +134,13 @@ const RestaurantInventory = () => {
 
 
   return (
-    <div className="inv-wrapper">
+    <div className="inv-wrapper" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
 
       {/* HEADER */}
-      <div className="inv-header">
-        <h2>📦 Restaurant Inventory</h2>
-        <span className="inv-subtitle">Real-time stock snapshot</span>
-      </div>
+<div className="inv-header">
+  <h2>📦 {t("ResrestaurantInventory")}</h2>
+  <span className="inv-subtitle">{t("ResrealTimeStock")}</span>
+</div>
 
 
       {/* FILTERS */}
@@ -138,7 +150,7 @@ const RestaurantInventory = () => {
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Search by product name..."
+            placeholder={t("RessearchProduct")}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -148,10 +160,11 @@ const RestaurantInventory = () => {
           value={stockFilter}
           onChange={e => setStockFilter(e.target.value)}
         >
-          <option value="ALL">All</option>
-          <option value="IN">In Stock</option>
-          <option value="LOW">Low Stock</option>
-          <option value="OUT">Out of Stock</option>
+
+          <option value="ALL">{t("Resall")}</option>
+          <option value="IN">{t("ResinStock")}</option>
+          <option value="LOW">{t("ReslowStock")}</option>
+          <option value="OUT">{t("ResoutOfStock")}</option>
         </select>
 
       </div>
@@ -161,18 +174,18 @@ const RestaurantInventory = () => {
       <div className="inv-summary">
 
         <div className="summary-card">
-          <span>Total Products</span>
-          <b>{items.length}</b>
+          <span>{t("RestotalProducts")}</span>
+          <b>{formatNumber(items.length)}</b>
         </div>
 
         <div className="summary-card">
-          <span>Total Quantity</span>
-          <b>{totalQty.toFixed(2)}</b>
+          <span>{t("RestotalQuantity")}</span>
+          <b>{formatNumber(totalQty.toFixed(2))}</b>
         </div>
 
         <div className="summary-card warning">
-          <span>Low Stock</span>
-          <b>{lowStockCount}</b>
+          <span>{t("ReslowStock")}</span>
+          <b>{formatNumber(lowStockCount)}</b>
         </div>
 
       </div>
@@ -185,14 +198,14 @@ const RestaurantInventory = () => {
 
           const qty = Number(item.available_qty || 0);
 
-          let status = "IN STOCK";
+          let status = t("ResinStock");
           let statusclass = "ok";
 
           if (qty <= 0) {
-            status = "OUT OF STOCK";
+            status = t("ResoutOfStock");
             statusclass = "danger";
           } else if (qty < 10) {
-            status = "LOW STOCK";
+            status = t("ReslowStock");
             statusclass = "warning";
           }
 
@@ -218,10 +231,14 @@ const RestaurantInventory = () => {
               {/* INFO */}
               <div className="inv-info">
 
-                <h4>{item.product_name}</h4>
+                  <h4>
+                  {i18n.language === "ar"
+                    ? (item.product_name_arabic?.trim() || item.product_name_english)
+                    : item.product_name_english}
+                  </h4>
 
                 <div className="inv-qty">
-                  {qty.toFixed(2)}
+                 {formatNumber(qty.toFixed(2))}
                 </div>
 
                 <div className="inv-actions">
@@ -241,7 +258,7 @@ const RestaurantInventory = () => {
                     }}
                   >
                     <FaUtensils className="btn-icon" />
-                    Issue to Kitchen
+                    {t("ResissueToKitchen")}
                   </button>
 
 
@@ -255,7 +272,7 @@ const RestaurantInventory = () => {
                     }}
                   >
                     <FaShoppingCart className="btn-icon" />
-                    Reorder
+                    {t("Resreorder")}
                   </button>
 
 
@@ -278,11 +295,15 @@ const RestaurantInventory = () => {
 
           <div className="inv-modal">
 
-            <h3>Issue to Kitchen</h3>
+            <h3>{t("ResissueToKitchen")}</h3>
 
-            <p><b>{selectedItem.product_name}</b></p>
+            <p>  <b>
+              {i18n.language === "ar"
+                ? selectedItem.product_name_arabic || selectedItem.product_name
+                : selectedItem.product_name}
+            </b></p>
 
-            <label>Quantity</label>
+            <label>{t("Resquantity")}</label>
             <input
               type="number"
               min="1"
@@ -298,7 +319,7 @@ const RestaurantInventory = () => {
               }
             />
 
-            <label>Remarks</label>
+            <label>{t("Resremarks")}</label>
             <textarea
               value={remarks}
               onChange={e => setRemarks(e.target.value)}
@@ -310,7 +331,7 @@ const RestaurantInventory = () => {
                 className="btn cancel"
                 onClick={() => setSelectedItem(null)}
               >
-                Cancel
+                {t("Rescancel")}
               </button>
 
               <button
@@ -347,7 +368,7 @@ const RestaurantInventory = () => {
 
                 }}
               >
-                {issuing ? "Issuing…" : "Issue"}
+                {issuing ? t("Resissuing") : t("Resissue")}
               </button>
 
             </div>
@@ -365,19 +386,21 @@ const RestaurantInventory = () => {
 
           <div className="inv-modal">
 
-            <h3>Reorder Product</h3>
+            <h3>{t("ResreorderProduct")}</h3>
 
-            <p><b>{reorderItemData.product_name}</b></p>
+            <p>  <b>
+              {i18n.language === "ar"
+                ? reorderItemData.product_name_arabic || reorderItemData.product_name
+                : reorderItemData.product_name}
+            </b></p>
 
             <p>
-              Current Stock:
+              {t("RescurrentStock")}:
               {" "}
-              {Number(
-                reorderItemData.available_qty
-              ).toFixed(2)}
+                {formatNumber(Number(reorderItemData.available_qty).toFixed(2))}
             </p>
 
-            <label>Quantity</label>
+            <label>{t("Resquantity")}</label>
             <input
               type="number"
               min="1"
@@ -393,7 +416,7 @@ const RestaurantInventory = () => {
                 className="btn cancel"
                 onClick={() => setReorderItemData(null)}
               >
-                Cancel
+               {t("Rescancel")}
               </button>
 
               <button
@@ -401,7 +424,7 @@ const RestaurantInventory = () => {
                 disabled={reordering}
                 onClick={confirmReorder}
               >
-                {reordering ? "Ordering..." : "Reorder"}
+                {reordering ? t("Resordering") : t("Resreorder")}
               </button>
 
             </div>
