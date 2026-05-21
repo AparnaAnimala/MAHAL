@@ -36,20 +36,20 @@ const Header = ({ onProfileClick }) => {
 useEffect(() => {
   const token = localStorage.getItem("token");
   if (!token) return;
-  fetch("http://192.168.2.9:5000/api/notifications/count", {
+  fetch("http://192.168.2.22:5000/api/notifications/count", {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then(res => res.json())
     .then(d => setNotificationCount(d.count || 0))
     .catch(() => setNotificationCount(0));
-  fetch("http://192.168.2.9:5000/api/cart/count", {
+  fetch("http://192.168.2.22:5000/api/cart/count", {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then(res => res.json())
     .then(d => setCartCount(d.count || 0))
     .catch(() => setCartCount(0));
   /* WISHLIST COUNT */
-  fetch("http://192.168.2.9:5000/api/wishlist/count", {
+  fetch("http://192.168.2.22:5000/api/wishlist/count", {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then(res => res.json())
@@ -61,7 +61,7 @@ useEffect(() => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://192.168.2.9:5000/api/gridlist", {
+    fetch("http://192.168.2.22:5000/api/gridlist", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -71,12 +71,12 @@ useEffect(() => {
 
   /* RECENT + TRENDING */
   useEffect(() => {
-    fetch("http://192.168.2.9:5000/api/search/recent")
+    fetch("http://192.168.2.22:5000/api/search/recent")
       .then(res => res.json())
       .then(setRecentSearches)
       .catch(() => {});
 
-    fetch("http://192.168.2.9:5000/api/search/trending")
+    fetch("http://192.168.2.22:5000/api/search/trending")
       .then(res => res.json())
       .then(setTrendingSearches)
       .catch(() => {});
@@ -134,7 +134,7 @@ const handleSearch = text => {
   const q = (text || query).trim();
   if (!q) return;
 
-  fetch("http://192.168.2.9:5000/api/search/log", {
+  fetch("http://192.168.2.22:5000/api/search/log", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ search_text: q }),
@@ -160,7 +160,7 @@ const handleSearch = text => {
 useEffect(() => {
   const loadCount = () => {
     fetch(
-      "http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/count",
+      "http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/count",
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -184,7 +184,7 @@ useEffect(() => {
   const loadDefaultLocation = async () => {
     try {
       const res = await fetch(
-        `http://192.168.2.9:5000/api/location/address/default/${restaurantId}`
+        `http://192.168.2.22:5000/api/location/address/default/${restaurantId}`
       );
       const data = await res.json();
 
@@ -221,7 +221,7 @@ useEffect(() => {
 
         setLocationText(`${area}, ${city}`);
 
-        await fetch("http://192.168.2.9:5000/api/location/address", {
+        await fetch("http://192.168.2.22:5000/api/location/address", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -418,7 +418,7 @@ useEffect(() => {
 
               {showUserMenu && (
                 <div className="user_dropdown">
-                  <Link to="/my-profile/restuarent">My Profile</Link>
+                  <Link to={`/profile/${localStorage.getItem("role")}/${localStorage.getItem("linked_id")}`}>My Profile</Link>
                 </div>
               )}
             </div>

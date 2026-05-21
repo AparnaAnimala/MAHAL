@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { NavLink } from "react-router-dom";
 import logo from "../../images/Logo.png";
-import "../../pages/css/status.css";
+// import "../../pages/css/status.css";
 import introJs from "intro.js";
 import { toolsTourSteps } from "../../tours/toolsTour";
 import { tourLock } from "../../utils/tourLock";
@@ -13,7 +13,7 @@ const Sidebar = () => {
   const [startToolsTour, setStartToolsTour] = useState(
     localStorage.getItem("startToolsTour")
   );
-  const API = "http://192.168.2.9:5000/api/v1";
+  const API = "http://192.168.2.22:5000/api/v1";
 
   const [issueCount, setIssueCount] = useState(0);
   const [orderCount, setOrderCount] = useState(0);

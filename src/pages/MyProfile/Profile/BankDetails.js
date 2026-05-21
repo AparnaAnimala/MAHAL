@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+const API_PROFILE = "http://192.168.2.22:5000/api/profile";
 
 export default function BankDetails() {
 

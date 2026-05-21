@@ -34,14 +34,14 @@
 //   const token = localStorage.getItem("token");
 //   if (!token) return;
 
-//   fetch("http://192.168.2.9:5000/api/notifications/count", {
+//   fetch("http://192.168.2.22:5000/api/notifications/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
 //     .then(d => setNotificationCount(d.count || 0))
 //     .catch(() => setNotificationCount(0));
 
-//   fetch("http://192.168.2.9:5000/api/cart/count", {
+//   fetch("http://192.168.2.22:5000/api/cart/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
@@ -49,7 +49,7 @@
 //     .catch(() => setCartCount(0));
 
 //   /* WISHLIST COUNT */
-//   fetch("http://192.168.2.9:5000/api/wishlist/count", {
+//   fetch("http://192.168.2.22:5000/api/wishlist/count", {
 //     headers: { Authorization: `Bearer ${token}` },
 //   })
 //     .then(res => res.json())
@@ -62,7 +62,7 @@
 //   useEffect(() => {
 //     const token = localStorage.getItem("token");
 
-//     fetch("http://192.168.2.9:5000/api/gridlist", {
+//     fetch("http://192.168.2.22:5000/api/gridlist", {
 //       headers: { Authorization: `Bearer ${token}` },
 //     })
 //       .then(res => res.json())
@@ -72,12 +72,12 @@
 
 //   /* RECENT + TRENDING */
 //   useEffect(() => {
-//     fetch("http://192.168.2.9:5000/api/search/recent")
+//     fetch("http://192.168.2.22:5000/api/search/recent")
 //       .then(res => res.json())
 //       .then(setRecentSearches)
 //       .catch(() => {});
 
-//     fetch("http://192.168.2.9:5000/api/search/trending")
+//     fetch("http://192.168.2.22:5000/api/search/trending")
 //       .then(res => res.json())
 //       .then(setTrendingSearches)
 //       .catch(() => {});
@@ -120,7 +120,7 @@
 // useEffect(() => {
 //   const loadCount = () => {
 //     fetch(
-//       "http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/count",
+//       "http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/count",
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -350,7 +350,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { resolveIdentity } from "../../utils/identity";
 import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
-import "../../pages/css/halfscreen.css";
 import { useTranslation } from "react-i18next";
 
 const Header = ({ onProfileClick }) => {
@@ -395,7 +394,7 @@ const Header = ({ onProfileClick }) => {
         setLocation({ latitude, longitude });
 
         // 🔥 send to backend
-        fetch("http://192.168.2.9:5000/api/location/save", {
+        fetch("http://192.168.2.22:5000/api/location/save", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -418,7 +417,7 @@ const Header = ({ onProfileClick }) => {
   const loadNotificationCount = () => {
     const token = localStorage.getItem("token");
 
-    fetch("http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/count", {
+    fetch("http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -429,7 +428,7 @@ const Header = ({ onProfileClick }) => {
   const loadCredit = () => {
     const token = localStorage.getItem("token");
 
-    fetch("http://192.168.2.9:5000/api/restaurant/credit-info", {
+    fetch("http://192.168.2.22:5000/api/restaurant/credit-info", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -457,21 +456,21 @@ const Header = ({ onProfileClick }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    fetch("http://192.168.2.9:5000/api/notifications/count", {
+    fetch("http://192.168.2.22:5000/api/notifications/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(d => setNotificationCount(d.count || 0))
       .catch(() => setNotificationCount(0));
 
-    fetch("http://192.168.2.9:5000/api/cart/count", {
+    fetch("http://192.168.2.22:5000/api/cart/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(d => setCartCount(d.count || 0))
       .catch(() => setCartCount(0));
 
-    fetch("http://192.168.2.9:5000/api/wishlist/count", {
+    fetch("http://192.168.2.22:5000/api/wishlist/count", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -482,7 +481,7 @@ const Header = ({ onProfileClick }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://192.168.2.9:5000/api/gridlist", {
+    fetch("http://192.168.2.22:5000/api/gridlist", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -491,12 +490,12 @@ const Header = ({ onProfileClick }) => {
   }, []);
 
   useEffect(() => {
-    fetch("http://192.168.2.9:5000/api/search/recent")
+    fetch("http://192.168.2.22:5000/api/search/recent")
       .then(res => res.json())
       .then(setRecentSearches)
       .catch(() => {});
 
-    fetch("http://192.168.2.9:5000/api/search/trending")
+    fetch("http://192.168.2.22:5000/api/search/trending")
       .then(res => res.json())
       .then(setTrendingSearches)
       .catch(() => {});

@@ -5,11 +5,10 @@ import { Outlet } from "react-router-dom";
 
 import Sidebar from "../../components/RestaurantDashboard/Sidebar";
 import Header from "../../components/RestaurantDashboard/Header";
-import ProfileSetup from "../../pages/ProfileSetup";
 import { resolveIdentity } from "../../utils/identity";
 import { getRestaurantDashboardTourSteps } from "../../tours/restaurantDashboardTour";
 import introJs from "intro.js";
-import "../../pages/css/halfscreen.css";
+// import "../../pages/css/halfscreen.css";
 import RestaurantNotificationPopup from "../../components/RestaurantDashboard/RestaurantNotificationPopup";
 
 const DashboardLayout = () => {

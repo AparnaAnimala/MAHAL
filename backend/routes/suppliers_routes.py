@@ -737,18 +737,19 @@ supplier_bp = Blueprint("supplier_bp", __name__)
 # -------------------------------------------------
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "webp"}
 
-# Maps Frontend keys to Database columns
 SUPPLIER_FILE_MAP = {
     "tradeLicense": "upload_trade_license_copy",
     "vatCertificate": "upload_vat_certificates_copy",
     "computerCardCopy": "upload_computer_card_copy",
     "crCopy": "upload_cr_company",
+    "upload_company_logo": "upload_company_logo",
 }
 
 RESTAURANT_FILE_MAP = {
     "tradeLicense": "upload_trade_license_copy",
-    "vatCertificate": "upload_vat_certificate_copy",  
+    "vatCertificate": "upload_vat_certificate_copy",
     "foodSafetyCertificate": "upload_food_safety_certificate",
+    "upload_company_logo": "upload_company_logo",
 }
 
 def allowed_file(filename):
@@ -756,6 +757,23 @@ def allowed_file(filename):
         return False
     ext = filename.rsplit(".", 1)[1].lower() if "." in filename else ""
     return ext in ALLOWED_EXTENSIONS
+
+def convert_file_to_base64(file):
+    if not file or file.filename == "":
+        return None
+
+    if not allowed_file(file.filename):
+        return None
+
+    file_bytes = file.read()
+
+    encoded = base64.b64encode(file_bytes).decode("utf-8")
+
+    mime = file.mimetype
+
+    return f"data:{mime};base64,{encoded}"
+
+
 
 EMAIL_REGEX = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
@@ -829,11 +847,21 @@ def register_supplier(form, files):
             "country": form.get("country"),
             "city": form.get("city"),
 
-            # FILES — OPTIONAL
-            "upload_trade_license_copy": None,
-            "upload_vat_certificates_copy": None,
-            "upload_computer_card_copy": None,
-            "upload_cr_company": None,
+            # FILES
+            "upload_trade_license_copy":
+                convert_file_to_base64(files.get("tradeLicense")),
+
+            "upload_vat_certificates_copy":
+                convert_file_to_base64(files.get("vatCertificate")),
+
+            "upload_computer_card_copy":
+                convert_file_to_base64(files.get("computerCardCopy")),
+
+            "upload_cr_company":
+                convert_file_to_base64(files.get("crCopy")),
+
+            "upload_company_logo":
+                convert_file_to_base64(files.get("upload_company_logo")),
         }
 
         conn = get_db_connection()
@@ -852,6 +880,7 @@ def register_supplier(form, files):
                 upload_vat_certificates_copy,
                 upload_computer_card_copy,
                 upload_cr_company,
+                upload_company_logo,    
                 approval_status,
                 created_at,
                 updated_at,
@@ -868,6 +897,7 @@ def register_supplier(form, files):
                 %(upload_vat_certificates_copy)s,
                 %(upload_computer_card_copy)s,
                 %(upload_cr_company)s,
+                %(upload_company_logo)s,    
                 'Pending',
                 NOW(),
                 NOW(),
@@ -934,12 +964,19 @@ def register_restaurant(form, files):
             "city": form.get("city"),
             "approval_status": "Pending",
 
-            # FILES — OPTIONAL (NULL)
-            "upload_trade_license_copy": None,
-            "upload_vat_certificate_copy": None,
-            "upload_food_safety_certificate": None,
-        }
+            # FILES
+            "upload_trade_license_copy":
+                convert_file_to_base64(files.get("tradeLicense")),
 
+            "upload_vat_certificate_copy":
+                convert_file_to_base64(files.get("vatCertificate")),
+
+            "upload_food_safety_certificate":
+                convert_file_to_base64(files.get("foodSafetyCertificate")),
+
+            "upload_company_logo":
+                convert_file_to_base64(files.get("upload_company_logo")),
+        }
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
@@ -954,6 +991,7 @@ def register_restaurant(form, files):
                 upload_trade_license_copy,
                 upload_vat_certificate_copy,
                 upload_food_safety_certificate,
+                upload_company_logo,
                 approval_status,
                 created_at,
                 updated_at
@@ -967,6 +1005,7 @@ def register_restaurant(form, files):
                 %(upload_trade_license_copy)s,
                 %(upload_vat_certificate_copy)s,
                 %(upload_food_safety_certificate)s,
+                %(upload_company_logo)s,
                 %(approval_status)s,
                 NOW(),
                 NOW()
@@ -1080,8 +1119,56 @@ def verify_otp():
         if cur: cur.close()
         if conn: conn.close()
 
+
 @supplier_bp.route("/master/<string:category>", methods=["GET"])
 def get_master_values(category):
+
+    conn = None
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        country = request.args.get("country")
+
+        # CITY WITH COUNTRY FILTER
+        if category.lower() == "city" and country:
+
+            cur.execute("""
+                SELECT value
+                FROM general_master
+                WHERE category = %s
+                AND unit = %s
+                ORDER BY value ASC
+            """, ("city", country))
+
+        else:
+
+            cur.execute("""
+                SELECT value, unit
+                FROM general_master
+                WHERE category = %s
+                ORDER BY value ASC
+            """, (category,))
+
+        rows = cur.fetchall()
+
+        return jsonify(rows), 200
+
+    except Exception as e:
+        traceback.print_exc()
+
+        return jsonify({
+            "status": False,
+            "message": "Server error"
+        }), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+# @supplier_bp.route("/master/<string:category>", methods=["GET"])
+# def get_master_values(category):
     """
     Fetch values from general_master by category
     Example:

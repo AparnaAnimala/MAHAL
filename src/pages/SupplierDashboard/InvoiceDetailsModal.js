@@ -135,7 +135,7 @@
 
 // import React from "react";
 
-// const API = "http://192.168.2.9:5000/api/v1/invoice";
+// const API = "http://192.168.2.22:5000/api/v1/invoice";
 
 // const InvoiceDetailsModal = ({ invoice, onClose }) => {
 //   const token = localStorage.getItem("token");
@@ -152,7 +152,7 @@
 
 //   try {
 //     const res = await fetch(
-//       `http://192.168.2.9:5000/api/v1/invoice/${invoiceId}/pdf`,
+//       `http://192.168.2.22:5000/api/v1/invoice/${invoiceId}/pdf`,
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -304,7 +304,7 @@
 
 // import React from "react";
 
-// const API = "http://192.168.2.9:5000/api/v1/invoice";
+// const API = "http://192.168.2.22:5000/api/v1/invoice";
 
 // const InvoiceDetailsModal = ({ invoice, onClose }) => {
 //   const token = localStorage.getItem("token");
@@ -321,7 +321,7 @@
 
 //   try {
 //     const res = await fetch(
-//       `http://192.168.2.9:5000/api/v1/invoice/${invoiceId}/pdf`,
+//       `http://192.168.2.22:5000/api/v1/invoice/${invoiceId}/pdf`,
 //       {
 //         headers: {
 //           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -528,7 +528,7 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/invoice";
+const API = "http://192.168.2.22:5000/api/v1/invoice";
 
 const InvoiceDetailsModal = ({ invoice, onClose }) => {
   const { t, i18n } = useTranslation();

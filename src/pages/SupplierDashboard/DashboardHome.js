@@ -107,7 +107,7 @@ import { dashboardTourSteps } from "../../tours/dashboardTour";
 import { tourLock } from "../../utils/tourLock";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api";
+const API = "http://192.168.2.22:5000/api";
 const LOW_STOCK_LIMIT = 10;
 
 const DashboardHome = () => {

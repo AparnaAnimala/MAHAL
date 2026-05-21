@@ -7,7 +7,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-const API_BASE = "http://192.168.2.9:5000/api/v1/admin";
+const API_BASE = "http://192.168.2.22:5000/api/v1/admin";
 
 export default function RestaurantUserManagement() {
   const token = localStorage.getItem("admin_token");

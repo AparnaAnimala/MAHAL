@@ -63,7 +63,7 @@
 
 //     try {
 //       setLoading(true);
-//       const res = await fetch("http://192.168.2.9:5000/api/menu-items", {
+//       const res = await fetch("http://192.168.2.22:5000/api/menu-items", {
 //         method: "POST",
 //         body: formData,
 //       });

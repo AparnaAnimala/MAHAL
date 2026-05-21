@@ -185,7 +185,7 @@ const Overview = () => {
     const fetchStatus = async () => {
       try {
         const res = await fetch(
-          `http://192.168.2.9:5000/api/profile/${roleLower}/profile-summary/${id}`
+          `http://192.168.2.22:5000/api/profile/${roleLower}/profile-summary/${id}`
         );
 
         const json = await res.json();
@@ -219,7 +219,7 @@ const Overview = () => {
           Authorization: `Bearer ${token}`
         };
 
-        const BASE_URL = "http://192.168.2.9:5000/api/profile";
+        const BASE_URL = "http://192.168.2.22:5000/api/profile";
 
         const requests = [
           axios.get(`${BASE_URL}/${roleLower}/basic/${id}`, { headers }),

@@ -114,7 +114,7 @@ import axios from "axios";
 import bannerImg from "../../images/special_pro_banner_img.jpg";
 
 
-const API_BASE = "http://192.168.2.9:5000/api";
+const API_BASE = "http://192.168.2.22:5000/api";
 
 const SpecialProducts = () => {
   const [products, setProducts] = useState([]);
@@ -126,7 +126,7 @@ const [ratings, setRatings] = useState({});
   /* ================= FETCH FROM BACKEND ================= */
 
   useEffect(() => {
-    fetch("http://192.168.2.9:5000/api/special-products")
+    fetch("http://192.168.2.22:5000/api/special-products")
       .then((res) => res.json())
       .then((data) => {
         if (data.products) {
@@ -149,7 +149,7 @@ const [ratings, setRatings] = useState({});
 
         try {
           const res = await fetch(
-            `http://192.168.2.9:5000/api/reviews/product/${productId}`
+            `http://192.168.2.22:5000/api/reviews/product/${productId}`
           );
           const data = await res.json();
 
@@ -173,51 +173,86 @@ const [ratings, setRatings] = useState({});
 
   /* ================= ADD TO CART ================= */
 
-  const addToCart = (product) => {
-    console.log("PRODUCT:", product); // 🔥 debug
+const addToCart = (product) => {
 
-    const token = localStorage.getItem("token");
+  console.log("PRODUCT:", product);
 
-    if (!token) {
-      alert("Please login");
-      return;
-    }
+  const token = localStorage.getItem("token");
 
-    const productId = product.id || product.product_id;
+  if (!token) {
+    alert("Please login");
+    return;
+  }
 
-    if (!productId) {
-      alert("Invalid product ❌");
-      console.error("BAD PRODUCT:", product);
-      return;
-    }
+  const productId = product.id || product.product_id;
 
-    axios
-      .post(
-        `${API_BASE}/cart/add`,
-        {
-          product_id: Number(productId),
-          quantity: 1,
+  if (!productId) {
+
+    alert("Invalid product ❌");
+
+    console.error(
+      "BAD PRODUCT:",
+      product
+    );
+
+    return;
+  }
+
+  axios
+    .post(
+      `${API_BASE}/cart/add`,
+      {
+        product_id: Number(productId),
+        quantity: 1,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then((res) => {
-        console.log("SUCCESS:", res.data);
-        alert("Added to cart ✅");
-      })
-      .catch((err) => {
-        console.log("FULL ERROR:", err.response || err);
+      }
+    )
+
+    .then((res) => {
+
+      console.log(
+        "SUCCESS:",
+        res.data
+      );
+
+      // ✅ Product already exists
+      if (res.data.status === "exists") {
 
         alert(
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Backend error"
+          "Product already in cart 🛒\n\nQuantity updated"
         );
-      });
-  };
+
+      }
+
+      // ✅ New product added
+      else {
+
+        alert("Added to cart ✅");
+
+      }
+
+    })
+
+    .catch((err) => {
+
+      console.log(
+        "FULL ERROR:",
+        err.response || err
+      );
+
+      alert(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Backend error"
+      );
+
+    });
+
+};
 
   return (
     <section className="mm-special-section pt-5 pb-5">

@@ -5,6 +5,7 @@ export default function AdminProfileChanges() {
   const camelToSnake = (key) =>
     key.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
   const ADMIN_TOKEN = localStorage.getItem("admin_token");
+  const API_BASE = "http://192.168.2.22:5000";
 
   useEffect(() => {
     if (!ADMIN_TOKEN) {
@@ -454,7 +455,7 @@ export default function AdminProfileChanges() {
   const loadData = useCallback(async () => {
     try {
       const res = await fetch(
-        "http://localhost:5000/api/v1/admin/change-requests/pending",
+        `${API_BASE}/api/v1/admin/change-requests/pending`,
         {
           headers: {
             Authorization: `Bearer ${ADMIN_TOKEN}`,
@@ -502,7 +503,7 @@ export default function AdminProfileChanges() {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/v1/admin/change-requests/${id}/approve`,
+        `${API_BASE}/api/v1/admin/change-requests/${id}/approve`,
         {
           method: "POST",
           headers: {
@@ -544,7 +545,7 @@ export default function AdminProfileChanges() {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/v1/admin/change-requests/${id}/reject`,
+        `${API_BASE}/api/v1/admin/change-requests/${id}/reject`,
         {
           method: "POST",
           headers: {

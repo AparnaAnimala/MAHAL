@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import "../../pages/css/status.css";
+
 
 const NewOrderPopup = ({ notification, onClose }) => {
   const navigate = useNavigate();

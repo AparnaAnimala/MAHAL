@@ -1,217 +1,7 @@
-// import React, { useState } from "react";
-// import CreateOfferModal from "../../components/Dashboard/CreateOfferModal";
 
-// const Offers = () => {
-//   const [showModal, setShowModal] = useState(false);
-
-//   return (
-//     <div className="dashboard_page offers_page">
-
-//       <div className="page_header glass">
-//         <div>
-//           <h2>Offers</h2>
-//           <p className="sub_text">Manage your offers</p>
-//         </div>
-
-//         <button
-//           className="btn_save glow"
-//           onClick={() => setShowModal(true)}
-//         >
-//           <i className="fas fa-plus"></i> Add Offer
-//         </button>
-//       </div>
-
-//       {/* TABLE DUMMY */}
-//       <div className="section_card soft">
-//         <p>No offers created yet</p>
-//       </div>
-
-//       {/* MODAL */}
-//       {showModal && (
-//         <CreateOfferModal onClose={() => setShowModal(false)} />
-//       )}
-//     </div>
-//   );
-// };
-
-// export default Offers;
-
-
-
-// import React, { useEffect, useState } from "react";
-// import CreateOfferModal from "../../components/Dashboard/CreateOfferModal";
-
-// const Offers = () => {
-//   const [showModal, setShowModal] = useState(false);
-//   const [offers, setOffers] = useState([]);
-//   const [products, setProducts] = useState([]);
-
-//   const supplierId = localStorage.getItem("linked_id");
-
-//   /* ================= FETCH OFFERS ================= */
-//   const fetchOffers = async () => {
-//     if (!supplierId) return;
-
-//     try {
-//       const res = await fetch(
-//         `http://192.168.2.9:5000/api/offers?supplier_id=${supplierId}`
-//       );
-//       const data = await res.json();
-//       setOffers(Array.isArray(data) ? data : []);
-//     } catch (err) {
-//       console.error("Fetch offers failed", err);
-//     }
-//   };
-
-//   /* ================= FETCH PRODUCTS (FOR IMAGES) ================= */
-//   const fetchProducts = async () => {
-//     if (!supplierId) return;
-
-//     try {
-//       const res = await fetch(
-//         `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
-//       );
-//       const data = await res.json();
-//       setProducts(Array.isArray(data) ? data : []);
-//     } catch (err) {
-//       console.error("Fetch products failed", err);
-//     }
-//   };
-
-//   /* ================= DELETE OFFER ================= */
-//   const deleteOffer = async (offerId) => {
-//     if (!window.confirm("Delete this offer?")) return;
-
-//     try {
-//       await fetch(
-//         `http://192.168.2.9:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
-//         { method: "DELETE" }
-//       );
-//       fetchOffers();
-//     } catch (err) {
-//       alert("Delete failed");
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchOffers();
-//     fetchProducts();
-//   }, [supplierId]);
-
-//   /* ================= IMAGE RESOLVER ================= */
-//   const getOfferImage = (offer) => {
-//     if (!offer.product_id) return "/placeholder.png";
-
-//     const product = products.find(
-//       (p) => p.product_id === offer.product_id
-//     );
-
-//     if (!product) return "/placeholder.png";
-
-//     // case: multiple images
-//     if (
-//       Array.isArray(product.product_images) &&
-//       product.product_images.length > 0
-//     ) {
-//       return `data:image/jpeg;base64,${product.product_images[0]}`;
-//     }
-
-//     // case: single base64 image
-//     if (
-//       typeof product.product_images === "string" &&
-//       product.product_images.trim()
-//     ) {
-//       return `data:image/jpeg;base64,${product.product_images}`;
-//     }
-
-//     return "/placeholder.png";
-//   };
-
-//   return (
-//     <div className="dashboard_page offers_page">
-//       {/* HEADER */}
-//       <div className="page_header glass">
-//         <div>
-//           <h2>Offers</h2>
-//           <p className="sub_text">Manage your offers</p>
-//         </div>
-
-//         <button
-//           className="btn_save glow"
-//           onClick={() => setShowModal(true)}
-//         >
-//           <i className="fas fa-plus"></i> Add Offer
-//         </button>
-//       </div>
-
-//       {/* OFFERS LIST */}
-//       <div className="section_card soft">
-//         {offers.length === 0 && <p>No offers created yet</p>}
-
-//         {offers.map((o) => (
-//           <div key={o.offer_id} className="offer_row">
-//             <div
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: "12px",
-//               }}
-//             >
-//               <img
-//                 src={getOfferImage(o)}
-//                 alt={o.product_name_english || "Offer"}
-//                 style={{
-//                   width: "48px",
-//                   height: "48px",
-//                   objectFit: "cover",
-//                   borderRadius: "6px",
-//                   border: "1px solid #ddd",
-//                 }}
-//               />
-
-//               <div>
-//                 <b>{o.product_name_english || "Category Offer"}</b>
-//                 <div className="muted">
-//                   {o.start_date} → {o.end_date}
-//                 </div>
-//               </div>
-//             </div>
-
-//             <div>{o.discount_percentage}% OFF</div>
-
-//             <button
-//               className="delete_btn"
-//               onClick={() => deleteOffer(o.offer_id)}
-//             >
-//               🗑
-//             </button>
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* MODAL */}
-//       {showModal && (
-//         <CreateOfferModal
-//           onClose={() => setShowModal(false)}
-//           onSaved={() => {
-//             setShowModal(false);
-//             fetchOffers();
-//           }}
-//         />
-//       )}
-//     </div>
-//   );
-// };
-
-// export default Offers;
-
-
-
-
-  
 import React, { useEffect, useState } from "react";
 import CreateOfferModal from "../../components/Dashboard/CreateOfferModal";
-import "../css/offer.css";
+// import "../css/offer.css";
 import { useTranslation } from "react-i18next";
 const Offers = () => {
   const [showModal, setShowModal] = useState(false);
@@ -232,7 +22,7 @@ const Offers = () => {
     if (!supplierId) return;
     try {
       const res = await fetch(
-        `http://192.168.2.9:5000/api/offers?supplier_id=${supplierId}`
+        `http://192.168.2.22:5000/api/offers?supplier_id=${supplierId}`
       );
       const data = await res.json();
       setOffers(Array.isArray(data) ? data : []);
@@ -245,7 +35,7 @@ const Offers = () => {
     if (!supplierId) return;
     try {
       const res = await fetch(
-        `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
+        `http://192.168.2.22:5000/api/products?supplier_id=${supplierId}`
       );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
@@ -264,7 +54,7 @@ const Offers = () => {
     if (!window.confirm("Delete this offer?")) return;
     try {
       await fetch(
-        `http://192.168.2.9:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
+        `http://192.168.2.22:5000/api/offers/${offerId}?supplier_id=${supplierId}`,
         { method: "DELETE" }
       );
       fetchOffers();
@@ -276,7 +66,7 @@ const Offers = () => {
   /* ================= HELPERS ================= */
   const getOfferImage = (o) =>
     o.image_url
-      ? `http://192.168.2.9:5000${o.image_url}`
+      ? `http://192.168.2.22:5000${o.image_url}`
       : "/placeholder.png";
 
   const getCurrentPrice = (productId) => {

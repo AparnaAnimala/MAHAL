@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import "../css/restaurantcredit.css";
+// import "../css/restaurantcredit.css";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {  useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-const API = "http://192.168.2.9:5000/api/restaurant/credit";
+const API = "http://192.168.2.22:5000/api/restaurant/credit";
 
 export default function RestaurantCreditWallet(){
 const location = useLocation();

@@ -86,10 +86,10 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
 import { resolveIdentity } from "../../utils/identity"; // adjust path
-import "../../pages/css/status.css";
-import "../../pages/css/halfscreen.css";
+// import "../../pages/css/status.css";
+// import "../../pages/css/halfscreen.css";
 import { useTranslation } from "react-i18next";
-const API = "http://192.168.2.9:5000/api/v1/orders";
+const API = "http://192.168.2.22:5000/api/v1/orders";
 
 const Header = ({ onProfileClick }) => {
 
@@ -116,7 +116,7 @@ const fetchCount = async () => {
 
   try {
     const res = await fetch(
-      "http://192.168.2.9:5000/api/v1/orders/supplier/notifications/count",
+      "http://192.168.2.22:5000/api/v1/orders/supplier/notifications/count",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 

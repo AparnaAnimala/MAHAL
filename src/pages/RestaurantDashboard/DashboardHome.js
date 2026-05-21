@@ -167,7 +167,7 @@ const formatOrderId = (id) => {
   useEffect(() => {
     if (!token) return;
 
-    fetch("http://192.168.2.9:5000/api/v1/orders/dashboard", {
+    fetch("http://192.168.2.22:5000/api/v1/orders/dashboard", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -183,7 +183,7 @@ const formatOrderId = (id) => {
         console.error("Dashboard fetch error:", err);
       });
 
-    fetch("http://192.168.2.9:5000/api/restaurant/credit-info", {
+    fetch("http://192.168.2.22:5000/api/restaurant/credit-info", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

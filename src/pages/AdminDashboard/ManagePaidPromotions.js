@@ -10,7 +10,7 @@ import {
   FiTrash2
 } from "react-icons/fi";
 
-const API = "http://192.168.2.9:5000/api/admin/promotions";
+const API = "http://192.168.2.22:5000/api/admin/promotions";
 
 export default function ManagePaidPromotions() {
 

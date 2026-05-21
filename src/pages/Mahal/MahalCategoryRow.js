@@ -1,6 +1,65 @@
 import React from "react";
 
+const API_BASE = "http://192.168.2.22:5000/api";
+
 const MahalCategoryRow = ({ title, products = [] }) => {
+
+  const addToCart = async (item) => {
+
+    try {
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login");
+        return;
+      }
+
+      const res = await axios.post(
+        `${API_BASE}/cart/add`,
+        {
+          product_id: item.id || item.product_id,
+          quantity: 1,
+          price: item.price_numeric || item.price,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // ✅ Already exists
+      if (res.data.status === "exists") {
+
+        alert(
+          "Product already in cart 🛒\n\nQuantity updated"
+        );
+
+      }
+
+      // ✅ New product
+      else {
+
+        alert("Added to cart 🛒");
+
+      }
+
+    } catch (err) {
+
+      console.error(
+        "❌ CART ERROR:",
+        err.response?.data || err
+      );
+
+      alert(
+        err.response?.data?.error ||
+        "Backend error"
+      );
+
+    }
+
+  };
   return (
     <section className="mahal-product-section mt-5">
       <div className="container">
@@ -66,9 +125,12 @@ const MahalCategoryRow = ({ title, products = [] }) => {
                     )}
                   </div>
 
-                  <button className="mahal-add-btn">
-                    ADD
-                  </button>
+                  <button
+                  className="mahal-add-btn"
+                  onClick={() => addToCart(item)}
+                >
+                  ADD
+                </button>
                 </div>
 
               </div>

@@ -276,7 +276,7 @@ def get_gridlist_data():
                 store_city = store_row["city"]
 
         base_sql = """
-        SELECT DISTINCT ON (pm.product_id)
+        SELECT
 
             pm.product_id,
             pm.product_name_english,
@@ -297,7 +297,7 @@ def get_gridlist_data():
             pm.shelf_life,
             pm.expiry_time,
 
-            pm.product_images,
+            
 
             o.offer_type,
             o.discount_percentage,
@@ -320,45 +320,14 @@ def get_gridlist_data():
         LEFT JOIN sub_category sc
             ON pm.sub_category_id = sc.id
 
-        LEFT JOIN LATERAL (
-            SELECT *
-            FROM offers o
-            WHERE o.product_id = pm.product_id
+        LEFT JOIN offers o
+            ON o.product_id = pm.product_id
             AND o.is_active = true
-            AND CURRENT_DATE BETWEEN o.start_date AND o.end_date
+            AND CURRENT_DATE >= o.start_date
+            AND CURRENT_DATE <= o.end_date
 
-            ORDER BY
-
-            CASE
-                WHEN LOWER(o.offer_type) = 'percentage'
-                THEN o.discount_percentage
-
-                WHEN LOWER(o.offer_type) = 'flat'
-                THEN o.flat_amount
-
-                WHEN LOWER(o.offer_type) = 'bogo'
-                THEN (o.buy_quantity + o.get_quantity)
-
-                ELSE 0
-            END DESC,
-
-            o.updated_at DESC
-
-            LIMIT 1
-        ) o ON true
-
-        --- WHERE pm.flag = 'A'
-        WHERE pm.flag = 'A'
-            AND o.offer_id IS NOT NULL
+        WHERE COALESCE(pm.flag,'A') = 'A'
         """
-
-        # WHERE o.offer_id IS NOT NULL
-
-        # LEFT JOIN offers o
-        #     ON o.product_id = pm.product_id
-        #     AND o.is_active = true
-        #     AND CURRENT_DATE >= o.start_date
-        #     AND CURRENT_DATE <= o.end_date
 
         params = []
 
@@ -372,8 +341,8 @@ def get_gridlist_data():
             params.append(category_id)
 
         if category_name:
-            base_sql += " AND c.name = %s"
-            params.append(category_name)
+            base_sql += " AND LOWER(c.name) LIKE LOWER(%s)"
+            params.append(f"%{category_name.strip()}%")
 
         base_sql += " ORDER BY pm.product_id DESC"
 
@@ -394,44 +363,11 @@ def get_gridlist_data():
 
             max_price = max(max_price, price_val)
 
-            discounted_price = price_val
-
-            offer_type = (row.get("offer_type") or "").strip().lower()
-
-            if offer_type == "percentage":
-                discounted_price = (
-                    price_val
-                    - (
-                        price_val
-                        * float(row.get("discount_percentage") or 0)
-                        / 100
-                    )
-                )
-
-            elif offer_type == "flat":
-                discounted_price = max(
-                    price_val - float(row.get("flat_amount") or 0),
-                    0
-                )
-
-            elif offer_type == "bogo":
-
-                buy_qty = float(row.get("buy_quantity") or 1)
-                get_qty = float(row.get("get_quantity") or 1)
-
-                total_qty = buy_qty + get_qty
-
-                # effective unit price
-                discounted_price = (
-                    (price_val * buy_qty)
-                    / total_qty
-                )
-
             # ---------------- OFFER LOGIC ----------------
             label = "New"
             offer_text = None
 
-            offer_type = (row.get("offer_type") or "").strip().lower()
+            offer_type = (row.get("offer_type") or "").lower()
 
             if offer_type == "percentage" and row.get("discount_percentage"):
                 label = f"{int(row['discount_percentage'])}% OFF"
@@ -448,22 +384,25 @@ def get_gridlist_data():
                 offer_text = label
 
             # ---------------- IMAGES ----------------
-            img_array = row.get("product_images") or []
+            # img_array = row.get("product_images") or []
 
-            if not isinstance(img_array, (list, tuple)):
-                img_array = []
+            # if not isinstance(img_array, (list, tuple)):
+            #     img_array = []
 
-            images = [
-                f"{host_url}/api/image/{row['product_id']}/{i}"
-                for i, img in enumerate(img_array)
-                if img
-            ]
+            # images = [
+            #     f"{host_url}/api/image/{row['product_id']}/{i}"
+            #     for i, img in enumerate(img_array)
+            #     if img
+            # ]
 
-            img1 = images[0] if images else None
-            img2 = images[1] if len(images) > 1 else img1
+            # img1 = images[0] if images else None
+            # img2 = images[1] if len(images) > 1 else img1
+            img1 = f"{host_url}/api/image/{row['product_id']}/0"
+            img2 = f"{host_url}/api/image/{row['product_id']}/1"
 
-            # price_str = f"ر.ق{int(price_val)}.00 {currency}"
-            price_str = format_price(price_val, currency)
+            images = [img1, img2]
+
+            price_str = f"ر.ق{int(price_val)}.00 {currency}"
 
             if row.get("category_name"):
                 categories.add(row["category_name"])
@@ -498,10 +437,6 @@ def get_gridlist_data():
                     "price": price_str,
                     "price_numeric": price_val,
                     "currency": currency,
-
-                    "discounted_price": discounted_price,
-                    "original_price": price_val,
-                    "has_offer": bool(row.get("offer_type")),
 
                     "reviews": 0,
                     "rating": 4,
@@ -542,7 +477,6 @@ def get_gridlist_data():
     finally:
         cur.close()
         conn.close()
-
 
 @gridlist_bp.route("/top-deals", methods=["GET"])
 def get_top_deals():
@@ -1015,8 +949,7 @@ def get_trending_products():
     finally:
         cur.close()
         conn.close()
-
-# =========================================================
+ # =========================================================
 # 5. Similar products (same category as given product, multi images)
 # =========================================================
 @gridlist_bp.route("/similar", methods=["GET"])

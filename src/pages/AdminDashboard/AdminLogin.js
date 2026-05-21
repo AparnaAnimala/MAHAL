@@ -4,7 +4,7 @@
 // import { useNavigate, Link } from "react-router-dom";
 // import signImg from "../../images/sign_in_img_1.jpg";
 
-// const API_BASE = "http://192.168.2.9:5000/api/admin/auth";
+// const API_BASE = "http://192.168.2.22:5000/api/admin/auth";
 // const OTP_LENGTH = 6;
 
 // const AdminLogin = () => {
@@ -374,7 +374,7 @@
 // import { useNavigate, Link } from "react-router-dom";
 // import signImg from "../../images/sign_in_img_1.jpg";
 
-// const API_BASE = "http://192.168.2.9:5000/api/admin/auth";
+// const API_BASE = "http://192.168.2.22:5000/api/admin/auth";
 // const OTP_LENGTH = 6;
 
 // const AdminLogin = () => {
@@ -751,7 +751,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import signImg from "../../images/Logo.png";
 
-const API_BASE = "http://192.168.2.9:5000/api/admin/auth";
+const API_BASE = "http://192.168.2.22:5000/api/admin/auth";
 const OTP_LENGTH = 6;
 
 const AdminLogin = () => {

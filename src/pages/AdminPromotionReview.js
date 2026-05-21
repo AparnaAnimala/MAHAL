@@ -3,7 +3,7 @@ import axios from "axios";
 import "../pages/css/AdminPromotionReview.css";
 import { useOutletContext } from "react-router-dom";
 
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const AdminPromotionReview = () => {
   const promoId = localStorage.getItem("review_promo_id");

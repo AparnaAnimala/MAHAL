@@ -2446,7 +2446,7 @@ def delete_product(product_id):
 
 #             # for idx, img in enumerate(raw_images):
 #             #     image_urls.append(
-#             #         f"http://192.168.2.9:5000/product/image/{row['product_id']}/{idx}"
+#             #         f"http://192.168.2.22:5000/product/image/{row['product_id']}/{idx}"
 #             #     )
 
 #             # row["product_images"] = image_urls

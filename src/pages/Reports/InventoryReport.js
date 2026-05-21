@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "jspdf-autotable";
 import { useTranslation } from "react-i18next";
-const API = "http://192.168.2.9:5000/api/reports/inventory";
+const API = "http://192.168.2.22:5000/api/reports/inventory";
 
 const InventoryReport = () => {
   const [data, setData] = useState([]);

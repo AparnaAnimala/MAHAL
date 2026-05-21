@@ -2,7 +2,7 @@
 // import axios from "axios";
 // import { useParams, useNavigate } from "react-router-dom";
 
-// const API_BASE = "http://192.168.2.9:5000/api/v1/orders";
+// const API_BASE = "http://192.168.2.22:5000/api/v1/orders";
 
 // export default function EditOrder() {
 //   const { orderId } = useParams();
@@ -231,7 +231,7 @@
 // import axios from "axios";
 // import { useParams, useNavigate } from "react-router-dom";
 
-// const API_BASE = "http://192.168.2.9:5000/api/v1/orders";
+// const API_BASE = "http://192.168.2.22:5000/api/v1/orders";
 
 // export default function EditOrder() {
 //   const { orderId } = useParams();
@@ -459,7 +459,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const API_BASE = "http://192.168.2.9:5000/api/v1/orders";
+const API_BASE = "http://192.168.2.22:5000/api/v1/orders";
 
 export default function EditOrder() {
   const { orderId } = useParams();

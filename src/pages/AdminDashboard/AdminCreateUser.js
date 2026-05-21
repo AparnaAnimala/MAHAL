@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import signImg from "../../images/sign_in_img_1.jpg";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://192.168.2.9:5000/api/suppliers";
+const API_BASE_URL = "http://192.168.2.22:5000/api/suppliers";
 
 export default function AdminCreateUser() {
   const navigate = useNavigate();

@@ -21,7 +21,7 @@
 // import right2 from "../../images/side_slider4.jpg";
 // import right3 from "../../images/side_slider5.jpg";
 
-// const API = "http://192.168.2.9:5000/api/admin/promotions";
+// const API = "http://192.168.2.22:5000/api/admin/promotions";
 
 // const Banner = () => {
 //   const navigate = useNavigate();
@@ -277,7 +277,7 @@ import right1 from "../../images/side_slider3.jpg";
 import right2 from "../../images/side_slider4.jpg";
 import right3 from "../../images/side_slider5.jpg";
 
-const API = "http://192.168.2.9:5000/api/admin/promotions";
+const API = "http://192.168.2.22:5000/api/admin/promotions";
 
 const Banner = () => {
   const navigate = useNavigate();

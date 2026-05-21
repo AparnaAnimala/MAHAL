@@ -10,7 +10,7 @@ import "./i18n";
 
 
 import './styles/style.css';
-
+import './styles/styles1.css';
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);

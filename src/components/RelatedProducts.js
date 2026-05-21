@@ -13,7 +13,7 @@
 
 // // SwiperCore.use([Navigation, Autoplay]);
 
-// const API_BASE_URL = "http://192.168.2.9:5000/api";
+// const API_BASE_URL = "http://192.168.2.22:5000/api";
 // const RESTAURANT_ID = 1;
 
 // const RelatedProducts = ({ productId, onProductClick }) => {
@@ -163,7 +163,7 @@ import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 
-const API_BASE_URL = "http://192.168.2.9:5000/api";
+const API_BASE_URL = "http://192.168.2.22:5000/api";
 const RESTAURANT_ID = 1;
 
 const RelatedProducts = ({ productId, onProductClick }) => {
@@ -187,9 +187,11 @@ const RelatedProducts = ({ productId, onProductClick }) => {
 
   /* ================= ADD TO CART ================= */
 const addToCart = (e, item) => {
+
   e.stopPropagation();
 
   const token = localStorage.getItem("token");
+
   if (!token) {
     alert("Please login");
     return;
@@ -208,18 +210,49 @@ const addToCart = (e, item) => {
       },
     }
   )
-  .then(() => {
-    const go = window.confirm("Added to cart 🛒\n\nGo to cart?");
-    if (go) {
-      navigate("/cartview");
-    }
-  })
-  .catch((err) => {
-    console.error("ADD TO CART ERROR", err);
-    alert("Add to cart failed");
-  });
-};
 
+  .then((res) => {
+
+    // ✅ Product already exists in cart
+    if (res.data.status === "exists") {
+
+      const go = window.confirm(
+        "Product already in cart 🛒\n\nQuantity updated.\n\nGo to cart?"
+      );
+
+      if (go) {
+        navigate("/cartview");
+      }
+
+    }
+
+    // ✅ New product added
+    else {
+
+      const go = window.confirm(
+        "Added to cart 🛒\n\nGo to cart?"
+      );
+
+      if (go) {
+        navigate("/cartview");
+      }
+
+    }
+
+  })
+
+  .catch((err) => {
+
+    console.error("ADD TO CART ERROR", err);
+
+    alert(
+      err.response?.data?.error ||
+      "Add to cart failed"
+    );
+
+  });
+
+};
 
   /* ================= ADD TO WISHLIST ================= */
 

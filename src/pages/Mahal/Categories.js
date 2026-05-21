@@ -71,7 +71,7 @@
 import React, { useEffect, useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
 
-const API_BASE = "http://192.168.2.9:5000";
+const API_BASE = "http://192.168.2.22:5000";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);

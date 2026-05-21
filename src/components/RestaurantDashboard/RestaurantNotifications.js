@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://192.168.2.9:5000/api/v1/orders/restaurant";
+const API = "http://192.168.2.22:5000/api/v1/orders/restaurant";
 
 export default function RestaurantNotifications() {
   const [notifications, setNotifications] = useState([]);

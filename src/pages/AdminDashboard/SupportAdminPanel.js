@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "../css/SupportAdminPanel.css";
 
-const API_BASE = "http://192.168.2.9:5000/api/v1/admin/support";
+const API_BASE = "http://192.168.2.22:5000/api/v1/admin/support";
 const attachmentCache = new Map();
 
 export default function SupportAdminPanel() {
@@ -290,7 +290,7 @@ export default function SupportAdminPanel() {
 
                 try {
                     const res = await fetch(
-                        `http://192.168.2.9:5000/api/v1/admin/support/attachment/${a.attachment_id}`,
+                        `http://192.168.2.22:5000/api/v1/admin/support/attachment/${a.attachment_id}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${localStorage.getItem("admin_token")}`

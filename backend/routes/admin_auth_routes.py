@@ -18,7 +18,7 @@ admin_auth_bp = Blueprint(
 # ======================================================
 # CONFIG
 # ======================================================
-ADMIN_JWT_EXP_MIN = 180        # 3 hours
+ADMIN_JWT_EXP_MIN = 1800        # 3 hours
 OTP_EXP_MIN = 5               # minutes
 OTP_RATE_LIMIT_SEC = 60       # seconds
 

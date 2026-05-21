@@ -22,7 +22,7 @@
 // import { useTranslation } from "react-i18next";
 
 // const API =
-//   "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers";
+//   "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers";
 
 // const SupplierReport = () => {
 
@@ -223,7 +223,7 @@
 //   const exportExcel = () => {
 
 //     window.open(
-//       "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers/export",
+//       "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers/export",
 //       "_blank"
 //     );
 
@@ -232,7 +232,7 @@
 //   const exportPDF = () => {
 
 //     window.open(
-//       "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers/pdf",
+//       "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers/pdf",
 //       "_blank"
 //     );
 
@@ -617,7 +617,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 const API =
-  "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers";
+  "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers";
 
 const SupplierReport = () => {
 
@@ -875,7 +875,7 @@ const downloadFile = async (
 const exportExcel = () => {
 
   downloadFile(
-    "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers/export",
+    "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers/export",
     "supplier_report.xlsx"
   );
 
@@ -884,7 +884,7 @@ const exportExcel = () => {
 const exportPDF = () => {
 
   downloadFile(
-    "http://192.168.2.9:5000/api/v1/restaurant/reports/suppliers/pdf",
+    "http://192.168.2.22:5000/api/v1/restaurant/reports/suppliers/pdf",
     "supplier_report.pdf"
   );
 

@@ -108,7 +108,7 @@ const Products = () => {
 const fetchOfferByProduct = async (productId) => {
   try {
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/offers/by-product/${productId}`
+      `http://192.168.2.22:5000/api/offers/by-product/${productId}`
     );
     return res.data; // null OR offer object
   } catch (err) {
@@ -122,7 +122,7 @@ const fetchOfferByProduct = async (productId) => {
 
 //     try {
 //       const res = await axios.get(
-//         `http://192.168.2.9:5000/api/products/inventory?supplier_id=${supplierId}`
+//         `http://192.168.2.22:5000/api/products/inventory?supplier_id=${supplierId}`
 //       );
 
 //       const formatted = await Promise.all(
@@ -178,7 +178,7 @@ const fetchOfferByProduct = async (productId) => {
 
     try {
       const res = await axios.get(
-        `http://192.168.2.9:5000/api/products/inventory?supplier_id=${supplierId}`
+        `http://192.168.2.22:5000/api/products/inventory?supplier_id=${supplierId}`
       );
 
       const formatted = (res.data || []).map((p) => {
@@ -244,7 +244,7 @@ const fetchOfferByProduct = async (productId) => {
   try {
     // 1️⃣ Update inventory fields
     await axios.put(
-      "http://192.168.2.9:5000/api/products/update-inventory",
+      "http://192.168.2.22:5000/api/products/update-inventory",
       {
         product_id: data.product_id,
         product_name_english: data.product_name_english,
@@ -279,7 +279,7 @@ const fetchOfferByProduct = async (productId) => {
       });
 
       await axios.post(
-        `http://192.168.2.9:5000/api/products/upload-images/${data.product_id}`,
+        `http://192.168.2.22:5000/api/products/upload-images/${data.product_id}`,
         formData,
         {
           headers: {
@@ -309,7 +309,7 @@ const fetchOfferByProduct = async (productId) => {
   const handleDeactivate = async (productId) => {
     try {
       await axios.delete(
-        `http://192.168.2.9:5000/api/products/${productId}/delete`,
+        `http://192.168.2.22:5000/api/products/${productId}/delete`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -326,7 +326,7 @@ const fetchOfferByProduct = async (productId) => {
 
   try {
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/products/inventory?flag=D&supplier_id=${supplierId}`
+      `http://192.168.2.22:5000/api/products/inventory?flag=D&supplier_id=${supplierId}`
     );
 
     const formatted = (res.data || []).map(formatProduct);
@@ -339,7 +339,7 @@ const fetchOfferByProduct = async (productId) => {
   const handleRestore = async (productId) => {
   try {
     await axios.put(
-      `http://192.168.2.9:5000/api/products/${productId}/restore`,
+      `http://192.168.2.22:5000/api/products/${productId}/restore`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -376,20 +376,20 @@ const handleSaveOffer = async (offerData) => {
     };
 
     const existing = await axios.get(
-      `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`
+      `http://192.168.2.22:5000/api/offers/by-product/${offerData.product_id}`
     );
 
     if (existing.data?.offer_id) {
       // ✅ UPDATE
       await axios.put(
-        `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`,
+        `http://192.168.2.22:5000/api/offers/by-product/${offerData.product_id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } else {
       // ✅ CREATE (NEW ROUTE)
       await axios.post(
-        `http://192.168.2.9:5000/api/offers/by-product/${offerData.product_id}`,
+        `http://192.168.2.22:5000/api/offers/by-product/${offerData.product_id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -409,7 +409,7 @@ const handleSaveOffer = async (offerData) => {
 const handleEditOffer = async (product) => {
   try {
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/offers/by-product/${product.product_id}`
+      `http://192.168.2.22:5000/api/offers/by-product/${product.product_id}`
     );
 
     setExistingOffer(res.data); // may be null

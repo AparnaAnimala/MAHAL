@@ -4,7 +4,7 @@ import { useOutletContext } from "react-router-dom";
 
 import "../pages/css/AdminSupplierPromotionRequests.css";
 
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const AdminSupplierPromotionRequests = () => {
   const { setActiveView } = useOutletContext();

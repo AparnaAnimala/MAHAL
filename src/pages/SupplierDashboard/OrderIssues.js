@@ -4,7 +4,7 @@ import ViewIssueModal from "./ViewIssueModal";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const OrderIssues = () => {
   const [issues, setIssues] = useState([]);

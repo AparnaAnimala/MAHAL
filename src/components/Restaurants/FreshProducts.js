@@ -40,7 +40,7 @@ const FreshProducts = () => {
 
   /* ---------- BACKEND DATA ---------- */
   useEffect(() => {
-    fetch("http://192.168.2.9:5000/api/tab-products")
+    fetch("http://192.168.2.22:5000/api/tab-products")
       .then((res) => res.json())
       .then((res) => {
         setData({
@@ -57,7 +57,7 @@ const FreshProducts = () => {
   /* ---------- ADD TO CART ---------- */
   const addToCart = async (item) => {
     try {
-      const res = await fetch("http://192.168.2.9:5000/api/cart/add", {
+      const res = await fetch("http://192.168.2.22:5000/api/cart/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -240,7 +240,7 @@ export default FreshProducts;
 
 //   /* ---------- FETCH BACKEND DATA ---------- */
 //   useEffect(() => {
-//     fetch("http://192.168.2.9:5000/api/tab-products")
+//     fetch("http://192.168.2.22:5000/api/tab-products")
 //       .then((res) => res.json())
 //       .then((res) => {
 //         setData({
@@ -257,7 +257,7 @@ export default FreshProducts;
 //   /* ---------- ADD TO CART ---------- */
 //   const addToCart = async (item) => {
 //     try {
-//       const res = await fetch("http://192.168.2.9:5000/api/cart/add", {
+//       const res = await fetch("http://192.168.2.22:5000/api/cart/add", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify({

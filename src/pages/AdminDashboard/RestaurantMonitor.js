@@ -1,6 +1,6 @@
 // import React, { useEffect, useState } from "react";
 
-// const API_BASE = "http://192.168.2.9:5000/api/v1/admin/monitor/restaurant";
+// const API_BASE = "http://192.168.2.22:5000/api/v1/admin/monitor/restaurant";
 
 // export default function RestaurantMonitor() {
 //   const ADMIN_TOKEN = localStorage.getItem("admin_token");
@@ -829,7 +829,7 @@
 import React, { useEffect, useState } from "react";
 import { FaPowerOff, FaSignOutAlt, FaHistory } from "react-icons/fa";
 import "../css/CouponManagement.css";
-const API_BASE = "http://192.168.2.9:5000/api/v1/admin/monitor/restaurant";
+const API_BASE = "http://192.168.2.22:5000/api/v1/admin/monitor/restaurant";
 export default function RestaurantMonitor() {
 
   const ADMIN_TOKEN = localStorage.getItem("admin_token");
@@ -889,7 +889,7 @@ export default function RestaurantMonitor() {
       const newStatus = isActive ? "suspended" : "active";
 
       const res = await fetch(
-        `http://192.168.2.9:5000/api/v1/admin/restaurants/users/${userId}/status`,
+        `http://192.168.2.22:5000/api/v1/admin/restaurants/users/${userId}/status`,
         {
           method: "PATCH",
           headers: {
@@ -930,7 +930,7 @@ export default function RestaurantMonitor() {
       if (!window.confirm(`Force logout ${selectedRestaurant.username}?`)) return;
 
       const res = await fetch(
-        `http://192.168.2.9:5000/api/v1/admin/restaurants/users/${userId}/force-logout`,
+        `http://192.168.2.22:5000/api/v1/admin/restaurants/users/${userId}/force-logout`,
         {
           method: "POST",
           headers
@@ -963,7 +963,7 @@ export default function RestaurantMonitor() {
       if (!restaurantId) return;
 
       const res = await fetch(
-        `http://192.168.2.9:5000/api/v1/admin/platform-audit?actor_type=RESTAURANT&linked_id=${restaurantId}`,
+        `http://192.168.2.22:5000/api/v1/admin/platform-audit?actor_type=RESTAURANT&linked_id=${restaurantId}`,
         { headers }
       );
 

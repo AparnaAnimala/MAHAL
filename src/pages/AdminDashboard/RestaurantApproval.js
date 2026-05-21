@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 
 // API Configuration
-const API_ROOT = "http://192.168.2.9:5000/api";
+const API_ROOT = "http://192.168.2.22:5000/api";
 const ADMIN_BASE = `${API_ROOT}/v1`;
 export default function AdminRestaurantReview() {
   const ADMIN_TOKEN = localStorage.getItem("admin_token");
@@ -555,7 +555,7 @@ export default function AdminRestaurantReview() {
                               onClick={async () => {
                                 try {
                                   const res = await fetch(
-                                    "http://192.168.2.9:5000/api/v1/admin/restaurants/send-excel-template",
+                                    "http://192.168.2.22:5000/api/v1/admin/restaurants/send-excel-template",
                                     {
                                       method: "POST",
                                       headers: {

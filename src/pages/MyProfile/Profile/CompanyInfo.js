@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/profile";
-const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+const API = "http://192.168.2.22:5000/api/profile";
+const API_PROFILE = "http://192.168.2.22:5000/api/profile";
 
 export const getProfileConfig = (role) => {
   const r = role?.toLowerCase();

@@ -16,7 +16,7 @@
 //   const [loading, setLoading] = useState(true);
 
 //   useEffect(() => {
-//     fetch("http://192.168.2.9:5000/api/tab-products")
+//     fetch("http://192.168.2.22:5000/api/tab-products")
 //       .then((res) => res.json())
 //       .then((data) => {
 //         setProducts(data.bestseller || []);
@@ -180,7 +180,7 @@ const BestSellProducts = () => {
 
   /* ------------ FETCH PRODUCTS ------------ */
   useEffect(() => {
-    fetch("http://192.168.2.9:5000/api/tab-products")
+    fetch("http://192.168.2.22:5000/api/tab-products")
       .then((res) => res.json())
       .then((data) => {
         setProducts(data.bestseller || []);
@@ -195,7 +195,7 @@ const BestSellProducts = () => {
   /* ------------ ADD TO CART (BACKEND) ------------ */
   const addToCart = async (product) => {
     try {
-      const res = await fetch("http://192.168.2.9:5000/api/cart/add", {
+      const res = await fetch("http://192.168.2.22:5000/api/cart/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

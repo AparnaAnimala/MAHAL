@@ -447,11 +447,23 @@ def add_to_cart():
         item = cur.fetchone()
 
         if item:
+
             cur.execute("""
                 UPDATE cart_items
                 SET quantity = quantity + %s
                 WHERE cart_item_id = %s
             """, (qty, item["cart_item_id"]))
+
+            conn.commit()
+
+            return jsonify({
+                "status": "exists",
+                "message": "Product already in cart. Quantity updated",
+                "final_price": final_price,
+                "offer_label": offer_label
+            }), 200
+
+
         else:
             cur.execute("""
                 INSERT INTO cart_items (

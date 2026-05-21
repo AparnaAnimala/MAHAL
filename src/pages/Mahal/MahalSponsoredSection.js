@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://192.168.2.9:5000";
+const API_BASE = "http://192.168.2.22:5000";
 
 const MahalSponsoredCarousel = () => {
   const navigate = useNavigate();

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "../css/restaurant_inventory.css";
+// import "../css/restaurant_inventory.css";
 import { useNavigate } from "react-router-dom";
 import { FaUtensils, FaShoppingCart } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/inventory";
-const CART_API = "http://192.168.2.9:5000/api/cart/add";
+const API = "http://192.168.2.22:5000/api/inventory";
+const CART_API = "http://192.168.2.22:5000/api/cart/add";
 
 const RestaurantInventory = () => {
 

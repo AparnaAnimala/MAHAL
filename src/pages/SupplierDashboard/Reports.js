@@ -76,7 +76,7 @@ import ProductReport from "../Reports/ProductReport";
 import OrderReport from "../Reports/OrderReport";
 import InvoiceReport from "../Reports/InvoiceReport";
 
-const API = "http://192.168.2.9:5000/api";
+const API = "http://192.168.2.22:5000/api";
 const LOW_STOCK_LIMIT = 10;
 
 const Reports = () => {

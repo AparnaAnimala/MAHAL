@@ -4,7 +4,7 @@ import "./css/approval.css";
 import { useNavigate } from "react-router-dom";
 
 // API Configuration
-const API_ROOT = "http://192.168.2.9:5000/api";
+const API_ROOT = "http://192.168.2.22:5000/api";
 const ADMIN_BASE = `${API_ROOT}/v1`;
 const ADMIN_TOKEN = "MAHAL-ADMIN-2025"; // Dev only
 
@@ -312,7 +312,7 @@ export default function AdminRestaurantReview() {
                                                 <button
                                                     className="btn btn-warning"
                                                     onClick={async () => {
-                                                    await fetch("http://192.168.2.9:5000/api/v1/admin/restaurants/send-excel-template", {
+                                                    await fetch("http://192.168.2.22:5000/api/v1/admin/restaurants/send-excel-template", {
                                                         method: "POST",
                                                         headers: {
                                                         Authorization: `Bearer ${ADMIN_TOKEN}`,
@@ -347,7 +347,7 @@ export default function AdminRestaurantReview() {
                                                     onClick={async () => {
                                                         try {
                                                         const res = await fetch(
-                                                            "http://192.168.2.9:5000/api/v1/admin/restaurants/send-remaining-profile-mail",
+                                                            "http://192.168.2.22:5000/api/v1/admin/restaurants/send-remaining-profile-mail",
                                                             {
                                                             method: "POST",
                                                             headers: {

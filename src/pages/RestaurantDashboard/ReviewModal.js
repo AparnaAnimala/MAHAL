@@ -31,7 +31,7 @@ const toArabicDigitsOnly = (value) => {
   useEffect(() => {
     axios
       .get(
-        `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${order.order_id}`,
+        `http://192.168.2.22:5000/api/v1/orders/restaurant/orders/${order.order_id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -45,7 +45,7 @@ const toArabicDigitsOnly = (value) => {
     setLoadingReviews(true);
 
     axios
-      .get("http://192.168.2.9:5000/api/reviews/restaurant", {
+      .get("http://192.168.2.22:5000/api/reviews/restaurant", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setReviews(res.data || []))
@@ -83,7 +83,7 @@ const toArabicDigitsOnly = (value) => {
         formData.append("review_image", reviewImage);
       }
 
-      await axios.post("http://192.168.2.9:5000/api/reviews", formData, {
+      await axios.post("http://192.168.2.22:5000/api/reviews", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -245,7 +245,7 @@ const toArabicDigitsOnly = (value) => {
                     {/* IMAGE */}
                     <td>
                       <img
-                        src={`http://192.168.2.9:5000/api/reviews/image/${r.review_id}`}
+                        src={`http://192.168.2.22:5000/api/reviews/image/${r.review_id}`}
                         alt="review"
                         width="60"
                         style={{ borderRadius: "8px" }}

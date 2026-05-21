@@ -30,7 +30,7 @@ const ProductReport = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://192.168.2.9:5000/api/reports/products",
+        "http://192.168.2.22:5000/api/reports/products",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -128,7 +128,7 @@ const ProductReport = () => {
     };
 
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/reports/products/${type}`,
+      `http://192.168.2.22:5000/api/reports/products/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         params: {

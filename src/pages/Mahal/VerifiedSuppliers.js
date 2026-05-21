@@ -19,7 +19,7 @@ const VerifiedSuppliersCarousel = () => {
     const fetchSuppliers = async () => {
       try {
         const res = await axios.get(
-          "http://192.168.2.9:5000/api/suppliers"
+          "http://192.168.2.22:5000/api/suppliers"
         );
 
         console.log("🔥 SUPPLIERS:", res.data);
@@ -46,7 +46,7 @@ const VerifiedSuppliersCarousel = () => {
           try {
             // 1️⃣ Get supplier products
             const productRes = await axios.get(
-              `http://192.168.2.9:5000/api/products?supplier_id=${supplier.id}`
+              `http://192.168.2.22:5000/api/products?supplier_id=${supplier.id}`
             );
 
             const products = productRes.data.products || [];
@@ -70,7 +70,7 @@ const VerifiedSuppliersCarousel = () => {
                     if (!productId) return;
 
                     const reviewRes = await axios.get(
-                      `http://192.168.2.9:5000/api/reviews/product/${productId}`
+                      `http://192.168.2.22:5000/api/reviews/product/${productId}`
                     );
 
                   const reviews = reviewRes.data || [];
@@ -142,7 +142,7 @@ const VerifiedSuppliersCarousel = () => {
                     supplier.image && supplier.image.trim() !== ""
                       ? supplier.image.startsWith("http")
                         ? supplier.image
-                        : `http://192.168.2.9:5000/${supplier.image}`
+                        : `http://192.168.2.22:5000/${supplier.image}`
                       : null
                   }
                   alt={supplier.name}

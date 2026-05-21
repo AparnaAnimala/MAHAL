@@ -17,7 +17,7 @@ const emptyBranch = {
   branchLicense: "",
 };
 
-const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+const API_PROFILE = "http://192.168.2.22:5000/api/profile";
 
 const Branches = () => {
 
@@ -47,7 +47,7 @@ const Branches = () => {
 
   const translateToArabic = async (text) => {
     try {
-      const res = await fetch("http://192.168.2.9:5000/api/profile/translate", {
+      const res = await fetch("http://192.168.2.22:5000/api/profile/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text })
@@ -172,7 +172,7 @@ const Branches = () => {
     const fetchBranches = async () => {
       try {
         const res = await fetch(
-          `http://192.168.2.9:5000/api/profile/${finalRole}/branch/${finalId}`,
+          `http://192.168.2.22:5000/api/profile/${finalRole}/branch/${finalId}`,
           {
             headers: {
               Authorization: `Bearer ${

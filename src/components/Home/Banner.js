@@ -102,7 +102,7 @@
 // import heroVideo from "../../images/slider_Video.mp4";
 
 // // SAFE IMPORT (won’t crash app if config missing)
-// let API_BASE = "http://192.168.2.9:5000";
+// let API_BASE = "http://192.168.2.22:5000";
 
 // try {
 //   const config = require("../../config/api");

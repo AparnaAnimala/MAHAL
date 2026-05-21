@@ -38,24 +38,82 @@ def get_categories():
 # ------------------------------
 # GET records by category
 # ------------------------------
+# @general_bp.route("/records", methods=["GET"])
+# def get_records_by_category():
+#     category = request.args.get("category")
+#     if not category:
+#         return jsonify({"error": "Missing category parameter"}), 400
+
+#     try:
+#         conn = get_connection()
+#         cur = conn.cursor(cursor_factory=RealDictCursor)
+#         cur.execute("SELECT * FROM general_master WHERE category = %s;", (category,))
+#         records = cur.fetchall()
+#         cur.close()
+#         conn.close()
+#         return jsonify(records)
+#     except Exception as e:
+#         print("Error fetching records:", e)
+#         return jsonify({"error": str(e)}), 500
+
+
 @general_bp.route("/records", methods=["GET"])
 def get_records_by_category():
+
     category = request.args.get("category")
+    country = request.args.get("country")
+
     if not category:
         return jsonify({"error": "Missing category parameter"}), 400
 
     try:
+
         conn = get_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM general_master WHERE category = %s;", (category,))
+
+        cur = conn.cursor(
+            cursor_factory=RealDictCursor
+        )
+
+        # CITY FILTER
+        if category == "city" and country:
+
+            cur.execute(
+                """
+                SELECT id, value, unit
+                FROM general_master
+                WHERE category = %s
+                AND unit = %s
+                ORDER BY value
+                """,
+                (category, country)
+            )
+
+        else:
+
+            cur.execute(
+                """
+                SELECT id, value, unit
+                FROM general_master
+                WHERE category = %s
+                ORDER BY value
+                """,
+                (category,)
+            )
+
         records = cur.fetchall()
+
         cur.close()
         conn.close()
-        return jsonify(records)
-    except Exception as e:
-        print("Error fetching records:", e)
-        return jsonify({"error": str(e)}), 500
 
+        return jsonify(records)
+
+    except Exception as e:
+
+        print("Error fetching records:", e)
+
+        return jsonify(
+            {"error": str(e)}
+        ), 500
 # ------------------------------
 # POST new record
 # ------------------------------

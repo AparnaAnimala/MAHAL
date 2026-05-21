@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import "../css/customers.css";
 
 const CustomersPage = () => {
     const [viewCustomer, setViewCustomer] = useState(null);

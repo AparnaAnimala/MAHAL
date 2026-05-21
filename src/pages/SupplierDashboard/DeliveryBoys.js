@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/delivery-boys";
+const API = "http://192.168.2.22:5000/api/v1/delivery-boys";
 
 export default function DeliveryBoys() {
   const [boys, setBoys] = useState([]);

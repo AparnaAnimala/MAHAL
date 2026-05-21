@@ -38,7 +38,7 @@ const formatTime = (date) => {
   useEffect(() => {
     axios
       .get(
-        "http://192.168.2.9:5000/api/v1/orders/restaurant/orders?status=DELIVERED",
+        "http://192.168.2.22:5000/api/v1/orders/restaurant/orders?status=DELIVERED",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

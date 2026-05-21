@@ -29,7 +29,7 @@
 
 //     axios
 //       .get(
-//         `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${orderId}`,
+//         `http://192.168.2.22:5000/api/v1/orders/restaurant/orders/${orderId}`,
 //         { headers: { Authorization: `Bearer ${token}` } }
 //       )
 //       .then((res) => setData(res.data))
@@ -358,7 +358,7 @@ const formatOrderId = (id) => {
     setLoading(true);
     axios
       .get(
-        `http://192.168.2.9:5000/api/v1/orders/restaurant/orders/${orderId}`,
+        `http://192.168.2.22:5000/api/v1/orders/restaurant/orders/${orderId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then(res => setData(res.data))

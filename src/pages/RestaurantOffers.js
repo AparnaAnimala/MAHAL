@@ -80,12 +80,14 @@ const RestaurantOffers = () => {
       
 
       <OffersBanner />
+             <MahalIntentSection /> {/* What Are You Ordering Today? */}
 
       <FeaturedSections />
+
       
       {/* <HeroSection /> */}
 
-       <CategoryWise />
+       {/* <CategoryWise /> */}
 
        {/* <MahalCampaignTiles /> */}
 
@@ -93,17 +95,22 @@ const RestaurantOffers = () => {
 
       <HotDealsSection />   {/* // Limited Time Procurement Deals */}
       
+
+<VerifiedSuppliers />
+
        <MahalDealsOfDay />
       
-      <VerifiedSuppliers />
+      
 
       <MahalSponsoredSection />   {/* Supplier Spotlight */}
 
-      <CategoriesSections />
+      <PromoStrip />
 
       
 
-     <PromoStrip />
+      
+
+     {/* <PromoStrip /> */}
 
       <MahalStealDeals />
 
@@ -117,7 +124,7 @@ const RestaurantOffers = () => {
 
       <FreshProducts />   {/* Our Fresh Products */}
 
-       <MahalIntentSection /> {/* What Are You Ordering Today? */}
+
 
 
 
@@ -125,7 +132,7 @@ const RestaurantOffers = () => {
    {/* <Categories /> */}
 
  
-
+    <CategoriesSections />
       {/* <BrandPartners /> */}
 
       <DeliveryStrip />

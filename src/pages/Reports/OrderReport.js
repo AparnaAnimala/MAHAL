@@ -21,7 +21,7 @@ const isArabic = i18n.language?.startsWith("ar");
   /* ================= FETCH ================= */
   useEffect(() => {
     axios
-      .get("http://192.168.2.9:5000/api/reports/orders", {
+      .get("http://192.168.2.22:5000/api/reports/orders", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setData(res.data || []))
@@ -101,7 +101,7 @@ const isArabic = i18n.language?.startsWith("ar");
   /* ================= DOWNLOAD ================= */
   const download = async (type) => {
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/reports/orders/${type}`,
+      `http://192.168.2.22:5000/api/reports/orders/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         params: {

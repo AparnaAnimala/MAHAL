@@ -3,8 +3,7 @@ import { Outlet } from "react-router-dom";
 
 import AdminSidebar from "../../components/AdminDashboard/Sidebar";
 import AdminHeader from "../../components/AdminDashboard/Header";
-import ProfileSetup from "../ProfileSetup";
-import "../../pages/css/halfscreen.css";
+
 
 const AdminDashboardLayout = () => {
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);

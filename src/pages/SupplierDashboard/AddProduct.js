@@ -242,7 +242,7 @@ import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import BulkUpload from "./BulkUpload";
-const API_URL = "http://192.168.2.9:5000/api";
+const API_URL = "http://192.168.2.22:5000/api";
 
 const AddProduct = () => {
   const supplierIdFromLS = localStorage.getItem("supplier_id") || "";
@@ -783,7 +783,7 @@ export default AddProduct;
 // import BulkUpload from "./BulkUpload";
 // import { FiSearch } from "react-icons/fi";
 
-// const API_URL = "http://192.168.2.9:5000/api"; // existing value from your project
+// const API_URL = "http://192.168.2.22:5000/api"; // existing value from your project
 
 // const speak = (text) => {
 //   if (typeof window === "undefined" || !window.speechSynthesis) return;

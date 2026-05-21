@@ -1,5 +1,5 @@
 export default{
-delivery_management: "إدارة عمال التوصيل",
+delivery_management: "إتوزيع السائقين",
 delivery_subtitle: "إدارة معلومات موظفي التوصيل",
 add_update_delivery: "إضافة / تحديث عامل توصيل",
 

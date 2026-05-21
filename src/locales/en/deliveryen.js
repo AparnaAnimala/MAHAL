@@ -1,5 +1,5 @@
 export default {
-delivery_management: "Delivery Boys Management",
+delivery_management: "Driver Allocation",
 delivery_subtitle: "Manage delivery staff information",
 add_update_delivery: "Add / Update Delivery Boy",
 

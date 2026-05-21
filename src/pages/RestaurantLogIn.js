@@ -6,7 +6,7 @@
 // import signImg from "../images/sign_in_img_1.jpg";
 // const USE_BACKEND = true;
 // const STATIC_OTP = "123456";
-// const API_BASE_URL = "http://192.168.2.9:5000/api/auth";
+// const API_BASE_URL = "http://192.168.2.22:5000/api/auth";
 // const OTP_LENGTH = 6;
 
 // const SignIn = () => {
@@ -403,7 +403,7 @@
 // import signImg from "../images/Logo.png";
 // const USE_BACKEND = true;
 // const STATIC_OTP = "123456";
-// const API_BASE_URL = "http://192.168.2.9:5000/api/auth";
+// const API_BASE_URL = "http://192.168.2.22:5000/api/auth";
 // const OTP_LENGTH = 6;
 
 // const SignIn = () => {
@@ -804,7 +804,7 @@ import { Link, useNavigate } from "react-router-dom";
 import signImg from "../images/Logo.png";
 const USE_BACKEND = true;
 const STATIC_OTP = "123456";
-const API_BASE_URL = "http://192.168.2.9:5000/api/auth";
+const API_BASE_URL = "http://192.168.2.22:5000/api/auth";
 const OTP_LENGTH = 6;
 
 const SignIn = () => {

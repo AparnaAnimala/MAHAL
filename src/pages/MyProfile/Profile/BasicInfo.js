@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+const API_PROFILE = "http://192.168.2.22:5000/api/profile";
 
 const BasicInfo = () => {
 
@@ -114,7 +114,7 @@ const BasicInfo = () => {
     const fetchBasic = async () => {
       try {
         setLoading(true);
-        const BASE_URL = "http://192.168.2.9:5000/api/profile";
+        const BASE_URL = "http://192.168.2.22:5000/api/profile";
 
         const res = await fetch(
           `${BASE_URL}/${normalizedRole}/basic/${userId}`,

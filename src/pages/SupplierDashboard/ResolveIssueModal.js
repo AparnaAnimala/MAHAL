@@ -65,7 +65,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const ResolveIssueModal = ({ issue, onClose, onResolved }) => {
   const { t, i18n } = useTranslation();

@@ -7,7 +7,7 @@
 // import "slick-carousel/slick/slick.css";
 // import "slick-carousel/slick/slick-theme.css";
 
-// const API_BASE = "http://192.168.2.9:5000";
+// const API_BASE = "http://192.168.2.22:5000";
 
 // const RestaurantDeals = () => {
 //   const { t } = useTranslation();
@@ -137,13 +137,6 @@
 // };
 
 // export default RestaurantDeals;
-
-
-
-
-
-
-
 
 
 
@@ -893,59 +886,76 @@ const RestaurantDeals = () => {
 
                       {/* ================= ACTIONS ================= */}
 
-                      <div className="product_actions">
-
-                        {p.deliveryTime >
-                          0 && (
-
-                          <div className="delivery_strip_label_new">
-
-                            <i className="fas fa-shipping-fast delivery_icon"></i>
-
-                            <span>
-
-                              <strong
-                                className={
-                                  p.deliveryTime <=
-                                  20
-                                    ? "fast"
-                                    : p.deliveryTime <=
-                                        35
-                                      ? "medium"
-                                      : "slow"
-                                }
-                              >
-
-                                {
-                                  p.deliveryTime
-                                }{" "}
-                                MIN
-
-                              </strong>
-
-                            </span>
-
-                          </div>
-
-                        )}
-                     <button
-                    className="add_cart_btn"
-                    onClick={() => {
-
-                      if (!checkAuth()) return;
-
-                      navigate(
-                        `/ShopDetails/${p.id}${location.search}`
-                      );
-
-                    }}
-                  >
-                    View Product
-                  </button>
                      
 
-                      </div>
-                      
+<div className="product_actions">
+
+  {p.deliveryTime > 0 && (
+
+    <div className="delivery_strip_label_new">
+
+      <i className="fas fa-shipping-fast delivery_icon"></i>
+
+      <span>
+
+        <strong
+          className={
+            p.deliveryTime <= 20
+              ? "fast"
+              : p.deliveryTime <= 35
+              ? "medium"
+              : "slow"
+          }
+        >
+          {p.deliveryTime} MIN
+        </strong>
+
+      </span>
+
+    </div>
+
+  )}
+
+  {!cart[p.id] ? (
+
+    <button
+      className="add_cart_btn"
+      onClick={() => {
+
+        if (!checkAuth()) return;
+
+        addItem(p);
+
+      }}
+    >
+      Add to Cart
+    </button>
+
+  ) : (
+
+    <div className="mm-stepper">
+
+      <button
+        onClick={() => removeItem(p)}
+      >
+        -
+      </button>
+
+      <span>
+        {cart[p.id]}
+      </span>
+
+      <button
+        onClick={() => addItem(p)}
+      >
+        +
+      </button>
+
+    </div>
+
+  )}
+
+</div>
 
                     </div>
 

@@ -767,7 +767,7 @@ import {
   FiCalendar,
   FiX
 } from "react-icons/fi";
-const API = "http://192.168.2.9:5000/api";
+const API = "http://192.168.2.22:5000/api";
 
 export default function AdminCreditSettlement() {
 

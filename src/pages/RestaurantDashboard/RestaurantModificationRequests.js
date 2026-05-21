@@ -1,7 +1,7 @@
 // import React, { useEffect, useState } from "react";
 // import ModificationRequestDetails from "./ModificationRequestDetails";
 
-// const API = "http://192.168.2.9:5000/api/v1/orders/restaurant";
+// const API = "http://192.168.2.22:5000/api/v1/orders/restaurant";
 
 // export default function RestaurantModificationRequests() {
 //   const token = localStorage.getItem("token");
@@ -20,7 +20,7 @@
 
 //   useEffect(() => {
 //   fetch(
-//     "http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/auto-read",
+//     "http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/auto-read",
 //     {
 //       method: "PUT",
 //       headers: {
@@ -130,7 +130,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModificationRequestDetails from "./ModificationRequestDetails";
 
-const API = "http://192.168.2.9:5000/api/v1/orders/restaurant";
+const API = "http://192.168.2.22:5000/api/v1/orders/restaurant";
 
 export default function RestaurantModificationRequests() {
   const token = localStorage.getItem("token");
@@ -195,7 +195,7 @@ export default function RestaurantModificationRequests() {
 
   useEffect(() => {
     fetch(
-      "http://192.168.2.9:5000/api/v1/orders/restaurant/notifications/auto-read",
+      "http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/auto-read",
       {
         method: "PUT",
         headers: {

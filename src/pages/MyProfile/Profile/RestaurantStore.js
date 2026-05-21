@@ -3,8 +3,8 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 
-const API = "http://192.168.2.9:5000/api/profile";
-const API_PROFILE = "http://192.168.2.9:5000/api/profile";
+const API = "http://192.168.2.22:5000/api/profile";
+const API_PROFILE = "http://192.168.2.22:5000/api/profile";
 
 const RestaurantStore = () => {
 
@@ -384,7 +384,7 @@ const RestaurantStore = () => {
 
   const translateToArabic = async (text) => {
     try {
-      const res = await fetch("http://192.168.2.9:5000/api/profile/translate", {
+      const res = await fetch("http://192.168.2.22:5000/api/profile/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text })

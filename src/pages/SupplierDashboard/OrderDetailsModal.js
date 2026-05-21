@@ -121,7 +121,7 @@
 // import React, { useState, useEffect } from "react";
 // import ReceiptView from "./ReceiptView";
 // import { useNavigate } from "react-router-dom";
-// const API = "http://192.168.2.9:5000/api/v1/orders";
+// const API = "http://192.168.2.22:5000/api/v1/orders";
 
 // const OrderDetailsModal = ({ order, onClose, onUpdate, onAssignDelivery }) => {
 //   const token = localStorage.getItem("token");
@@ -481,7 +481,7 @@
 //                 onClick={async () => {
 //                   try {
 //                     const res = await fetch(
-//                       `http://192.168.2.9:5000/api/v1/invoice/generate/${order.id}`,
+//                       `http://192.168.2.22:5000/api/v1/invoice/generate/${order.id}`,
 //                       {
 //                         method: "POST",
 //                         headers: { Authorization: `Bearer ${token}` },
@@ -515,7 +515,7 @@
 //                 const orderId = order.header.order_id;
 
 //                 const gen = await fetch(
-//                   `http://192.168.2.9:5000/api/v1/receipt/generate/${orderId}`,
+//                   `http://192.168.2.22:5000/api/v1/receipt/generate/${orderId}`,
 //                   {
 //                     method: "POST",
 //                     headers: { Authorization: `Bearer ${token}` },
@@ -585,7 +585,7 @@ import React, { useState, useEffect } from "react";
 import ReceiptView from "./ReceiptView";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-const API = "http://192.168.2.9:5000/api/v1/orders";
+const API = "http://192.168.2.22:5000/api/v1/orders";
 
 const OrderDetailsModal = ({ order, onClose, onUpdate, onAssignDelivery }) => {
   const token = localStorage.getItem("token");
@@ -1072,7 +1072,7 @@ const formatDate = (date) =>
                 onClick={async () => {
                   try {
                     const res = await fetch(
-                      `http://192.168.2.9:5000/api/v1/invoice/generate/${order.id}`,
+                      `http://192.168.2.22:5000/api/v1/invoice/generate/${order.id}`,
                       {
                         method: "POST",
                         headers: { Authorization: `Bearer ${token}` },
@@ -1106,7 +1106,7 @@ const formatDate = (date) =>
                 const orderId = order.header.order_id;
 
                 const gen = await fetch(
-                  `http://192.168.2.9:5000/api/v1/receipt/generate/${orderId}`,
+                  `http://192.168.2.22:5000/api/v1/receipt/generate/${orderId}`,
                   {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },

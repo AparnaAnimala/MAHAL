@@ -135,12 +135,12 @@
 
 //   /* ================= FETCH DROPDOWNS ================= */
 //   useEffect(() => {
-//     fetch("http://192.168.2.9:5000/api/products/categories")
+//     fetch("http://192.168.2.22:5000/api/products/categories")
 //       .then((r) => r.json())
 //       .then(setCategories);
 
 //     fetch(
-//       `http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`
+//       `http://192.168.2.22:5000/api/products?supplier_id=${supplierId}`
 //     )
 //       .then((r) => r.json())
 //       .then(setProducts);
@@ -154,7 +154,7 @@
 //     }
 
 //     try {
-//       await fetch("http://192.168.2.9:5000/api/offers", {
+//       await fetch("http://192.168.2.22:5000/api/offers", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify({
@@ -396,11 +396,11 @@ useEffect(() => {
   useEffect(() => {
     if (!supplierId) return;
 
-    fetch(`http://192.168.2.9:5000/api/categories?supplier_id=${supplierId}`)
+    fetch(`http://192.168.2.22:5000/api/categories?supplier_id=${supplierId}`)
       .then(r => r.json())
       .then(setCategories);
 
-    fetch(`http://192.168.2.9:5000/api/products?supplier_id=${supplierId}`)
+    fetch(`http://192.168.2.22:5000/api/products?supplier_id=${supplierId}`)
       .then(r => r.json())
       .then(setProducts);
 
@@ -443,7 +443,7 @@ useEffect(() => {
       : p.product_name_english,
       qty: p.stock_qty,
       status,
-      image: `http://192.168.2.9:5000${p.image_url}`,
+      image: `http://192.168.2.22:5000${p.image_url}`,
     };
   });
 
@@ -495,8 +495,8 @@ useEffect(() => {
     };
     try {
       const url = isEdit
-        ? `http://192.168.2.9:5000/api/offers/${offer.offer_id}`
-        : `http://192.168.2.9:5000/api/offers`;
+        ? `http://192.168.2.22:5000/api/offers/${offer.offer_id}`
+        : `http://192.168.2.22:5000/api/offers`;
 
       const method = isEdit ? "PUT" : "POST";
 
@@ -563,7 +563,7 @@ useEffect(() => {
                     setForm({ ...form, category_id, sub_category_id: "" });
 
                     const res = await fetch(
-                      `http://192.168.2.9:5000/api/subcategories?supplier_id=${supplierId}&category_id=${category_id}`
+                      `http://192.168.2.22:5000/api/subcategories?supplier_id=${supplierId}&category_id=${category_id}`
                     );
                     setSubCategories(await res.json());
                   }}

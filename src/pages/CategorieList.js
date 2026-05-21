@@ -20,13 +20,13 @@ import axios from "axios";
 
 //     if (promoId) {
 //       axios
-//         .get(`http://192.168.2.9:5000/api/v1/promotions/${promoId}/products`)
+//         .get(`http://192.168.2.22:5000/api/v1/promotions/${promoId}/products`)
 //         .then(res => {
 //           setProducts(res.data);
 //         });
 //     } else {
 //       axios
-//         .get("http://192.168.2.9:5000/api/gridlist")
+//         .get("http://192.168.2.22:5000/api/gridlist")
 //         .then(res => {
 //           setProducts(res.data.products || []);
 //         });
@@ -61,13 +61,13 @@ const CategorieList = () => {
 
     if (promoId) {
       axios
-        .get(`http://192.168.2.9:5000/api/v1/promotions/${promoId}/products`)
+        .get(`http://192.168.2.22:5000/api/v1/promotions/${promoId}/products`)
         .then(res => {
           setProducts(res.data);
         });
     } else {
       axios
-        .get("http://192.168.2.9:5000/api/gridlist", {
+        .get("http://192.168.2.22:5000/api/gridlist", {
           params: {
             category_name: category || undefined // 🔥 MAIN FIX
           }

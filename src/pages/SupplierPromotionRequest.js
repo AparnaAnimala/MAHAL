@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../pages/css/SupplierPromotions.css";
 import { useTranslation } from "react-i18next";
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const toBase64 = (file) =>
   new Promise((resolve, reject) => {

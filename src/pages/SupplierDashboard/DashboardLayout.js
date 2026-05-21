@@ -1,108 +1,15 @@
-// import React from "react";
-// import { Outlet } from "react-router-dom";
-
-// import Sidebar from "../../components/Dashboard/Sidebar";
-// import Header from "../../components/Dashboard/Header";
-
-// const DashboardLayout = () => {
-//   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
-
-//   const openProfileDrawer = () => setProfileDrawerOpen(true);
-//   const closeProfileDrawer = () => setProfileDrawerOpen(false);
-
-//   return (
-//     <div className="dashboard_wrapper">
-//       <Sidebar />
-//       <div className="dashboard_body">
-//         <Header />
-//         <div className="dashboard_content">
-//           <Outlet />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default DashboardLayout;  
-
-// import React, { useState } from "react";
-// import { Outlet } from "react-router-dom";
-
-// import Sidebar from "../../components/Dashboard/Sidebar";
-// import Header from "../../components/Dashboard/Header";
-// import ProfileSetup from "../../pages/ProfileSetup";
-// import { resolveIdentity } from "../../utils/identity";
-
-// import "../../pages/css/halfscreen.css";
-
-// const DashboardLayout = () => {
-//   const identity = resolveIdentity();
-//   const userRole = identity?.role;
-//   const linkedId = identity?.linkedId;
-
-//   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
-
-//   const openProfileDrawer = () => setProfileDrawerOpen(true);
-//   const closeProfileDrawer = () => setProfileDrawerOpen(false);
-
-//   return (
-//     <>
-//       {/* MAIN DASHBOARD */}
-//       <div className="dashboard_wrapper">
-//         <Sidebar />
-
-//         <div className="dashboard_body">
-//           <Header onProfileClick={openProfileDrawer} />
-
-//           <div className="dashboard_content">
-//             <Outlet />
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* PROFILE DRAWER */}
-//       {profileDrawerOpen && (
-//         <div className="drawer-overlay" onClick={closeProfileDrawer}>
-//           <div
-//             className="drawer-panel"
-//             onClick={(e) => e.stopPropagation()}
-//           >
-//             <button
-//               className="drawer-close-btn"
-//               onClick={closeProfileDrawer}
-//             >
-//               ×
-//             </button>
-
-//             <ProfileSetup
-//               identity={identity}
-//               role={userRole}
-//               linkedId={linkedId}
-//             />
-//           </div>
-//         </div>
-//       )}
-//     </>
-//   );
-// };
-
-// export default DashboardLayout;
-
-
-
 
 import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 
 import Sidebar from "../../components/Dashboard/Sidebar";
 import Header from "../../components/Dashboard/Header";
-import ProfileSetup from "../../pages/ProfileSetup";
 import NewOrderPopup from "../../components/Dashboard/NewOrderPopup";
 import { resolveIdentity } from "../../utils/identity";
 
-import "../../pages/css/halfscreen.css";
+// import "../../pages/css/halfscreen.css";
 
-const API = "http://192.168.2.9:5000/api/v1/orders";
+const API = "http://192.168.2.22:5000/api/v1/orders";
 
 const DashboardLayout = () => {
   const identity = resolveIdentity();

@@ -155,7 +155,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/receipt";
+const API = "http://192.168.2.22:5000/api/v1/receipt";
 
 export default function ReceiptView({ orderId, onBack }) {
   const [data, setData] = useState(null);

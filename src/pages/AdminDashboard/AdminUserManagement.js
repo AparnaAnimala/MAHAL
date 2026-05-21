@@ -16,7 +16,7 @@ import {
     FaPlus
 } from "react-icons/fa";
 
-const API_BASE = "http://192.168.2.9:5000/api/v1/admin/manage";
+const API_BASE = "http://192.168.2.22:5000/api/v1/admin/manage";
 
 const ROLE_COLORS = {
     SUPER_ADMIN: "#d32f2f",
@@ -141,7 +141,7 @@ export default function AdminUserManagement() {
     const loadPermissions = async () => {
         try {
             const res = await fetch(
-                "http://192.168.2.9:5000/api/admin/auth/me",
+                "http://192.168.2.22:5000/api/admin/auth/me",
                 { headers: authHeaders }
             );
 

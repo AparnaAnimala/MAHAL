@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "./css/SupportTicket.css";
 import customerSupport from "../images/customer_support.png";
 import { useTranslation } from "react-i18next";
 /* -------- GET USER FROM TOKEN -------- */
@@ -42,7 +41,7 @@ export default function SupportTicket() {
   useEffect(() => {
     if (!user) return;
 
-    fetch("http://192.168.2.9:5000/api/support/categories", {
+    fetch("http://192.168.2.22:5000/api/support/categories", {
       headers: {
         Authorization: `Bearer ${user.token}`,
       },
@@ -77,7 +76,7 @@ export default function SupportTicket() {
     formData.append("message", message);
     if (file) formData.append("attachment", file);
 
-    const res = await fetch("http://192.168.2.9:5000/api/support/ticket", {
+    const res = await fetch("http://192.168.2.22:5000/api/support/ticket", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${user.token}`,
@@ -105,7 +104,7 @@ export default function SupportTicket() {
       return;
     }
 
-    const res = await fetch("http://192.168.2.9:5000/api/support/my-tickets", {
+    const res = await fetch("http://192.168.2.22:5000/api/support/my-tickets", {
       headers: {
         Authorization: `Bearer ${user.token}`,
       },
@@ -121,7 +120,7 @@ export default function SupportTicket() {
   /* ---------- LOAD TICKET DETAILS ---------- */
   const loadTicketDetails = async (ticketId) => {
     const res = await fetch(
-      `http://192.168.2.9:5000/api/support/ticket/${ticketId}`,
+      `http://192.168.2.22:5000/api/support/ticket/${ticketId}`,
       {
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -147,7 +146,7 @@ export default function SupportTicket() {
     if (replyFile) formData.append("attachment", replyFile);
 
     const res = await fetch(
-      `http://192.168.2.9:5000/api/support/ticket/${selectedTicket.ticket_id}/reply`,
+      `http://192.168.2.22:5000/api/support/ticket/${selectedTicket.ticket_id}/reply`,
       {
         method: "POST",
         headers: {
@@ -168,7 +167,7 @@ export default function SupportTicket() {
   const downloadFile = async (id, fileName) => {
     try {
       const res = await fetch(
-        `http://192.168.2.9:5000/api/support/attachment/${id}`,
+        `http://192.168.2.22:5000/api/support/attachment/${id}`,
         {
           method: "GET",
           headers: {

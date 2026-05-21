@@ -7,7 +7,7 @@ import {
 
 import "../css/ControlTower.css";
 
-const API = "http://192.168.2.9:5000/api/v1/admin/dashboard-metrics";
+const API = "http://192.168.2.22:5000/api/v1/admin/dashboard-metrics";
 
 const COLORS = {
   Pending: "color-pending",
@@ -80,8 +80,8 @@ export default function ControlTower() {
   const pieData = normalizeStatusData(order_status_distribution);
   return (
     <div className="droid-container">
-      <div className="page-center">
-        <div className="page-content">
+      <div className="page-center ">
+        <div className="page-content ">
           <div className="ct-container">
 
             {/* ===== HEADER ===== */}

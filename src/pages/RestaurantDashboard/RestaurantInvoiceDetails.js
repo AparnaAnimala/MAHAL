@@ -1,6 +1,6 @@
 // import React from "react";
 
-// const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
+// const API = "http://192.168.2.22:5000/api/v1/restaurant/invoices";
 
 // const RestaurantInvoiceDetailsModal = ({ invoice, onClose }) => {
 //   const token = localStorage.getItem("token");
@@ -137,7 +137,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
+const API = "http://192.168.2.22:5000/api/v1/restaurant/invoices";
 
 const RestaurantInvoiceDetailsModal = ({ invoice, onClose }) => {
   const token = localStorage.getItem("token");

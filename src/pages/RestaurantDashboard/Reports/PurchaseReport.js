@@ -1,7 +1,7 @@
 // import React, { useEffect, useState, useMemo } from "react";
 // import axios from "axios";
 
-// const API = "http://192.168.2.9:5000/api/v1/restaurant/reports/purchases";
+// const API = "http://192.168.2.22:5000/api/v1/restaurant/reports/purchases";
 
 // const ITEMS_PER_PAGE = 5;
 
@@ -299,7 +299,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/restaurant/reports/purchases";
+const API = "http://192.168.2.22:5000/api/v1/restaurant/reports/purchases";
 
 const ITEMS_PER_PAGE = 5;
 

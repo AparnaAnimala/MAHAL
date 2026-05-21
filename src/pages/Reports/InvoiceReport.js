@@ -19,7 +19,7 @@ const InvoiceReport = () => {
   /* ================= FETCH ================= */
   useEffect(() => {
     axios
-      .get("http://192.168.2.9:5000/api/reports/invoices", {
+      .get("http://192.168.2.22:5000/api/reports/invoices", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setData(res.data || []))
@@ -66,7 +66,7 @@ const InvoiceReport = () => {
   /* ================= DOWNLOAD ================= */
   const download = async (type) => {
     const res = await axios.get(
-      `http://192.168.2.9:5000/api/reports/invoices/${type}`,
+      `http://192.168.2.22:5000/api/reports/invoices/${type}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         params: {

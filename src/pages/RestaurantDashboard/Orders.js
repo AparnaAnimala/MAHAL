@@ -5,7 +5,7 @@ import OrderDetails from "./OrderDetails";
 import { useTranslation } from "react-i18next";
 
 
-const API = "http://192.168.2.9:5000/api/v1/orders/restaurant/orders";
+const API = "http://192.168.2.22:5000/api/v1/orders/restaurant/orders";
 
 export default function RestaurantOrders() {
   const [orders, setOrders] = useState([]);
@@ -126,7 +126,7 @@ const confirm = window.confirm(localText.confirmCancel);
 
   try {
     const res = await fetch(
-      `http://192.168.2.9:5000/api/v1/orders/restaurant/${orderId}/cancel`,
+      `http://192.168.2.22:5000/api/v1/orders/restaurant/${orderId}/cancel`,
       {
         method: "PUT",
         headers: {
@@ -177,7 +177,7 @@ const activateRecurring = async () => {
 
   try {
     const res = await fetch(
-      "http://192.168.2.9:5000/api/v1/orders/restaurant/recurring/create",
+      "http://192.168.2.22:5000/api/v1/orders/restaurant/recurring/create",
       {
         method: "POST",
         headers: {
@@ -222,7 +222,7 @@ const confirm = window.confirm(localText.pauseConfirm);
 
   try {
     const res = await fetch(
-      `http://192.168.2.9:5000/api/v1/orders/restaurant/recurring/pause/${orderId}`,
+      `http://192.168.2.22:5000/api/v1/orders/restaurant/recurring/pause/${orderId}`,
       {
         method: "PUT",
         headers: {
@@ -856,7 +856,7 @@ const filteredOrders = orders.filter((group) => {
 // import { useTranslation } from "react-i18next";
 
 
-// const API = "http://192.168.2.9:5000/api/v1/orders/restaurant/orders";
+// const API = "http://192.168.2.22:5000/api/v1/orders/restaurant/orders";
 
 // export default function RestaurantOrders() {
 //   const [orders, setOrders] = useState([]);
@@ -970,7 +970,7 @@ const filteredOrders = orders.filter((group) => {
 
 //   try {
 //     const res = await fetch(
-//       `http://192.168.2.9:5000/api/v1/orders/restaurant/${orderId}/cancel`,
+//       `http://192.168.2.22:5000/api/v1/orders/restaurant/${orderId}/cancel`,
 //       {
 //         method: "PUT",
 //         headers: {
@@ -1021,7 +1021,7 @@ const filteredOrders = orders.filter((group) => {
 
 //   try {
 //     const res = await fetch(
-//       "http://192.168.2.9:5000/api/v1/orders/restaurant/recurring/create",
+//       "http://192.168.2.22:5000/api/v1/orders/restaurant/recurring/create",
 //       {
 //         method: "POST",
 //         headers: {
@@ -1066,7 +1066,7 @@ const filteredOrders = orders.filter((group) => {
 
 //   try {
 //     const res = await fetch(
-//       `http://192.168.2.9:5000/api/v1/orders/restaurant/recurring/pause/${orderId}`,
+//       `http://192.168.2.22:5000/api/v1/orders/restaurant/recurring/pause/${orderId}`,
 //       {
 //         method: "PUT",
 //         headers: {

@@ -245,13 +245,13 @@ const Header = () => {
               </Link>
 
               {/* ADMIN */}
-              <Link to="/admin/login" className="login_card_v2 admin">
+              {/* <Link to="/admin/login" className="login_card_v2 admin">
                 <div className="icon_wrap">
                   <i className="fa-solid fa-user-shield"></i>
                 </div>
                 <h5>{t("admin")}</h5>
                 <p>{t("system_control")}</p>
-              </Link>
+              </Link> */}
 
             </div>
           </div>

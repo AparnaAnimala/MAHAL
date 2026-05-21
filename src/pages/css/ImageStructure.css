@@ -1,9 +1,9 @@
-.product_img {
+/* .product_img {
   position: relative;
   width: 100%;
-  height: 250px;           /* 🔥 Fix same height */
-  overflow: hidden;        /* 🔥 Prevent overflow */
-  background: #f8f8f8;     /* Optional clean background */
+  height: 250px;          
+  overflow: hidden;       
+  background: #f8f8f8;     
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,7 +12,7 @@
 .product_img img {
   width: 100%;
   height: 100%;
-  object-fit: cover;       /* 🔥 Makes all images uniform */
+  object-fit: cover;      
 }
 
 .product_img {
@@ -58,4 +58,4 @@
   font-weight: bold;
   border-radius: 4px;
   z-index: 10;
-}
+} */

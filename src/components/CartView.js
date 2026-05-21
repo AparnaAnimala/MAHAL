@@ -7,7 +7,7 @@
 // /* IMAGE PLACEHOLDER */
 // import img1 from "../images/cart_view_img_1.png";
 
-// const API_BASE_URL = "http://192.168.2.9:5000/api";
+// const API_BASE_URL = "http://192.168.2.22:5000/api";
 // const RESTAURANT_ID = 1;
 
 // const Cart = () => {
@@ -233,12 +233,12 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import CouponPopup from "../pages/RestaurantDashboard/CouponPopup";
-import "../pages/css/cart.css";
+
 
 /* IMAGE PLACEHOLDER */
 import img1 from "../images/cart_view_img_1.png";
 
-const API_BASE_URL = "http://192.168.2.9:5000/api";
+const API_BASE_URL = "http://192.168.2.22:5000/api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);

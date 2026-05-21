@@ -9,7 +9,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 const API =
-  "http://192.168.2.9:5000/api/v1/restaurant/reports/invoices";
+  "http://192.168.2.22:5000/api/v1/restaurant/reports/invoices";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -1129,7 +1129,7 @@ export default InvoiceReport;
 // import { useTranslation } from "react-i18next";
 
 // const API =
-//   "http://192.168.2.9:5000/api/v1/restaurant/reports/invoices";
+//   "http://192.168.2.22:5000/api/v1/restaurant/reports/invoices";
 
 // const ITEMS_PER_PAGE = 5;
 

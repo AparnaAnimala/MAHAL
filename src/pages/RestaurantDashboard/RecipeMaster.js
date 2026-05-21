@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../css/RecipeMaster.css";
+// import "../css/RecipeMaster.css";
 import { useTranslation } from "react-i18next";
 
 export default function RecipeMaster() {
@@ -21,7 +21,7 @@ export default function RecipeMaster() {
   if (!restaurantId) return;
 
   fetch(
-    `http://192.168.2.9:5000/api/recipes/menu-items?restaurant_id=${restaurantId}`
+    `http://192.168.2.22:5000/api/recipes/menu-items?restaurant_id=${restaurantId}`
   )
     .then(res => res.json())
     .then(data => setMenuItems(Array.isArray(data) ? data : []))
@@ -32,7 +32,7 @@ export default function RecipeMaster() {
   // FETCH UNITS FROM GENERAL_MASTER
   // ===============================
   useEffect(() => {
-    fetch(`http://192.168.2.9:5000/api/recipes/units?lang=${i18n.language}`)
+    fetch(`http://192.168.2.22:5000/api/recipes/units?lang=${i18n.language}`)
       .then(res => res.json())
       .then(data => setUnits(Array.isArray(data) ? data : []))
       .catch(() => setUnits([]));
@@ -91,7 +91,7 @@ export default function RecipeMaster() {
       return;
     }
 
-    fetch("http://192.168.2.9:5000/api/recipes/save", {
+    fetch("http://192.168.2.22:5000/api/recipes/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

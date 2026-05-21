@@ -3,7 +3,7 @@
 // // import "../css/product.css";
 // import "@fortawesome/fontawesome-free/css/all.min.css";
 
-// const API = "http://192.168.2.9:5000/api";
+// const API = "http://192.168.2.22:5000/api";
 
 // export default function BulkUpload({ supplierId, branchId, storeId }) {
 //   const [excelFile, setExcelFile] = useState(null);
@@ -135,7 +135,7 @@ import axios from "axios";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api";
+const API = "http://192.168.2.22:5000/api";
 
 export default function BulkUpload({ supplierId, branchId, storeId }) {
   const [excelFile, setExcelFile] = useState(null);

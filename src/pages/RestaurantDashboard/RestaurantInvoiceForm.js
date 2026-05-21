@@ -2,7 +2,7 @@
 // import { useNavigate } from "react-router-dom";
 // import "../css/OrdersDashboard.css";
 
-// const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
+// const API = "http://192.168.2.22:5000/api/v1/restaurant/invoices";
 
 // export default function InvoiceForm({ invoiceId, orderId,onBack }) {
 //   const navigate = useNavigate();
@@ -315,7 +315,7 @@ import React, { useEffect, useState } from "react";
 import RestaurantInvoiceDetailsModal from "./RestaurantInvoiceDetails";
 import { useTranslation } from "react-i18next";
 
-const API = "http://192.168.2.9:5000/api/v1/restaurant/invoices";
+const API = "http://192.168.2.22:5000/api/v1/restaurant/invoices";
 
 export default function InvoiceForm({ invoiceId, orderId, onBack }) {
   const token = localStorage.getItem("token");

@@ -6,7 +6,7 @@
 // import InvoiceReport from "./Reports/InvoiceReport";
 // import SupplierReport from "./Reports/SupplierReport";
 
-// const API = "http://192.168.2.9:5000/api/v1";
+// const API = "http://192.168.2.22:5000/api/v1";
 
 // const RestaurantReports = () => {
 
@@ -290,7 +290,7 @@ import GRNReport from "./Reports/GRNReport";
 import InvoiceReport from "./Reports/InvoiceReport";
 import SupplierReport from "./Reports/SupplierReport";
 
-const API = "http://192.168.2.9:5000/api/v1";
+const API = "http://192.168.2.22:5000/api/v1";
 
 const RestaurantReports = () => {
 

@@ -9,7 +9,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 const API =
-  "http://192.168.2.9:5000/api/v1/restaurant/reports/grn";
+  "http://192.168.2.22:5000/api/v1/restaurant/reports/grn";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -1005,7 +1005,7 @@ export default GRNReport;
 // import axios from "axios";
 // import { useTranslation } from "react-i18next";
 
-// const API = "http://192.168.2.9:5000/api/v1/restaurant/reports/grn";
+// const API = "http://192.168.2.22:5000/api/v1/restaurant/reports/grn";
 
 // const ITEMS_PER_PAGE = 5;
 
