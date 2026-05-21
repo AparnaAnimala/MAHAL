@@ -96,20 +96,51 @@ def full_search():
 # =========================================================
 # LOG SEARCH
 # =========================================================
+# =========================================================
+# LOG SEARCH
+# =========================================================
 @search_bp.route("/search/log", methods=["POST"])
 def log_search():
     conn = get_db_connection()
     cur = conn.cursor()
 
     try:
-        data = request.json
+        data = request.json or {}
         text = data.get("search_text")
+        restaurant_id = data.get("restaurant_id")
 
-        if text:
+        if text and restaurant_id:
             cur.execute(
-                "INSERT INTO search_log (search_text) VALUES (%s)",
-                (text,),
+                """
+                SELECT search_log_id
+                FROM search_log
+                WHERE restaurant_id = %s
+                  AND LOWER(TRIM(search_text)) = LOWER(TRIM(%s))
+                LIMIT 1
+                """,
+                (restaurant_id, text),
             )
+
+            existing = cur.fetchone()
+
+            if existing:
+                cur.execute(
+                    """
+                    UPDATE search_log
+                    SET searched_at = NOW()
+                    WHERE search_log_id = %s
+                    """,
+                    (existing[0],),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO search_log (restaurant_id, search_text)
+                    VALUES (%s, %s)
+                    """,
+                    (restaurant_id, text),
+                )
+
             conn.commit()
 
         return jsonify({"ok": True})
@@ -132,14 +163,22 @@ def recent_searches():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
+        restaurant_id = request.args.get("restaurant_id")
+
+        if not restaurant_id:
+            return jsonify([])
+
         cur.execute(
             """
             SELECT search_text
             FROM search_log
+            WHERE restaurant_id = %s
             ORDER BY searched_at DESC
             LIMIT 6
-            """
+            """,
+            (restaurant_id,)
         )
+
         return jsonify(cur.fetchall())
 
     except Exception as e:
@@ -151,6 +190,7 @@ def recent_searches():
         conn.close()
 
 
+
 # =========================================================
 # TRENDING SEARCHES
 # =========================================================
@@ -160,16 +200,24 @@ def trending_searches():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
+        restaurant_id = request.args.get("restaurant_id")
+
+        if not restaurant_id:
+            return jsonify([])
+
         cur.execute(
             """
             SELECT search_text, COUNT(*) AS freq
             FROM search_log
             WHERE searched_at > NOW() - INTERVAL '7 days'
+              AND restaurant_id = %s
             GROUP BY search_text
             ORDER BY freq DESC
             LIMIT 6
-            """
+            """,
+            (restaurant_id,)
         )
+
         return jsonify(cur.fetchall())
 
     except Exception as e:
@@ -179,3 +227,46 @@ def trending_searches():
     finally:
         cur.close()
         conn.close()
+
+
+
+
+# =========================================================
+# DELETE RECENT SEARCH
+# =========================================================
+@search_bp.route("/search/recent/delete", methods=["DELETE", "OPTIONS"])
+def delete_recent_search():
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True}), 200
+
+    data = request.get_json() or {}
+    search_text = data.get("search_text")
+    restaurant_id = data.get("restaurant_id")
+
+    if not search_text:
+        return jsonify({"error": "search_text required"}), 400
+
+    if not restaurant_id:
+        return jsonify({"error": "restaurant_id required"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            DELETE FROM search_log
+            WHERE LOWER(TRIM(search_text)) = LOWER(TRIM(%s))
+              AND restaurant_id = %s
+        """, (search_text, restaurant_id))
+
+        conn.commit()
+
+        return jsonify({"message": "Recent search deleted"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+ 

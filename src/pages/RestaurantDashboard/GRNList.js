@@ -1,71 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// const API = "http://192.168.2.22:5000/api/v1";
-
-// export default function GRNList() {
-//   const [grns, setGrns] = useState([]);
-//   const navigate = useNavigate();
-//   const token = localStorage.getItem("token");
-
-//   useEffect(() => {
-//     fetch(`${API}/grn`, {
-//       headers: { Authorization: `Bearer ${token}` }
-//     })
-//       .then(res => res.json())
-//       .then(setGrns);
-//   }, [token]);
-
-//   return (
-//     <div className="orders-page">
-//       <h2 className="page-title">Goods Receipt Notes</h2>
-
-//       <table className="orders-table">
-//         <thead>
-//           <tr>
-//             <th>#</th>
-//             <th>GRN No</th>
-//             <th>Supplier</th>
-//             <th>Order</th>
-//             <th>Status</th>
-//             <th />
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {grns.map((g, i) => (
-//             <tr key={g.grn_id}>
-//               <td>{i + 1}</td>
-//               <td>GRN-{String(g.grn_id).padStart(5, "0")}</td>
-//               <td>{g.supplier_name}</td>
-//               <td>{g.order_id}</td>
-//               <td>{g.status}</td>
-//               <td>
-//                 <button
-//                   onClick={() =>
-//                     navigate(`/restaurantdashboard/grn/${g.order_id}`)
-//                   }
-//                 >
-//                   View
-//                 </button>
-//               </td>
-//             </tr>
-//           ))}
-
-//           {grns.length === 0 && (
-//             <tr>
-//               <td colSpan="6" align="center">No GRNs found</td>
-//             </tr>
-//           )}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// }
-
-
-
-
-
 
 
 import React, { useEffect, useState } from "react";
@@ -207,7 +139,7 @@ const getStatusText = (status) => {
 
           {/* RESET */}
           <button
-            className="reset_btn"
+            className="reset_btn1"
             onClick={() => {
               setSearch("");
               setStatusFilter("ALL");

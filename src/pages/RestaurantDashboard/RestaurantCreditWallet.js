@@ -281,7 +281,7 @@ onClick={()=>setActiveTab("payments")}
 
   {/* RESET */}
   <button
-    className="reset_btn"
+    className="reset_btn1"
     onClick={() => {
       setSearchOrder("");
       setFromDate("");
@@ -403,7 +403,7 @@ onClick={()=>setActiveTab("payments")}
 
     {/* RESET */}
     <button
-      className="reset_btn"
+      className="reset_btn1"
       onClick={() => {
         setSearchSettlement("");
         setPayFromDate("");

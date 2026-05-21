@@ -743,10 +743,10 @@ const getFlag = (country) => {
                 </div>
               )}
 
-              <div className="hover_icons">
+              {/* <div className="hover_icons">
                 <button><i className="far fa-eye"></i></button>
                 <button><i className="far fa-heart"></i></button>
-              </div>
+              </div> */}
             </div>
 
             <div className="product_text">

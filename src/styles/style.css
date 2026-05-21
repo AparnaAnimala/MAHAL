@@ -9509,6 +9509,15 @@ section {
 }
 
 
+.reset_btn1 {
+ width: 32%;
+    background: #ff6b00;
+    color: #fff;
+    border: none;
+    height: 41px;
+    padding: 10px;
+    border-radius: 6px;
+}
 
 /* COMMON */
 .sidebar_item {
@@ -9602,7 +9611,7 @@ section {
 
 /* RADIO / CHECKBOX */
 .filter_option {
-  /* display: flex; */
+  display: flex;
   align-items: center;
   gap: 10px;
   font-size: 15px;
@@ -21789,7 +21798,7 @@ display: inline-block;
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 .filter_input {
@@ -22566,7 +22575,7 @@ display: inline-block;
 .filter_bar{
   display:flex;
   gap:12px;
-  flex-wrap:wrap;
+  /* flex-wrap:wrap; */
   margin:20px 0;
 }
 

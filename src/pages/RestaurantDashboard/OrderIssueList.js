@@ -107,7 +107,7 @@ const formatOrderId = (id) => {
 
           {/* RESET */}
           <button
-            className="reset_btn"
+            className="reset_btn1"
             onClick={() => {
               setSearch("");
               setFromDate("");
