@@ -269,4 +269,34 @@ def delete_recent_search():
 
     finally:
         cur.close()
- 
+@search_bp.route("/dashboard/search", methods=["GET"])
+def dashboard_search():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        q = request.args.get("q", "").lower().strip()
+
+        if not q:
+            return jsonify([])
+
+        cur.execute("""
+            SELECT *
+            FROM dashboard_search
+            WHERE EXISTS (
+                SELECT 1
+                FROM unnest(keywords) k
+                WHERE LOWER(k) LIKE %s
+            )
+            LIMIT 10
+        """, (f"%{q}%",))
+
+        return jsonify(cur.fetchall())
+
+    except Exception as e:
+        print("Dashboard search error:", e)
+        return jsonify([])
+
+    finally:
+        cur.close()
+        conn.close()

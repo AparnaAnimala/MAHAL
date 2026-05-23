@@ -50,5 +50,8 @@ last_1_month: "Last 1 Month",
 last_3_months: "Last 3 Months",
 last_6_months: "Last 6 Months",
 last_1_year: "Last 1 Year",
-issue_search:"Search for Restaurants"
+issue_search:"Search for Restaurants",
+issue_status:"Issue Status",
+issue_type:"Issue Type",
+calendar:"Calendar wise",
 }

@@ -9608,7 +9608,14 @@ section {
   flex-direction: column;
   gap: 5px;
 }
+.check_input{
+      margin-top: 15px;
 
+}
+
+.check_radio{
+  display: grid;
+}
 /* RADIO / CHECKBOX */
 .filter_option {
   display: flex;

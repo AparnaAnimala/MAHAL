@@ -253,7 +253,7 @@ return (
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="ALL">{t("all")}</option>
+          <option value="ALL">{t("status")}</option>
           <option value="ACTIVE">{t("active")}</option>
           <option value="UPCOMING">{t("upcoming")}</option>
           <option value="EXPIRED">{t("expired")}</option>
@@ -264,7 +264,7 @@ return (
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >
-          <option value="ALL">{t("all")}</option>
+          <option value="ALL">{t("Type")}</option>
 
           <option value="Flat">
             {offerTypeMap.Flat}
@@ -283,7 +283,7 @@ return (
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
         >
-          <option value="ALL">{t("all")}</option>
+          <option value="ALL">{t("validity")}</option>
           <option value="TODAY">{t("today")}</option>
           <option value="UPCOMING">{t("upcoming")}</option>
           <option value="EXPIRED">{t("expired")}</option>

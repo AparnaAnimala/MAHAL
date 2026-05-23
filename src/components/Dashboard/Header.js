@@ -85,9 +85,7 @@ import { jwtDecode } from "jwt-decode";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
-import { resolveIdentity } from "../../utils/identity"; // adjust path
-// import "../../pages/css/status.css";
-// import "../../pages/css/halfscreen.css";
+// import { resolveIdentity } from "../../utils/identity";
 import { useTranslation } from "react-i18next";
 const API = "http://192.168.2.22:5000/api/v1/orders";
 
@@ -203,22 +201,59 @@ useEffect(() => {
     }
   };
 
-  const handleSearch = () => {
-    const text = query.toLowerCase().trim();
-    if (!text) return;
+  // const handleSearch = () => {
+  //   const text = query.toLowerCase().trim();
+  //   if (!text) return;
 
-    const match = dashboardSearchMap.find((item) =>
-      item.keywords.some((k) => text.includes(k))
-    );
+  //   const match = dashboardSearchMap.find((item) =>
+  //     item.keywords.some((k) => text.includes(k))
+  //   );
 
-    if (match) {
-      navigate(match.route);
-      setQuery("");
-    } else {
-      alert("No matching section found");
-    }
-  };
+  //   if (match) {
+  //     navigate(match.route);
+  //     setQuery("");
+  //   } else {
+  //     alert("No matching section found");
+  //   }
+  // };
 
+
+
+
+  const handleSearch = async () => {
+  const text = query.toLowerCase().trim();
+
+  if (!text) return;
+
+  // 🔥 DASHBOARD SEARCH FROM DB
+  const dashboardRes = await fetch(
+    `http://192.168.2.22:5000/api/dashboard/search?q=${text}`
+  );
+
+  const dashboardData = await dashboardRes.json();
+
+  if (dashboardData.length > 0) {
+    navigate(dashboardData[0].route);
+    setQuery("");
+    return;
+  }
+
+  // 🔥 PRODUCT SEARCH
+  const productMatch = allProducts.find((p) =>
+    (p.name || p.product_name_english || "")
+      .toLowerCase()
+      .includes(text)
+  );
+
+  if (productMatch) {
+    navigate(`/product/${productMatch.id}`);
+    setQuery("");
+    return;
+  }
+
+  // 🔥 NORMAL SEARCH
+navigate(`/restaurantdashboard/${text}`);
+};
 
   return (
     <div className="dashboard_header">

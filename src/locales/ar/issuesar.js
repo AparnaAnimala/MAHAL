@@ -51,4 +51,7 @@ last_3_months: "آخر 3 أشهر",
 last_6_months: "آخر 6 أشهر",
 last_1_year: "آخر سنة",
 issue_search:"ابحث عن مطاعم",
+issue_status:"حالة المشكلة",
+issue_type:"نوع المشكلة",
+calendar:"حسب التقويم",
 }

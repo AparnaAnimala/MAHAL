@@ -230,8 +230,7 @@ const OrderIssues = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="ALL">{t("all")}</option>
-            <option value="ALL">{t("all")}</option>
+            <option value="ALL">{t("issue_status")}</option>
             <option value="UNDER_REVIEW">
               {t("under_review")}
             </option>
@@ -245,7 +244,7 @@ const OrderIssues = () => {
             value={issueTypeFilter}
             onChange={(e) => setIssueTypeFilter(e.target.value)}
           >
-            <option value="ALL">{t("all")}</option>
+            <option value="ALL">{t("issue_type")}</option>
 
             {[
               ...new Set(
@@ -264,7 +263,7 @@ const OrderIssues = () => {
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           >
-            <option value="ALL">{t("all")}</option>
+            <option value="ALL">{t("calendar")}</option>
 
               <option value="TODAY">{t("today")}</option>
 

@@ -1,8 +1,10 @@
 
+
 // import React, { useEffect, useRef, useState } from "react";
 // import { Link, useNavigate } from "react-router-dom";
 // import { resolveIdentity } from "../../utils/identity";
-// import "../../pages/css/halfscreen.css";
+// import { dashboardSearchMap } from "../../utils/dashboardSearchMap";
+// import { useTranslation } from "react-i18next";
 
 // const Header = ({ onProfileClick }) => {
 //   const navigate = useNavigate();
@@ -27,38 +29,109 @@
 //   const [notificationCount, setNotificationCount] = useState(0);
 //   const [cartCount, setCartCount] = useState(0);
 //   const [wishlistCount, setWishlistCount] = useState(0);
-  
+//   const [credit, setCredit] = useState(null);
+//    const { t, i18n } = useTranslation();
 
-//   /* LOAD COUNTS */
-// useEffect(() => {
-//   const token = localStorage.getItem("token");
-//   if (!token) return;
+//   // ✅ LOCATION STATE
+//   const [location, setLocation] = useState(null);
 
-//   fetch("http://192.168.2.22:5000/api/notifications/count", {
-//     headers: { Authorization: `Bearer ${token}` },
-//   })
-//     .then(res => res.json())
-//     .then(d => setNotificationCount(d.count || 0))
-//     .catch(() => setNotificationCount(0));
+//   // ✅ GET CURRENT LOCATION FUNCTION
+//   const getCurrentLocation = () => {
+//     if (!navigator.geolocation) return;
 
-//   fetch("http://192.168.2.22:5000/api/cart/count", {
-//     headers: { Authorization: `Bearer ${token}` },
-//   })
-//     .then(res => res.json())
-//     .then(d => setCartCount(d.count || 0))
-//     .catch(() => setCartCount(0));
+//     navigator.geolocation.getCurrentPosition(
+//       (position) => {
+//         const { latitude, longitude } = position.coords;
 
-//   /* WISHLIST COUNT */
-//   fetch("http://192.168.2.22:5000/api/wishlist/count", {
-//     headers: { Authorization: `Bearer ${token}` },
-//   })
-//     .then(res => res.json())
-//     .then(d => setWishlistCount(d.count || 0))
-//     .catch(() => setWishlistCount(0));
+//         console.log("Location:", latitude, longitude);
 
-// }, []);
+//         setLocation({ latitude, longitude });
 
-//   /* LOAD PRODUCTS */
+//         // 🔥 send to backend
+//         fetch("http://192.168.2.22:5000/api/location/save", {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${localStorage.getItem("token")}`,
+//           },
+//           body: JSON.stringify({ latitude, longitude }),
+//         }).catch(() => {});
+//       },
+//       (error) => {
+//         console.error("Location error:", error);
+//       }
+//     );
+//   };
+
+//   // ✅ AUTO CALL (LIKE SWIGGY)
+//   useEffect(() => {
+//     getCurrentLocation();
+//   }, []);
+
+//   const loadNotificationCount = () => {
+//     const token = localStorage.getItem("token");
+
+//     fetch("http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/count", {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then(res => res.json())
+//       .then(data => setNotificationCount(data.count || 0))
+//       .catch(() => setNotificationCount(0));
+//   };
+
+//   const loadCredit = () => {
+//     const token = localStorage.getItem("token");
+
+//     fetch("http://192.168.2.22:5000/api/restaurant/credit-info", {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then(res => res.json())
+//       .then(setCredit)
+//       .catch(() => setCredit(null));
+//   };
+
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     if (!token) return;
+
+//     loadNotificationCount();
+//     loadCredit();
+
+//     window.addEventListener("refreshNotifications", loadNotificationCount);
+//     window.addEventListener("creditUpdated", loadCredit);
+
+//     return () => {
+//       window.removeEventListener("refreshNotifications", loadNotificationCount);
+//       window.removeEventListener("creditUpdated", loadCredit);
+//     };
+//   }, []);
+
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     if (!token) return;
+
+//     fetch("http://192.168.2.22:5000/api/notifications/count", {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then(res => res.json())
+//       .then(d => setNotificationCount(d.count || 0))
+//       .catch(() => setNotificationCount(0));
+
+//     fetch("http://192.168.2.22:5000/api/cart/count", {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then(res => res.json())
+//       .then(d => setCartCount(d.count || 0))
+//       .catch(() => setCartCount(0));
+
+//     fetch("http://192.168.2.22:5000/api/wishlist/count", {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//       .then(res => res.json())
+//       .then(d => setWishlistCount(d.count || 0))
+//       .catch(() => setWishlistCount(0));
+//   }, []);
+
 //   useEffect(() => {
 //     const token = localStorage.getItem("token");
 
@@ -70,7 +143,6 @@
 //       .catch(() => setAllProducts([]));
 //   }, []);
 
-//   /* RECENT + TRENDING */
 //   useEffect(() => {
 //     fetch("http://192.168.2.22:5000/api/search/recent")
 //       .then(res => res.json())
@@ -83,28 +155,25 @@
 //       .catch(() => {});
 //   }, []);
 
-//   /* AUTOCOMPLETE */
 //   useEffect(() => {
 //     if (!query) {
 //       setSuggestions([]);
 //       return;
 //     }
 
-// const filtered = allProducts
-//   .filter(p =>
-//     (p.name || p.product_name_english || "")
-//       .toLowerCase()
-//       .includes(query.toLowerCase())
-//   )
-//   .slice(0, 16);
-
+//     const filtered = allProducts
+//       .filter(p =>
+//         (p.name || p.product_name_english || "")
+//           .toLowerCase()
+//           .includes(query.toLowerCase())
+//       )
+//       .slice(0, 16);
 
 //     setSuggestions(filtered);
 //     setShowSuggestions(true);
 //     setActiveIndex(-1);
 //   }, [query, allProducts]);
 
-//   /* CLICK OUTSIDE */
 //   useEffect(() => {
 //     const handleClick = e => {
 //       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -117,50 +186,46 @@
 //     return () => document.removeEventListener("mousedown", handleClick);
 //   }, []);
 
-// useEffect(() => {
-//   const loadCount = () => {
-//     fetch(
-//       "http://192.168.2.22:5000/api/v1/orders/restaurant/notifications/count",
-//       {
-//         headers: {
-//           Authorization: `Bearer ${localStorage.getItem("token")}`,
-//         },
-//       }
-//     )
-//       .then(res => res.json())
-//       .then(data => setNotificationCount(data.count || 0))
-//       .catch(() => setNotificationCount(0));
-//   };
+// const handleSearch = () => {
+//   const text = query.toLowerCase().trim();
+//   if (!text) return;
 
-//   loadCount();
-//   window.addEventListener("refreshNotifications", loadCount);
+//   // 🔹 1. Check dashboard routes (orders, invoices, etc.)
+//   const routeMatch = dashboardSearchMap.find((item) =>
+//     item.keywords.some((k) => text.includes(k.toLowerCase()))
+//   );
 
-//   return () =>
-//     window.removeEventListener("refreshNotifications", loadCount);
-// }, []);
+//   if (routeMatch) {
+//     navigate(routeMatch.route);
+//     setQuery("");
+//     return;
+//   }
 
-//   const handleSearch = text => {
-//     const q = (text || query).trim();
-//     if (!q) return;
+//   // 🔹 2. Check product list
+//   const productMatch = allProducts.find((p) =>
+//     (p.name || p.product_name_english || "")
+//       .toLowerCase()
+//       .includes(text)
+//   );
 
-//     setShowSuggestions(false);
-//     setShowOverlay(false);
+//   if (productMatch) {
+//     // 👉 change route based on your app
+//     navigate(`/product/${productMatch.id}`);
+//     setQuery("");
+//     return;
+//   }
 
-//     navigate(
-//       `/restaurantdashboard/CategorieList?search=${encodeURIComponent(
-//         q
-//       )}&category=${searchCategory}`
-//     );
-//   };
+//   // 🔹 3. fallback → go to search page
+//   navigate(`/search?q=${encodeURIComponent(text)}`);
+// };
 
 //   const handleLogout = () => {
 //     localStorage.removeItem("token");
 //     localStorage.removeItem("role");
 //     localStorage.removeItem("linked_id");
-//     // ❌ DO NOT remove tourSeen_restaurant_*
-
 //     navigate("/");
 //   };
+
 
 //   return (
 //     <>
@@ -171,130 +236,59 @@
 
 //           <div className="header_left">
 //             <h4 className="welcome_text">
-//               Welcome, <span>{username}!</span>
+//               {t("welcome")}, <span>{username}!</span>
 //             </h4>
 
-//             <div className="search_wrapper" ref={searchRef}>
-//               <select
-//                 className="search_bar"
-//                 style={{ maxWidth: "120px" }}
-//                 value={searchCategory}
-//                 onChange={(e) => setSearchCategory(e.target.value)}
-//               >
-//                 <option value="All">All</option>
-//                 <option value="Vegetables">Vegetables</option>
-//                 <option value="Fruits">Fruits</option>
-//                 <option value="Groceries">Groceries</option>
-//               </select>
+//             {credit && (
+//               <div className="header_credit">
+//                 <i className="fas fa-wallet"></i>
 
-//               <input
-//                 className="search_bar"
-//                 placeholder="Search for ingredients or products..."
-//                 value={query}
-//                 onFocus={() => {
-//                   setShowOverlay(true);
-//                   setShowSuggestions(true);
-//                 }}
-//                 onChange={(e) => setQuery(e.target.value)}
-//                 onKeyDown={(e) => {
-//                   if (e.key === "ArrowDown")
-//                     setActiveIndex(i =>
-//                       Math.min(i + 1, suggestions.length - 1)
-//                     );
-
-//                   if (e.key === "ArrowUp")
-//                     setActiveIndex(i => Math.max(i - 1, 0));
-
-//                   if (e.key === "Enter") {
-//                     if (activeIndex >= 0)
-//                       handleSearch(
-//                         suggestions[activeIndex].product_name_english
-//                       );
-//                     else handleSearch();
-//                   }
-//                 }}
-//               />
-
-//               <button className="search_btn" onClick={handleSearch}>
-//                 <i className="fas fa-search"></i>
-//               </button>
-
-//               {showOverlay && (
-//              <div className="search_dropdown">
-
-//                 {/* SHOW RECENT + TRENDING WHEN QUERY EMPTY */}
-// {query === "" && (
-//   <>
-//     {recentSearches.length > 0 &&
-//       recentSearches.map((r, i) => (
-//         <div
-//           key={`recent-${i}`}
-//           className="search_item"
-//           onClick={() => handleSearch(r.search_text)}
-//         >
-//           🕒 {r.search_text}
-//         </div>
-//       ))}
-
-//     {trendingSearches.length > 0 &&
-//       trendingSearches.map((t, i) => (
-//         <div
-//           key={`trending-${i}`}
-//           className="search_item"
-//           onClick={() => handleSearch(t.search_text)}
-//         >
-//           🔥 {t.search_text}
-//         </div>
-//       ))}
-//   </>
-// )}
-
-// {/* SHOW SUGGESTIONS WHEN TYPING */}
-// {query !== "" &&
-//   suggestions.map((p, i) => (
-//     <div
-//       key={p.product_id || p.id}
-//       className={`search_item ${i === activeIndex ? "active" : ""}`}
-//       onClick={() =>
-//         handleSearch(p.name || p.product_name_english)
-//       }
-//     >
-//       {p.name || p.product_name_english}
-//     </div>
-//   ))}
-
-
-//                   {query === "" &&
-//                     trendingSearches.map((t, i) => (
-//                       <div
-//                         key={i}
-//                         className="search_item"
-//                         onClick={() => handleSearch(t.search_text)}
-//                       >
-//                         🔥 {t.search_text}
-//                       </div>
-//                     ))}
-
-//                   {suggestions.map((p, i) => (
-//                   <div
-//                     key={p.product_id || p.id}
-//                     className={`search_item ${i === activeIndex ? "active" : ""}`}
-//                     onClick={() =>
-//                       handleSearch(p.name || p.product_name_english)
-//                     }
-//                   >
-//                     {p.name || p.product_name_english}
-//                   </div>
-//                 ))}
-
+//                 <div className="credit_text">
+//                   <span className="credit_label">{t("credit")}</span>
+//                   <b>QAR  {Number(credit.credit_available || 0).toFixed(2)}</b>
 //                 </div>
-//               )}
-//             </div>
+//               </div>
+//             )}
+
+//             <div className="search_wrapper">
+//             <input
+//               className="search_bar"
+//               placeholder={t("search_placeholder")}
+//               value={query}
+//               onChange={(e) => setQuery(e.target.value)}
+//               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+//             />
+//             <button className="search_btn" onClick={handleSearch}>
+//               <i className="fas fa-search"></i>
+//             </button>
+//           </div>
 //           </div>
 
+//           <div>
+//           <select
+//             className="lang_dropdown"
+//             value={i18n.language}
+//             onChange={(e) => {
+//               const lang = e.target.value;
+//               i18n.changeLanguage(lang);
+//               document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+//               localStorage.setItem("i18nextLng", lang);
+//             }}
+//           >
+//             <option value="en">English</option>
+//             <option value="ar">العربية</option>
+//           </select>
+//             </div>
+          
+
 //           <div className="header_right">
-//             <Link to="/restaurantdashboard/CategorieList" className="icon_box Icon_Btn">
+//             {/* <Link to="/restaurantdashboard/CategorieList" className="icon_box Icon_Btn">
 //               <i className="fas fa-shop"></i> Shop Now
+//             </Link> */}
+            
+
+//             <Link to="/restaurantOffers" className="icon_box Icon_Btn">
+//               <i className="fas fa-shop"></i> {t("shop_now")}
 //             </Link>
 
 //             <Link to="/restaurantdashboard/notifications" className="icon_box">
@@ -304,18 +298,22 @@
 //               )}
 //             </Link>
 
-//             <div className="icon_box logout_icon" onClick={onProfileClick}>
+//             {/* <div className="icon_box logout_icon" onClick={onProfileClick}>
 //               <i className="fas fa-user-circle"></i>
-//             </div>
+//             </div> */}
 
-//               <Link to="/restaurantdashboard/wishlist" className="icon_box">
+//             <Link to={`/profile/${localStorage.getItem("role")}/${localStorage.getItem("linked_id")}`} className="icon_box">
+//               <i className="fas fa-user"></i>    
+//             </Link>
+
+//               <Link to="/wishlist" className="icon_box">
 //               <i className="far fa-heart"></i>
 //               {wishlistCount > 0 && (
 //                 <span className="badge">{wishlistCount}</span>
 //               )}
 //             </Link>
 
-//             <Link to="/restaurantdashboard/CartView" className="icon_box">
+//             <Link to="/CartView" className="icon_box">
 //               <i className="fas fa-shopping-cart"></i>
 //               {cartCount > 0 && (
 //                 <span className="badge">{cartCount}</span>
@@ -334,6 +332,16 @@
 // };
 
 // export default Header;
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -532,22 +540,25 @@ const Header = ({ onProfileClick }) => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-const handleSearch = () => {
+const handleSearch = async () => {
   const text = query.toLowerCase().trim();
+
   if (!text) return;
 
-  // 🔹 1. Check dashboard routes (orders, invoices, etc.)
-  const routeMatch = dashboardSearchMap.find((item) =>
-    item.keywords.some((k) => text.includes(k.toLowerCase()))
+  // 🔥 DASHBOARD SEARCH FROM DB
+  const dashboardRes = await fetch(
+    `http://192.168.2.22:5000/api/dashboard/search?q=${text}`
   );
 
-  if (routeMatch) {
-    navigate(routeMatch.route);
+  const dashboardData = await dashboardRes.json();
+
+  if (dashboardData.length > 0) {
+    navigate(dashboardData[0].route);
     setQuery("");
     return;
   }
 
-  // 🔹 2. Check product list
+  // 🔥 PRODUCT SEARCH
   const productMatch = allProducts.find((p) =>
     (p.name || p.product_name_english || "")
       .toLowerCase()
@@ -555,14 +566,13 @@ const handleSearch = () => {
   );
 
   if (productMatch) {
-    // 👉 change route based on your app
     navigate(`/product/${productMatch.id}`);
     setQuery("");
     return;
   }
 
-  // 🔹 3. fallback → go to search page
-  navigate(`/search?q=${encodeURIComponent(text)}`);
+  // 🔥 NORMAL SEARCH
+navigate(`/restaurantdashboard/${text}`);
 };
 
   const handleLogout = () => {

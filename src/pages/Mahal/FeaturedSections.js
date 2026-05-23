@@ -80,7 +80,7 @@ const FeaturedSections = () => {
 
             <span
               className="mm-featured-link"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/categorieList")}
               style={{ cursor: "pointer" }}
             >
               View all

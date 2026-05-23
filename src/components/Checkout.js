@@ -1330,47 +1330,47 @@ const handleSubmit = async (e) => {
                     <div className="row">
 
                       <div className="col-md-6">
-                        <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
+                        <input className="check_input" name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" />
+                        <input className="check_input"  name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="altPhone" value={formData.altPhone} onChange={handleChange} placeholder="Alt Phone" />
+                        <input className="check_input"  name="altPhone" value={formData.altPhone} onChange={handleChange} placeholder="Alt Phone" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Pincode" />
+                        <input className="check_input"  name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Pincode" />
                       </div>
 
                       <div className="col-12">
-                        <input name="address1" value={formData.address1} onChange={handleChange} placeholder="Address 1" />
+                        <input className="check_input"  name="address1" value={formData.address1} onChange={handleChange} placeholder="Address 1" />
                       </div>
 
                       <div className="col-12">
-                        <input name="address2" value={formData.address2} onChange={handleChange} placeholder="Address 2" />
+                        <input className="check_input"  name="address2" value={formData.address2} onChange={handleChange} placeholder="Address 2" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="city" value={formData.city} onChange={handleChange} placeholder="City" />
+                        <input  className="check_input" name="city" value={formData.city} onChange={handleChange} placeholder="City" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="state" value={formData.state} onChange={handleChange} placeholder="State" />
+                        <input  className="check_input" name="state" value={formData.state} onChange={handleChange} placeholder="State" />
                       </div>
 
                       <div className="col-md-6">
-                        <input name="landmark" value={formData.landmark} onChange={handleChange} placeholder="Landmark" />
+                        <input  className="check_input" name="landmark" value={formData.landmark} onChange={handleChange} placeholder="Landmark" />
                       </div>
 
-                      <div className="col-12 mt-3">
+                      <div className="col-12 mt-3 check_radio" >
                         <label>
-                          <input type="radio" name="type" value="Home" onChange={handleChange} /> Home
+                          <input id="check_radio"  type="radio" name="type" value="Home" onChange={handleChange} /> Home
                         </label>
                         <label>
-                          <input type="radio" name="type" value="Office" onChange={handleChange} /> Office
+                          <input id="check_radio"   type="radio" name="type" value="Office" onChange={handleChange} /> Office
                         </label>
                       </div>
 

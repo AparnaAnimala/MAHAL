@@ -47,4 +47,6 @@ today: "اليوم",
 action: "الإجراء",
 search: "بحث",
 offers_found: "عرض موجود",
+Type:"نوع العرض",
+valid:"العرض صالح",
 }

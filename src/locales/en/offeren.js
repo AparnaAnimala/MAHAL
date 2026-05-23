@@ -48,4 +48,6 @@ today: "Today",
 action: "Action",
 search: "Search",
 offers_found: "offers found",
+Type:"Offer Type",
+valid:"Offer Valid",
 }

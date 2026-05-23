@@ -256,3 +256,31 @@ def get_all_reviews():
     conn.close()
 
     return jsonify(rows), 200
+@reviews_bp.route("/reviews/image/<int:review_id>", methods=["GET"])
+def get_review_image_by_id(review_id):
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT review_image, review_image_name
+        FROM product_reviews
+        WHERE review_id = %s
+    """, (review_id,))
+
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not row or not row[0]:
+        return jsonify({"error": "Image not found"}), 404
+
+    image_data = row[0]
+    image_name = row[1] or "review.jpg"
+
+    return send_file(
+        io.BytesIO(image_data),
+        mimetype="image/jpeg",
+        download_name=image_name
+    )
